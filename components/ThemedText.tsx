@@ -16,6 +16,7 @@ export function ThemedText({
   ...rest
 }: ThemedTextProps) {
   const color = useThemeColor({ light: lightColor, dark: darkColor }, 'text');
+  const primary = useThemeColor({ light: lightColor, dark: darkColor }, 'button');
 
   return (
     <Text
@@ -25,7 +26,7 @@ export function ThemedText({
         type === 'title' ? styles.title : undefined,
         type === 'defaultSemiBold' ? styles.defaultSemiBold : undefined,
         type === 'subtitle' ? styles.subtitle : undefined,
-        type === 'link' ? styles.link : undefined,
+        type === 'link' ? (styles.link, {color: primary}) : undefined,
         style,
       ]}
       {...rest}
