@@ -1,65 +1,62 @@
+import { Member } from "@/hooks/useReduxMembers";
+import { useThemeColor } from "@/hooks/useThemeColor";
+import { Image } from "expo-image";
+import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import { Pressable, StyleSheet } from "react-native";
 import { ThemedText } from "./ThemedText";
 import { ThemedView } from "./ThemedView";
-import { Image } from "expo-image";
-import { useThemeColor } from "@/hooks/useThemeColor";
 
-export type TeamType = "RESIDENT" | "INDIVIDUAL";
-
-type Team = {
-  name: string;
-  house: string;
-  team: TeamType;
-  onPress: () => void;
-};
+export type RoleType = "RESIDENT" | "INDIVIDUAL";
 
 interface TeamCardProps {
-  teams: Team[];
+  members: Member[];
 }
 
-// Static labels based on team type
-const TEAM_LABELS: Record<TeamType, string> = {
+// Static labels based on role type
+const ROLE_LABELS: Record<RoleType, string> = {
   RESIDENT: "Residents",
   INDIVIDUAL: "Individuals",
 };
 
-export function TeamCard({ teams }: TeamCardProps) {
+export function MemberCard({ members }: TeamCardProps) {
   const bgColor = useThemeColor({}, "input");
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const navigation = useRouter();
 
-  // Group teams by team type
-  const groupedTeams: Record<TeamType, Team[]> = {
+  // Group teams by role type
+  const groupedMembers: Record<RoleType, Member[]> = {
     RESIDENT: [],
     INDIVIDUAL: [],
   };
-  teams.forEach((member) => {
-    if (!groupedTeams[member.team]) groupedTeams[member.team] = [];
-    groupedTeams[member.team].push(member);
+  members.forEach((member) => {
+    if (member.role === "RESIDENT" || member.role === "INDIVIDUAL") {
+      groupedMembers[member.role].push(member);
+    }
   });
 
   return (
     <>
-      {(Object.keys(groupedTeams) as TeamType[]).map((team) => {
-        const groupMembers = groupedTeams[team];
+      {(Object.keys(groupedMembers) as RoleType[]).map((role) => {
+        const groupMembers = groupedMembers[role];
         if (!groupMembers || groupMembers.length === 0) return null;
         const showViewAll = groupMembers.length > 4;
-        const isExpanded = expanded[team] || false;
+        const isExpanded = expanded[role] || false;
         const displayedMembers =
           showViewAll && !isExpanded ? groupMembers.slice(0, 4) : groupMembers;
 
         return (
-          <ThemedView style={styles.container} key={team}>
+          <ThemedView style={styles.container} key={role}>
             <ThemedView style={[styles.row, { marginBottom: "5%" }]}>
               <ThemedText type="subtitle">
-                {TEAM_LABELS[team]}
+                {ROLE_LABELS[role]}
               </ThemedText>
               {showViewAll && (
                 <Pressable
                   onPress={() =>
                     setExpanded((prev) => ({
                       ...prev,
-                      [team]: !prev[team],
+                      [role]: !prev[role],
                     }))
                   }
                 >
@@ -78,9 +75,20 @@ export function TeamCard({ teams }: TeamCardProps) {
                     styles.button,
                     { backgroundColor: bgColor },
                   ]}
-                  onPress={member.onPress}
+                  onPress={() =>
+                    navigation.push({
+                      pathname: "/member-detail",
+                      params: {
+                        ...member,
+                        house: member.house ? member.house.name : null, // Pass house as string or null
+                        task: JSON.stringify(member.task ?? []), // Pass tasks as JSON string
+                      },
+                    })
+                  }
                 >
-                  <ThemedText type="default">{member.name}</ThemedText>
+                  <ThemedText type="default">
+                    {member.name}
+                  </ThemedText>
                   <Image
                     source={require("../assets/icons/chevron-right.png")}
                     style={{ height: 20, width: 20 }}
@@ -97,9 +105,8 @@ export function TeamCard({ teams }: TeamCardProps) {
 
 const styles = StyleSheet.create({
   container: {
-    minHeight: "20%",
     width: "100%",
-    marginBottom: 15,
+    marginBottom: 20
   },
   row: {
     flexDirection: "row",
@@ -107,7 +114,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   taskButtons: {
-    gap: 8,
+    gap: 5,
   },
   button: {
     borderRadius: 15,

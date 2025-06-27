@@ -1,245 +1,25 @@
-import React from "react";
-import { Image, Pressable, ScrollView, StyleSheet, View } from "react-native";
-
-import { ThemedView } from "@/components/ThemedView";
-import { useThemeColor } from "@/hooks/useThemeColor";
-import { TeamCard, TeamType } from "@/components/TeamCard";
-import { useRouter } from "expo-router";
-import { Avatar } from "@/components/ui/Avatar";
-import { ThemedText } from "@/components/ThemedText";
 import { HalfDonutChart } from "@/components/HalfDonutChart";
-import { ProgressType } from "@/components/TaskCard";
+import { MemberCard } from "@/components/MemberCard";
+import { ThemedText } from "@/components/ThemedText";
+import { ThemedView } from "@/components/ThemedView";
+import { Avatar } from "@/components/ui/Avatar";
+import { useReduxMembers } from "@/hooks/useReduxMembers";
+import { useThemeColor } from "@/hooks/useThemeColor";
+import { useRouter } from "expo-router";
+import React, { useMemo } from "react";
+import {
+  ActivityIndicator,
+  Image,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  View,
+} from "react-native";
 
-const TEAM_MEMBERS = [
-  {
-    id: "1",
-    name: "Alice Johnson",
-    house: "Lillie Louise Woermer House",
-    team: "RESIDENT" as TeamType,
-    phone: "555-1234",
-    email: "alice.johnson@example.com",
-    startDate: "2023-01-01",
-    endDate: "2023-12-31",
-    tasks: [
-      {
-        name: "Clearing the lawn",
-        description: "Remove debris and tidy up the lawn area.",
-        progress: "PENDING" as ProgressType,
-      },
-      {
-        name: "Watering plants",
-        description: "Ensure all plants are watered thoroughly.",
-        progress: "COMPLETED" as ProgressType,
-      },
-      {
-        name: "Trimming hedges",
-        description: "Trim the hedges to maintain a neat appearance.",
-        progress: "COMPLETED" as ProgressType,
-      },
-      {
-        name: "Weeding flower beds",
-        description: "Remove weeds from all flower beds.",
-        progress: "PENDING" as ProgressType,
-      },
-      {
-        name: "Watering plants",
-        description: "Ensure all plants are watered thoroughly.",
-        progress: "COMPLETED" as ProgressType,
-      },
-    ],
-  },
-  {
-    id: "2",
-    name: "Bob Smith",
-    house: "Lillie Louise Woermer House",
-    team: "RESIDENT" as TeamType,
-    phone: "555-5678",
-    email: "bob.smith@example.com",
-    startDate: "2023-02-01",
-    endDate: "2023-12-31",
-    tasks: [
-      {
-        name: "Clearing the lawn",
-        description: "Remove debris and tidy up the lawn area.",
-        progress: "PENDING" as ProgressType,
-      },
-      {
-        name: "Watering plants",
-        description: "Ensure all plants are watered thoroughly.",
-        progress: "COMPLETED" as ProgressType,
-      },
-      {
-        name: "Trimming hedges",
-        description: "Trim the hedges to maintain a neat appearance.",
-        progress: "COMPLETED" as ProgressType,
-      },
-    ],
-  },
-  {
-    id: "3",
-    name: "Carol Lee",
-    house: "Lillie Louise Woermer House",
-    team: "RESIDENT" as TeamType,
-    phone: "555-8765",
-    email: "carol.lee@example.com",
-    startDate: "2023-03-01",
-    endDate: "2023-12-31",
-    tasks: [
-      {
-        name: "Watering plants",
-        description: "Ensure all plants are watered thoroughly.",
-        progress: "COMPLETED" as ProgressType,
-      },
-      {
-        name: "Trimming hedges",
-        description: "Trim the hedges to maintain a neat appearance.",
-        progress: "COMPLETED" as ProgressType,
-      },
-      {
-        name: "Weeding flower beds",
-        description: "Remove weeds from all flower beds.",
-        progress: "PENDING" as ProgressType,
-      },
-      {
-        name: "Watering plants",
-        description: "Ensure all plants are watered thoroughly.",
-        progress: "COMPLETED" as ProgressType,
-      },
-    ],
-  },
-  {
-    id: "4",
-    name: "David Kim",
-    house: "Lillie Louise Woermer House",
-    team: "RESIDENT" as TeamType,
-    phone: "555-4321",
-    email: "david.kim@example.com",
-    startDate: "2023-04-01",
-    endDate: "2023-12-31",
-    tasks: [
-      {
-        name: "Clearing the lawn",
-        description: "Remove debris and tidy up the lawn area.",
-        progress: "PENDING" as ProgressType,
-      },
-      {
-        name: "Watering plants",
-        description: "Ensure all plants are watered thoroughly.",
-        progress: "COMPLETED" as ProgressType,
-      },
-      {
-        name: "Trimming hedges",
-        description: "Trim the hedges to maintain a neat appearance.",
-        progress: "COMPLETED" as ProgressType,
-      },
-      {
-        name: "Weeding flower beds",
-        description: "Remove weeds from all flower beds.",
-        progress: "PENDING" as ProgressType,
-      },
-      {
-        name: "Watering plants",
-        description: "Ensure all plants are watered thoroughly.",
-        progress: "COMPLETED" as ProgressType,
-      },
-    ],
-  },
-  {
-    id: "5",
-    name: "Eve Turner",
-    house: "Lillie Louise Woermer House",
-    team: "RESIDENT" as TeamType,
-    phone: "555-2468",
-    email: "eve.turner@example.com",
-    startDate: "2023-05-01",
-    endDate: "2023-12-31",
-    tasks: [
-      {
-        name: "Watering plants",
-        description: "Ensure all plants are watered thoroughly.",
-        progress: "COMPLETED" as ProgressType,
-      },
-      {
-        name: "Trimming hedges",
-        description: "Trim the hedges to maintain a neat appearance.",
-        progress: "COMPLETED" as ProgressType,
-      },
-      {
-        name: "Weeding flower beds",
-        description: "Remove weeds from all flower beds.",
-        progress: "PENDING" as ProgressType,
-      },
-      {
-        name: "Watering plants",
-        description: "Ensure all plants are watered thoroughly.",
-        progress: "COMPLETED" as ProgressType,
-      },
-    ],
-  },
-  {
-    id: "6",
-    name: "Frank Miller",
-    house: "Lillie Louise Woermer House",
-    team: "INDIVIDUAL" as TeamType,
-    phone: "555-1357",
-    email: "frank.miller@example.com",
-    startDate: "2023-06-01",
-    endDate: "2023-12-31",
-    tasks: [
-      {
-        name: "Watering plants",
-        description: "Ensure all plants are watered thoroughly.",
-        progress: "COMPLETED" as ProgressType,
-      },
-      {
-        name: "Trimming hedges",
-        description: "Trim the hedges to maintain a neat appearance.",
-        progress: "COMPLETED" as ProgressType,
-      },
-      {
-        name: "Weeding flower beds",
-        description: "Remove weeds from all flower beds.",
-        progress: "PENDING" as ProgressType,
-      },
-      {
-        name: "Watering plants",
-        description: "Ensure all plants are watered thoroughly.",
-        progress: "COMPLETED" as ProgressType,
-      },
-    ],
-  },
-  {
-    id: "7",
-    name: "Grace Lee",
-    house: "Lillie Louise Woermer House",
-    team: "INDIVIDUAL" as TeamType,
-    phone: "555-9753",
-    email: "grace.lee@example.com",
-    startDate: "2023-07-01",
-    endDate: "2023-12-31",
-    tasks: [
-      {
-        name: "Watering plants",
-        description: "Ensure all plants are watered thoroughly.",
-        progress: "COMPLETED" as ProgressType,
-      },
-      {
-        name: "Trimming hedges",
-        description: "Trim the hedges to maintain a neat appearance.",
-        progress: "COMPLETED" as ProgressType,
-      },
-      {
-        name: "Weeding flower beds",
-        description: "Remove weeds from all flower beds.",
-        progress: "PENDING" as ProgressType,
-      },
-      {
-        name: "Watering plants",
-        description: "Ensure all plants are watered thoroughly.",
-        progress: "COMPLETED" as ProgressType,
-      },
-    ],
-  },
+
+const houses = [
+  { label: "LLW House", enum: "LILLIE_LOUISE_WOERMER_HOUSE" },
+  { label: "CE House", enum: "CAROLYN_ECKMAN_HOUSE" },
 ];
 
 export default function TeamsScreen() {
@@ -248,25 +28,76 @@ export default function TeamsScreen() {
   const pending = useThemeColor({}, "pending");
   const overdue = useThemeColor({}, "overdue");
   const navigation = useRouter();
+  const { members, loading } = useReduxMembers();
 
-  const teams = TEAM_MEMBERS.map((member) => ({
-    ...member,
-    onPress: () =>
-      navigation.navigate({
-        pathname: "/member-detail",
-        params: {
-          id: member.id,
-          name: member.name,
-          house: member.house,
-          team: member.team,
-          phone: member.phone,
-          email: member.email,
-          startDate: member.startDate,
-          endDate: member.endDate,
-          tasks: JSON.stringify(member.tasks),
-        },
-      }),
-  }));
+  const houseReduxTaskstats = useMemo(() => {
+    const stats: Record<
+      string, 
+      { pending: number; completed: number; overdue: number; totalTasks: number; completionPercent: number }
+    > = {};
+
+    // Initialize stats for all houses
+    houses.forEach(house => {
+      stats[house.enum] = {
+        pending: 0,
+        completed: 0,
+        overdue: 0,
+        totalTasks: 0,
+        completionPercent: 0
+      };
+    });
+
+    // Process all members
+    members.forEach(member => {
+      // Get the house enum from member's house name
+      const houseEnum = member.house?.name 
+        ? member.house.name.toUpperCase().replace(/ /g, "_")
+        : null;
+      
+      // Skip if no house or house not in our list
+      if (!houseEnum || !stats[houseEnum]) return;
+
+      const houseStat = stats[houseEnum];
+      
+      // Process each task for this member
+      member.task?.forEach(task => {
+        // Only count tasks with valid progress states
+        if (["PENDING", "COMPLETED", "OVERDUE"].includes(task.progress || "")) {
+          switch (task.progress) {
+            case "PENDING":
+              houseStat.pending++;
+              break;
+            case "COMPLETED":
+              houseStat.completed++;
+              break;
+            case "OVERDUE":
+              houseStat.overdue++;
+              break;
+          }
+          houseStat.totalTasks++;
+        }
+      });
+    });
+
+    // Calculate percentages
+    Object.values(stats).forEach(stat => {
+      stat.completionPercent = stat.totalTasks > 0 
+        ? Math.round((stat.completed / stat.totalTasks) * 100) 
+        : 0;
+    });
+
+    return stats;
+  }, [members]);
+
+  // Helper to get stats for a house
+  const getHouseStats = (houseEnum: string) =>
+    houseReduxTaskstats[houseEnum] || {
+      pending: 0,
+      completed: 0,
+      overdue: 0,
+      totalTasks: 0,
+      completionPercent: 0,
+    };
 
   return (
     <>
@@ -275,7 +106,7 @@ export default function TeamsScreen() {
           contentContainerStyle={{
             alignItems: "center",
             width: "100%",
-            paddingBottom: "80%",
+            paddingBottom: "20%",
           }}
           style={styles.innerContainer}
         >
@@ -288,90 +119,73 @@ export default function TeamsScreen() {
                   type="title"
                   style={{ width: "100%", color: "#FFFFFF" }}
                 >
-                  My Teams
+                  Members
                 </ThemedText>
               </View>
               <Avatar />
             </ThemedView>
 
-            <ThemedView style={[styles.row, { backgroundColor: primaryColor }]}>
-              <ThemedView
-                style={[
-                  styles.chartContainer,
-                  { backgroundColor: primaryColor },
-                ]}
-              >
-                <HalfDonutChart
-                  data={[
-                    { value: 47, color: completed, text: "Completed" },
-                    { value: 40, color: pending, text: "Pending" },
-                    { value: 16, color: overdue, text: "Overdue" },
-                  ]}
-                  height={80}
-                  radius={80}
-                  innerRadius={50}
-                  showGradient={false}
-                  strokeColor={primaryColor}
-                  strokeWidth={5}
-                  centerLabelComponent={() => (
-                    <View>
-                      <ThemedText
-                        type="title"
-                        style={{
-                          fontWeight: "bold",
-                          textAlign: "center",
-                          color: "#FFFFFF",
-                        }}
-                      >
-                        I
-                      </ThemedText>
-                    </View>
-                  )}
-                  legendContainerStyle={{ marginTop: 10 }}
-                  legendTextStyle={{ color: "#fff", fontSize: 14 }}
-                />
-              </ThemedView>
-              <ThemedView
-                style={[
-                  styles.chartContainer,
-                  { backgroundColor: primaryColor },
-                ]}
-              >
-                <HalfDonutChart
-                  data={[
-                    { value: 47, color: completed, text: "Completed" },
-                    { value: 40, color: pending, text: "Pending" },
-                    { value: 16, color: overdue, text: "Overdue" },
-                  ]}
-                  height={80}
-                  radius={80}
-                  innerRadius={50}
-                  showGradient={false}
-                  strokeColor={primaryColor}
-                  strokeWidth={5}
-                  centerLabelComponent={() => (
-                    <View>
-                      <ThemedText
-                        type="title"
-                        style={{
-                          fontWeight: "bold",
-                          textAlign: "center",
-                          color: "#FFFFFF",
-                        }}
-                      >
-                        R
-                      </ThemedText>
-                    </View>
-                  )}
-                  legendContainerStyle={{ marginTop: 10 }}
-                  legendTextStyle={{ color: "#fff", fontSize: 14 }}
-                />
-              </ThemedView>
+            <ThemedView
+              style={[styles.column, { backgroundColor: primaryColor }]}
+            >
+              {houses.map((house) => {
+                const stats = getHouseStats(house.enum);
+                return (
+                  <HalfDonutChart
+                    key={house.enum}
+                    data={[
+                      {
+                        value: stats.completed,
+                        color: completed,
+                        text: "Completed",
+                      },
+                      { value: stats.pending, color: pending, text: "Pending" },
+                      { value: stats.overdue, color: overdue, text: "Overdue" },
+                    ]}
+                    height={80}
+                    radius={80}
+                    innerRadius={50}
+                    showGradient={false}
+                    strokeColor={primaryColor}
+                    strokeWidth={5}
+                    legendTitle={`${house.label} Progress`}
+                    legendContainerStyle={{ marginTop: 10 }}
+                    legendTitleStyle={{ color: "#fff", fontSize: 20 }}
+                    legendTextStyle={{ color: "#fff", fontSize: 14 }}
+                    centerLabelComponent={() => (
+                      <View>
+                        <ThemedText
+                          type="title"
+                          style={{
+                            fontWeight: "bold",
+                            textAlign: "center",
+                            color: "#FFFFFF",
+                          }}
+                        >
+                          {stats.totalTasks === 0
+                            ? "0%"
+                            : `${stats.completionPercent}%`}
+                        </ThemedText>
+                      </View>
+                    )}
+                  />
+                );
+              })}
             </ThemedView>
           </ThemedView>
 
           <ThemedView style={styles.subContainer}>
-            <TeamCard teams={teams} />
+            {loading ? (
+              <ActivityIndicator
+                size="large"
+                color={primaryColor}
+                style={{ marginTop: "5%" }}
+              />
+            ) : (
+              <>
+                <MemberCard members={members} />
+              </>
+            )}
           </ThemedView>
         </ScrollView>
 
@@ -407,25 +221,25 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
   },
   headerCard: {
-    height: "50%",
+    height: 430,
     width: "100%",
     borderBottomEndRadius: 20,
     borderBottomStartRadius: 20,
     paddingHorizontal: 15,
     marginBottom: 15,
-    paddingTop: "5%",
   },
   row: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
   },
-  chartContainer: {
-    height: "auto",
-    width: "50%",
-    marginTop: "35%",
-    // borderWidth: 1
+  column: {
+    flexDirection: "column",
+    justifyContent: "flex-start",
+    alignItems: "flex-start",
+    height: "80%",
   },
+
   taskCTAbtn: {
     height: 60,
     width: 60,

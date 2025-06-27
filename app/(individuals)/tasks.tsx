@@ -1,72 +1,37 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import React from "react";
-import { ScrollView, StyleSheet, View } from "react-native";
+import { ActivityIndicator, ScrollView, StyleSheet, View } from "react-native";
 
-import { ThemedView } from "@/components/ThemedView";
-import { useThemeColor } from "@/hooks/useThemeColor";
-import { TaskCard } from "@/components/TaskCard";
-import type { ProgressType } from "@/components/TaskCard";
-import { useRouter } from "expo-router";
-import { Avatar } from "@/components/ui/Avatar";
-import { ThemedText } from "@/components/ThemedText";
 import { HalfDonutChart } from "@/components/HalfDonutChart";
-
-const TASKS_DB = [
-  {
-    name: "Clearing the lawn",
-    description: "Remove debris and tidy up the lawn area.",
-    progress: "PENDING" as ProgressType,
-  },
-  {
-    name: "Watering plants",
-    description: "Ensure all plants are watered thoroughly.",
-    progress: "COMPLETED" as ProgressType,
-  },
-  {
-    name: "Trimming hedges",
-    description: "Trim the hedges to maintain a neat appearance.",
-    progress: "COMPLETED" as ProgressType,
-  },
-  {
-    name: "Weeding flower beds",
-    description: "Remove weeds from all flower beds.",
-    progress: "PENDING" as ProgressType,
-  },
-  {
-    name: "Watering plants",
-    description: "Ensure all plants are watered thoroughly.",
-    progress: "COMPLETED" as ProgressType,
-  },
-  {
-    name: "Trimming hedges",
-    description: "Trim the hedges to maintain a neat appearance.",
-    progress: "COMPLETED" as ProgressType,
-  },
-  {
-    name: "Weeding flower beds",
-    description: "Remove weeds from all flower beds.",
-    progress: "COMPLETED" as ProgressType,
-  },
-];
+import { TaskCard } from "@/components/TaskCard";
+import { ThemedText } from "@/components/ThemedText";
+import { ThemedView } from "@/components/ThemedView";
+import { Avatar } from "@/components/ui/Avatar";
+import { useReduxTasks } from "@/hooks/useReduxTasks";
+import { useThemeColor } from "@/hooks/useThemeColor";
+import { useRouter } from "expo-router";
 
 export default function TabTwoScreen() {
   const primaryColor = useThemeColor({}, "selection");
-  const completed = useThemeColor({}, "completed");
-  const pending = useThemeColor({}, "pending");
-  const overdue = useThemeColor({}, "overdue");
+  const completedColor = useThemeColor({}, "completed");
+  const pendingColor = useThemeColor({}, "pending");
+  const overdueColor = useThemeColor({}, "overdue");
   const navigation = useRouter();
-  const tasks = TASKS_DB.map((task) => ({
-    ...task,
-    progress: task.progress,
-    onPress: () =>
-      navigation.navigate({
-        pathname: "/task-detail",
-        params: {
-          name: task.name,
-          description: task.description,
-          progress: task.progress,
-        },
-      }),
-  }));
+  const { tasks, loading } = useReduxTasks({ onlyCurrentUser: true });
+
+  let pending = 0,
+    completed = 0,
+    overdue = 0,
+    totalTasks = 0;
+  tasks.forEach((task) => {
+    totalTasks++;
+    if (task.progress === "PENDING") pending++;
+    else if (task.progress === "COMPLETED") completed++;
+    else if (task.progress === "OVERDUE") overdue++;
+  });
+
+  const completionPercent =
+    totalTasks > 0 ? Math.round((completed / totalTasks) * 100) : 0;
 
   return (
     <>
@@ -75,7 +40,7 @@ export default function TabTwoScreen() {
           contentContainerStyle={{
             alignItems: "center",
             width: "100%",
-            paddingBottom: "50%",
+            flex: 1,
           }}
           style={styles.innerContainer}
         >
@@ -96,20 +61,28 @@ export default function TabTwoScreen() {
             </ThemedView>
 
             <ThemedView
-              style={[styles.chartContainer, { backgroundColor: primaryColor }]}
+              style={[
+                styles.chartContainer,
+                { backgroundColor: "transparent" },
+              ]}
             >
               <HalfDonutChart
                 data={[
-                  { value: 47, color: completed, text: "Completed" },
-                  { value: 40, color: pending, text: "Pending" },
-                  { value: 16, color: overdue, text: "Overdue" },
+                  {
+                    value: completed,
+                    color: completedColor,
+                    text: "Completed",
+                  },
+                  { value: pending, color: pendingColor, text: "Pending" },
+                  { value: overdue, color: overdueColor, text: "Overdue" },
                 ]}
-                height={250}
-                radius={120}
-                innerRadius={70}
+                height={220}
+                radius={90}
+                innerRadius={60}
                 showGradient={false}
                 strokeColor={primaryColor}
                 strokeWidth={10}
+                legendTitle="Tasks Progress"
                 centerLabelComponent={() => (
                   <View>
                     <ThemedText
@@ -121,18 +94,38 @@ export default function TabTwoScreen() {
                         color: "#FFFFFF",
                       }}
                     >
-                      47%
+                      {totalTasks === 0 ? "0%" : `${completionPercent}%`}
                     </ThemedText>
                   </View>
                 )}
                 legendContainerStyle={{ marginTop: 10 }}
+                legendTitleStyle={{ color: "#fff", fontSize: 22 }}
                 legendTextStyle={{ color: "#fff", fontSize: 14 }}
               />
             </ThemedView>
           </ThemedView>
 
           <ThemedView style={styles.subContainer}>
-            <TaskCard tasks={tasks} />
+            {loading ? (
+              <ActivityIndicator
+                size="large"
+                color={primaryColor}
+                style={{ marginTop: "5%" }}
+              />
+            ) : tasks.length === 0 ? (
+              <ThemedText
+                type="default"
+                style={{
+                  textAlign: "center",
+                  marginTop: 24,
+                  color: "#888",
+                }}
+              >
+                You have no tasks assigned yet.
+              </ThemedText>
+            ) : (
+              <TaskCard tasks={tasks} />
+            )}
           </ThemedView>
         </ScrollView>
       </ThemedView>
@@ -159,13 +152,12 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   headerCard: {
-    height: "50%",
+    height: 280,
     width: "100%",
     borderBottomEndRadius: 20,
     borderBottomStartRadius: 20,
     paddingHorizontal: 15,
     marginBottom: 15,
-    paddingTop: "5%",
   },
   row: {
     flexDirection: "row",
@@ -173,10 +165,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   chartContainer: {
-    // borderWidth: 1,
-    height: "auto",
+    height: "80%",
     width: "100%",
-    marginTop: "15%",
   },
   chartKey: {
     borderWidth: 1,

@@ -1,44 +1,38 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import React from "react";
-import { ScrollView, StyleSheet, View } from "react-native";
+import { ActivityIndicator, ScrollView, StyleSheet, View } from "react-native";
 
-import { ThemedView } from "@/components/ThemedView";
-import { useThemeColor } from "@/hooks/useThemeColor";
+import { HalfDonutChart } from "@/components/HalfDonutChart";
 import { TaskCard } from "@/components/TaskCard";
-import { useRouter } from "expo-router";
-import { Avatar } from "@/components/ui/Avatar";
 import { ThemedText } from "@/components/ThemedText";
-
-const TASKS_DB = [
-  {
-    name: "Clearing the lawn",
-    description: "Remove debris and tidy up the lawn area.",
-  },
-  {
-    name: "Watering plants",
-    description: "Ensure all plants are watered thoroughly.",
-  },
-  {
-    name: "Trimming hedges",
-    description: "Trim the hedges to maintain a neat appearance.",
-  },
-  {
-    name: "Weeding flower beds",
-    description: "Remove weeds from all flower beds.",
-  },
-];
+import { ThemedView } from "@/components/ThemedView";
+import { Avatar } from "@/components/ui/Avatar";
+import { useReduxTasks } from "@/hooks/useReduxTasks";
+import { useThemeColor } from "@/hooks/useThemeColor";
+import { useRouter } from "expo-router";
 
 export default function TabTwoScreen() {
   const primaryColor = useThemeColor({}, "selection");
+  const completedColor = useThemeColor({}, "completed");
+  const pendingColor = useThemeColor({}, "pending");
+  const overdueColor = useThemeColor({}, "overdue");
   const navigation = useRouter();
+  const { tasks, loading } = useReduxTasks({ onlyCurrentUser: true });
 
-  const tasks = TASKS_DB.map((task) => ({
-    ...task,
-    onPress: () =>
-      navigation.navigate({
-        pathname: "/task-detail",
-        params: { name: task.name, description: task.description },
-      }),
-  }));
+  let pending = 0,
+    completed = 0,
+    overdue = 0,
+    totalTasks = 0;
+  tasks.forEach((task) => {
+    totalTasks++;
+    if (task.progress === "PENDING") pending++;
+    else if (task.progress === "COMPLETED") completed++;
+    else if (task.progress === "OVERDUE") overdue++;
+  });
+
+  const completionPercent =
+    totalTasks > 0 ? Math.round((completed / totalTasks) * 100) : 0;
+
   return (
     <>
       <ThemedView style={styles.container}>
@@ -67,18 +61,71 @@ export default function TabTwoScreen() {
             </ThemedView>
 
             <ThemedView
-              style={[styles.chartContainer, { backgroundColor: primaryColor }]}
-            ></ThemedView>
-            <ThemedView
-              style={[styles.chartKey, { backgroundColor: primaryColor }]}
+              style={[
+                styles.chartContainer,
+                { backgroundColor: "transparent" },
+              ]}
             >
-              <View style={styles.row}></View>
+              <HalfDonutChart
+                data={[
+                  {
+                    value: completed,
+                    color: completedColor,
+                    text: "Completed",
+                  },
+                  { value: pending, color: pendingColor, text: "Pending" },
+                  { value: overdue, color: overdueColor, text: "Overdue" },
+                ]}
+                height={220}
+                radius={90}
+                innerRadius={60}
+                showGradient={false}
+                strokeColor={primaryColor}
+                strokeWidth={10}
+                legendTitle="Tasks Progress"
+                centerLabelComponent={() => (
+                  <View>
+                    <ThemedText
+                      type="title"
+                      style={{
+                        // fontSize: 22,
+                        fontWeight: "bold",
+                        textAlign: "center",
+                        color: "#FFFFFF",
+                      }}
+                    >
+                      {totalTasks === 0 ? "0%" : `${completionPercent}%`}
+                    </ThemedText>
+                  </View>
+                )}
+                legendContainerStyle={{ marginTop: 10 }}
+                legendTitleStyle={{ color: "#fff", fontSize: 22 }}
+                legendTextStyle={{ color: "#fff", fontSize: 14 }}
+              />
             </ThemedView>
           </ThemedView>
 
           <ThemedView style={styles.subContainer}>
-            <TaskCard label="Pending Tasks" tasks={tasks} />
-            <TaskCard label="Completed Tasks" tasks={tasks} />
+            {loading ? (
+              <ActivityIndicator
+                size="large"
+                color={primaryColor}
+                style={{ marginTop: "5%" }}
+              />
+            ) : tasks.length === 0 ? (
+              <ThemedText
+                type="default"
+                style={{
+                  textAlign: "center",
+                  marginTop: 24,
+                  color: "#888",
+                }}
+              >
+                You have no tasks assigned yet.
+              </ThemedText>
+            ) : (
+              <TaskCard tasks={tasks} />
+            )}
           </ThemedView>
         </ScrollView>
       </ThemedView>
@@ -105,7 +152,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   headerCard: {
-    height: "50%",
+    height: 280,
     width: "100%",
     borderBottomEndRadius: 20,
     borderBottomStartRadius: 20,
@@ -118,10 +165,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   chartContainer: {
-    borderWidth: 1,
-    height: "60%",
+    height: "80%",
     width: "100%",
-    marginTop: "5%",
   },
   chartKey: {
     borderWidth: 1,

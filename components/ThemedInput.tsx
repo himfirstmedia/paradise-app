@@ -11,24 +11,28 @@ import {
   FlatList,
   LayoutRectangle,
   Dimensions,
-  Image
+  Image,
 } from "react-native";
 import React, { useRef, useState } from "react";
 import { ThemedText } from "./ThemedText";
 import DateTimePickerModal from "react-native-modal-datetime-picker";
 import { format } from "date-fns";
 
-
 export type ThemedInputProps = TextInputProps & {
   type?: "default" | "floating" | "rounded";
   placeholder?: string;
+  errorMessage?: string | null;
 };
 
 type ThemedDropdownProps = ThemedInputProps & {
   items: string[];
   value?: string;
   onSelect?: (item: string) => void;
+  onValueChange?: (item: string) => void; 
+  placeholder?: string;
   errorMessage?: string | null;
+  numColumns?: number;
+  buttonStyle?: object;
 };
 
 type ThemedCheckboxProps = {
@@ -41,27 +45,11 @@ type ThemedCheckboxProps = {
 export function ThemedEmailInput({
   type = "default",
   placeholder,
+  errorMessage,
   ...rest
 }: ThemedInputProps) {
   const bgColor = useThemeColor({}, "input");
   const errorColor = useThemeColor({}, "overdue");
-  const [value, setValue] = useState("");
-  const [error, setError] = useState<string | null>(null);
-
-  const validateEmail = (email: string) => {
-    // Simple email regex
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-  };
-
-  const handleChangeText = (text: string) => {
-    setValue(text);
-    if (text.length === 0 || validateEmail(text)) {
-      setError(null);
-    } else {
-      setError("Invalid email address");
-    }
-    if (rest.onChangeText) rest.onChangeText(text);
-  };
 
   return (
     <>
@@ -78,22 +66,16 @@ export function ThemedEmailInput({
         placeholder={placeholder}
         autoCapitalize="none"
         placeholderTextColor={useThemeColor({}, "placeholder")}
-        value={value}
-        onChangeText={handleChangeText}
         {...rest}
       />
       <View style={{ height: 20, justifyContent: "center" }}>
-        {error && (
-          <>
-            <View
-              style={{ flexDirection: "row", alignItems: "center", gap: 10 }}
-            >
-              <View
-                style={[styles.dot, { backgroundColor: errorColor }]}
-              ></View>
-              <Text style={[styles.error, { color: errorColor }]}>{error}</Text>
-            </View>
-          </>
+        {errorMessage && (
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+            <View style={[styles.dot, { backgroundColor: errorColor }]} />
+            <Text style={[styles.error, { color: errorColor }]}>
+              {errorMessage}
+            </Text>
+          </View>
         )}
       </View>
     </>
@@ -103,22 +85,11 @@ export function ThemedEmailInput({
 export function ThemedTextInput({
   type = "default",
   placeholder,
+  errorMessage,
   ...rest
 }: ThemedInputProps) {
   const bgColor = useThemeColor({}, "input");
   const errorColor = useThemeColor({}, "overdue");
-  const [value, setValue] = useState("");
-  const [error, setError] = useState<string | null>(null);
-
-  const handleChangeText = (text: string) => {
-    setValue(text);
-    if (text.length === 0) {
-      setError(null);
-    } else {
-      setError("Invalid email address");
-    }
-    if (rest.onChangeText) rest.onChangeText(text);
-  };
 
   return (
     <>
@@ -133,22 +104,16 @@ export function ThemedTextInput({
         selectionColor={useThemeColor({}, "selection")}
         placeholder={placeholder}
         placeholderTextColor={useThemeColor({}, "placeholder")}
-        value={value}
-        onChangeText={handleChangeText}
         {...rest}
       />
       <View style={{ height: 20, justifyContent: "center" }}>
-        {error && (
-          <>
-            <View
-              style={{ flexDirection: "row", alignItems: "center", gap: 10 }}
-            >
-              <View
-                style={[styles.dot, { backgroundColor: errorColor }]}
-              ></View>
-              <Text style={[styles.error, { color: errorColor }]}>{error}</Text>
-            </View>
-          </>
+        {errorMessage && (
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+            <View style={[styles.dot, { backgroundColor: errorColor }]} />
+            <Text style={[styles.error, { color: errorColor }]}>
+              {errorMessage}
+            </Text>
+          </View>
         )}
       </View>
     </>
@@ -158,29 +123,18 @@ export function ThemedTextInput({
 export function ThemedTextArea({
   type = "default",
   placeholder,
+  errorMessage,
   ...rest
 }: ThemedInputProps) {
   const bgColor = useThemeColor({}, "input");
   const errorColor = useThemeColor({}, "overdue");
-  const [value, setValue] = useState("");
-  const [error, setError] = useState<string | null>(null);
-
-  const handleChangeText = (text: string) => {
-    setValue(text);
-    if (text.length === 0) {
-      setError(null);
-    } else {
-      setError("Please enter a task description");
-    }
-    if (rest.onChangeText) rest.onChangeText(text);
-  };
 
   return (
     <>
       <TextInput
         style={[
           styles.input,
-          { backgroundColor: bgColor, height:  200, textAlignVertical: "top" },
+          { backgroundColor: bgColor, height: 200, textAlignVertical: "top" },
           type === "default" ? styles.default : undefined,
           type === "floating" ? styles.floating : undefined,
           type === "rounded" ? styles.rounded : undefined,
@@ -188,23 +142,17 @@ export function ThemedTextArea({
         selectionColor={useThemeColor({}, "selection")}
         placeholder={placeholder}
         placeholderTextColor={useThemeColor({}, "placeholder")}
-        value={value}
-        onChangeText={handleChangeText}
         multiline
         {...rest}
       />
       <View style={{ height: 20, justifyContent: "center" }}>
-        {error && (
-          <>
-            <View
-              style={{ flexDirection: "row", alignItems: "center", gap: 10 }}
-            >
-              <View
-                style={[styles.dot, { backgroundColor: errorColor }]}
-              ></View>
-              <Text style={[styles.error, { color: errorColor }]}>{error}</Text>
-            </View>
-          </>
+        {errorMessage && (
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+            <View style={[styles.dot, { backgroundColor: errorColor }]} />
+            <Text style={[styles.error, { color: errorColor }]}>
+              {errorMessage}
+            </Text>
+          </View>
         )}
       </View>
     </>
@@ -287,9 +235,13 @@ export function ThemedDropdown({
   items = [],
   value,
   onSelect,
+  onValueChange,
   errorMessage,
+  loading = false,
+  numColumns = 1,
+  buttonStyle = {},
   ...rest
-}: ThemedDropdownProps) {
+}: ThemedDropdownProps & { loading?: boolean }) {
   const bgColor = useThemeColor({}, "input");
   const errorColor = useThemeColor({}, "overdue");
   const iconColor = useThemeColor({}, "placeholder");
@@ -297,7 +249,9 @@ export function ThemedDropdown({
 
   const [selected, setSelected] = useState(value ?? "");
   const [showModal, setShowModal] = useState(false);
-  const [dropdownLayout, setDropdownLayout] = useState<LayoutRectangle | null>(null);
+  const [dropdownLayout, setDropdownLayout] = useState<LayoutRectangle | null>(
+    null
+  );
 
   const dropdownRef = useRef<View>(null);
 
@@ -313,11 +267,17 @@ export function ThemedDropdown({
     }
   };
 
+   // Sync selected state with value prop
+  React.useEffect(() => {
+    setSelected(value ?? "");
+  }, [value]);
+
   // Handle item selection
   const handleSelect = (item: string) => {
     setSelected(item);
     setShowModal(false);
     if (onSelect) onSelect(item);
+    if (onValueChange) onValueChange(item); 
     if (rest.onChangeText) rest.onChangeText(item);
   };
 
@@ -381,7 +341,9 @@ export function ThemedDropdown({
         {errorMessage && (
           <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
             <View style={[styles.dot, { backgroundColor: errorColor }]} />
-            <Text style={[styles.error, { color: errorColor }]}>{errorMessage}</Text>
+            <Text style={[styles.error, { color: errorColor }]}>
+              {errorMessage}
+            </Text>
           </View>
         )}
       </View>
@@ -414,18 +376,31 @@ export function ThemedDropdown({
                 },
               ]}
             >
-              <FlatList
-                data={items}
-                keyExtractor={(item) => item}
-                renderItem={({ item }) => (
-                  <Pressable
-                    style={styles.button}
-                    onPress={() => handleSelect(item)}
-                  >
-                    <ThemedText type="default">{item}</ThemedText>
-                  </Pressable>
-                )}
-              />
+              {loading ? (
+                <View
+                  style={{ padding: 20, alignItems: "center", width: "100%" }}
+                >
+                  <Text style={{ color: placeholderColor }}>Loading...</Text>
+                </View>
+              ) : (
+                <FlatList
+                  data={items}
+                  keyExtractor={(item) => item}
+                  numColumns={numColumns} // <-- use prop
+                  renderItem={({ item }) => (
+                    <Pressable
+                      style={[
+                        styles.button,
+                        buttonStyle, // <-- use prop
+                        numColumns > 1 && { width: 130, marginLeft: 6 },
+                      ]}
+                      onPress={() => handleSelect(item)}
+                    >
+                      <ThemedText type="default">{item}</ThemedText>
+                    </Pressable>
+                  )}
+                />
+              )}
             </View>
           )}
         </Pressable>
@@ -468,16 +443,27 @@ export function ThemedDatePicker({
         <View
           style={[
             styles.input,
-            { backgroundColor: bgColor, justifyContent: "space-between", alignItems: "center", flexDirection: "row" },
+            {
+              backgroundColor: bgColor,
+              justifyContent: "space-between",
+              alignItems: "center",
+              flexDirection: "row",
+            },
             type === "default" ? styles.default : undefined,
             type === "floating" ? styles.floating : undefined,
             type === "rounded" ? styles.rounded : undefined,
           ]}
         >
-          <ThemedText type="default" style={{ color: date ? textColor : placeholderColor }}>
+          <ThemedText
+            type="default"
+            style={{ color: date ? textColor : placeholderColor }}
+          >
             {date ? format(date, "dd-MM-yyyy") : placeholder}
           </ThemedText>
-          <Image source={require("@/assets/icons/date.png")} style={styles.icon}/>
+          <Image
+            source={require("@/assets/icons/date.png")}
+            style={styles.icon}
+          />
         </View>
       </Pressable>
       <DateTimePickerModal
@@ -545,5 +531,5 @@ const styles = StyleSheet.create({
   icon: {
     height: 24,
     width: 24,
-  }
+  },
 });

@@ -13,7 +13,7 @@ export default function TabLayout() {
   const bgColor = useThemeColor({}, "selection");
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: bgColor }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: bgColor }} edges={['top', 'bottom']}>
       <StatusBar barStyle="light-content" backgroundColor={bgColor} />
       <Tabs
         screenOptions={{
