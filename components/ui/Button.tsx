@@ -1,5 +1,5 @@
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { type ButtonProps, Pressable, StyleSheet } from "react-native";
+import { type ButtonProps, Pressable, StyleSheet, ActivityIndicator } from "react-native";
 import { ThemedText } from "../ThemedText";
 
 export type ThemedButtonProps = ButtonProps & {
@@ -7,6 +7,7 @@ export type ThemedButtonProps = ButtonProps & {
   darkColor?: string;
   type?: "default" | "icon" | "rounded" | "icon-rounded";
   title?: string;
+  loading?: boolean;
 };
 
 export function Button({
@@ -15,27 +16,33 @@ export function Button({
   type = "default",
   title,
   onPress,
+  loading = false,
   ...rest
 }: ThemedButtonProps) {
 
   const bgColor = useThemeColor({}, "button");
 
   return (
-    <>
-      <Pressable
-        style={[
-          styles.button,
-          { backgroundColor: bgColor },
-          type === "default" ? styles.default : undefined,
-          type === "icon" ? styles.icon : undefined,
-          type === "rounded" ? styles.rounded : undefined,
-          type === "icon-rounded" ? styles.iconRounded : undefined,
-        ]}
-        onPress={onPress}
-      >
+    <Pressable
+      style={[
+        styles.button,
+        { backgroundColor: bgColor },
+        type === "default" ? styles.default : undefined,
+        type === "icon" ? styles.icon : undefined,
+        type === "rounded" ? styles.rounded : undefined,
+        type === "icon-rounded" ? styles.iconRounded : undefined,
+        loading && { opacity: 0.7 },
+      ]}
+      onPress={loading ? undefined : onPress}
+      disabled={loading}
+      {...rest}
+    >
+      {loading ? (
+        <ActivityIndicator color="#fff" />
+      ) : (
         <ThemedText type='default' style={styles.text}>{title}</ThemedText>
-      </Pressable>
-    </>
+      )}
+    </Pressable>
   );
 }
 

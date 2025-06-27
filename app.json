@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Paradise-App",
+    "name": "Paradise",
     "slug": "Paradise-App",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -34,11 +34,13 @@
         "expo-splash-screen",
         {
           "image": "./assets/images/logo-new.png",
-          "imageWidth": 200,
+          "imageWidth": 150,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
         }
-      ]
+      ],
+      "expo-web-browser",
+      "expo-notifications"
     ],
     "experiments": {
       "typedRoutes": true
@@ -46,8 +48,9 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "f13a8ecf-bfe7-4f2f-ab01-58cd31c1ac3b"
+        "projectId": "9f85f5ed-1107-4df2-87c0-24a04bdee28d"
       }
-    }
+    },
+    "owner": "albertmoon"
   }
 }

@@ -1,40 +1,17 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useEffect, useState } from "react";
-import { ScrollView, StyleSheet, View } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { ActivityIndicator, ScrollView, StyleSheet, View } from "react-native";
 
-import { ThemedView } from "@/components/ThemedView";
-import { useThemeColor } from "@/hooks/useThemeColor";
 import { ScriptureCard } from "@/components/ScriptureCard";
 import { TaskCard } from "@/components/TaskCard";
-import { useRouter } from "expo-router";
-import { Avatar } from "@/components/ui/Avatar";
 import { ThemedText } from "@/components/ThemedText";
-
-// Import ProgressType from the appropriate location
-import type { ProgressType } from "@/components/TaskCard";
-
-const TASKS_DB = [
-  {
-    name: "Clearing the lawn",
-    description: "Remove debris and tidy up the lawn area.",
-    progress: "PENDING" as ProgressType,
-  },
-  {
-    name: "Watering plants",
-    description: "Ensure all plants are watered thoroughly.",
-    progress: "PENDING" as ProgressType,
-  },
-  {
-    name: "Trimming hedges",
-    description: "Trim the hedges to maintain a neat appearance.",
-    progress: "PENDING" as ProgressType,
-  },
-  {
-    name: "Weeding flower beds",
-    description: "Remove weeds from all flower beds.",
-    progress: "PENDING" as ProgressType,
-  },
-];
+import { ThemedView } from "@/components/ThemedView";
+import { Avatar } from "@/components/ui/Avatar";
+import { useReduxScripture } from "@/hooks/useReduxScripture";
+import { useReduxTasks } from "@/hooks/useReduxTasks";
+import { useThemeColor } from "@/hooks/useThemeColor";
+import { UserSessionUtils } from "@/utils/UserSessionUtils";
+import { useRouter } from "expo-router";
 
 function getGreeting() {
   const hour = new Date().getHours();
@@ -44,33 +21,43 @@ function getGreeting() {
 }
 
 export default function HomeScreen() {
-  const primaryColor = useThemeColor({}, "selection");
+   const primaryColor = useThemeColor({}, "selection");
   const navigation = useRouter();
   const [userName, setUserName] = useState("User");
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const [userHouse, setUserHouse] = useState<string | null>(null);
+  const { tasks, loading } = useReduxTasks({ onlyCurrentUser: true });
+  const { scriptures, loading: scriptureLoading } = useReduxScripture();
+
+  const latestScripture = scriptures.length > 0 ? scriptures[0] : null;
 
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const userData = await AsyncStorage.getItem("user");
+        const userData = await UserSessionUtils.getUserDetails();
         if (userData) {
-          const user = JSON.parse(userData);
-          setUserName(user?.name || "User");
+          const fullName = userData.name || userData.fullName || "";
+          const firstName = fullName.split(" ")[0] || "";
+          setUserName(firstName);
+          setUserRole(userData.role || null);
+          setUserHouse(userData.house || null);
         }
       } catch {
         setUserName("User");
+        setUserRole(null);
+        setUserHouse(null);
       }
     };
     fetchUser();
   }, []);
 
-  const tasks = TASKS_DB.map((task) => ({
-    ...task,
-    onPress: () =>
-      navigation.navigate({
-        pathname: "/task-detail",
-        params: { name: task.name, description: task.description },
-      }),
-  }));
+  // Helper to format house enum to readable string
+  const formatHouse = (house: string | null) => {
+    if (!house) return "";
+    if (house === "LILLIE_LOUISE_WOERMER_HOUSE") return "Lillie Louise Woermer House";
+    if (house === "CAROLYN_ECKMAN_HOUSE") return "Carolyn Eckman House";
+    return house;
+  };
 
   return (
     <>
@@ -79,12 +66,12 @@ export default function HomeScreen() {
           contentContainerStyle={{
             alignItems: "center",
             width: "100%",
-            paddingBottom: "50%",
+            flex: 1,
           }}
-          style={[styles.innerContainer]}
+          style={styles.innerContainer}
         >
           <ThemedView
-            style={[styles.headerCard, { backgroundColor: primaryColor}]}
+            style={[styles.headerCard, { backgroundColor: primaryColor }]}
           >
             <ThemedView style={[styles.row, { backgroundColor: primaryColor }]}>
               <ThemedView style={[{ backgroundColor: primaryColor }]}>
@@ -105,27 +92,58 @@ export default function HomeScreen() {
             </ThemedView>
 
             <View style={{ marginTop: "8%", gap: 12 }}>
-              <ThemedText
-                type="title"
-                style={{ width: "80%", color: "#FFFFFF" }}
-              >
-                Lillie Louise Woermer House
-              </ThemedText>
-
-              <View style={{marginTop: "8%"}}>
-
-              <ScriptureCard
-                verse="Proverbs 29:25"
-                version="NLT"
-                content="Fearing people is a dangerous trap, but trusting the LORD means safety."
-              />
-              </View>
-
+              {userRole === "RESIDENT" && userHouse ? (
+                <ThemedText
+                  type="title"
+                  style={{ width: "60%", color: "#FFFFFF" }}
+                >
+                  {formatHouse(userHouse)}
+                </ThemedText>
+              ) : userRole === "INDIVIDUAL" ? (
+                <ThemedText
+                  type="title"
+                  style={{ width: "80%", color: "#FFFFFF" }}
+                >
+                  Welcome To Paradise Home App.
+                </ThemedText>
+              ) : null}
             </View>
           </ThemedView>
 
           <ThemedView style={styles.subContainer}>
-            <TaskCard tasks={tasks} />
+            <View style={{ marginBottom: "5%", marginTop: "5%" }}>
+              {!scriptureLoading && latestScripture && (
+                <ScriptureCard
+                  verse={latestScripture.verse}
+                  book={latestScripture.book}
+                  version={latestScripture.version}
+                  scripture={latestScripture.scripture}
+                />
+              )}
+            </View>
+
+            <View style={{ marginTop: "1%" }}>
+              {loading ? (
+                <ActivityIndicator
+                  size="large"
+                  color={primaryColor}
+                  style={{ marginTop: "5%" }}
+                />
+              ) : tasks.length === 0 ? (
+                <ThemedText
+                  type="default"
+                  style={{
+                    textAlign: "center",
+                    marginTop: 24,
+                    color: "#888",
+                  }}
+                >
+                  You have no tasks assigned yet.
+                </ThemedText>
+              ) : (
+                <TaskCard tasks={tasks} />
+              )}
+            </View>
           </ThemedView>
         </ScrollView>
       </ThemedView>
@@ -153,13 +171,11 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   headerCard: {
-    height: "60%",
+    minHeight: 200,
     width: "100%",
     borderBottomEndRadius: 20,
     borderBottomStartRadius: 20,
     paddingHorizontal: 15,
-    marginBottom: "5%",
-    paddingTop: "5%",
   },
   row: {
     flexDirection: "row",

@@ -1,13 +1,15 @@
 import React, { useEffect, useState } from "react";
 import { StyleSheet, TouchableOpacity, Modal, Pressable } from "react-native";
 import { ThemedView } from "../ThemedView";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Image } from "expo-image";
 import { ThemedText } from "../ThemedText";
 import { useRouter, usePathname } from "expo-router";
+import { UserSessionUtils } from "@/utils/UserSessionUtils";
 
 type User = {
-  name: string;
+  fullName?: string;
+  name?: string;
+  email?: string;
   image?: string;
 };
 
@@ -23,18 +25,20 @@ export function Avatar({ size = 40 }: AvatarProps) {
 
   useEffect(() => {
     const fetchUser = async () => {
-      const userData = await AsyncStorage.getItem("user");
-      if (userData) setUser(JSON.parse(userData));
+      const userData = await UserSessionUtils.getUserDetails();
+      setUser(userData);
     };
     fetchUser();
   }, []);
 
   const getInitial = () => {
-    if (!user?.name) return "U";
-    return user.name.trim().charAt(0).toUpperCase();
+    const displayName = user?.fullName || user?.name || "";
+    if (!displayName) return "";
+    return displayName.trim().charAt(0).toUpperCase();
   };
 
   const handleLogout = () => {
+    UserSessionUtils.logout();
     navigation.replace("/auth/login");
   };
 
@@ -74,7 +78,7 @@ export function Avatar({ size = 40 }: AvatarProps) {
       >
         <Pressable style={styles.overlay} onPress={() => setPopoverVisible(false)}>
           <ThemedView style={styles.popover}>
-            <Pressable style={styles.button} onPress={() => {/* Navigate to profile */}}>
+            <Pressable style={styles.button} onPress={() => {}}>
               <ThemedText type="default">Profile</ThemedText>
             </Pressable>
             <Pressable style={styles.button} onPress={handleLogout}>
@@ -120,9 +124,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     minWidth: 200,
     elevation: 5,
-    shadowColor: "rgba(0,0,0, 0.2)",
+    shadowColor: "rgba(0, 0, 0, 0.03)",
     alignItems: "flex-start",
-    marginTop: "25%",
+    marginTop: 50,
     marginRight: 15,
   },
   button: {

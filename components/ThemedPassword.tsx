@@ -13,27 +13,23 @@ import { Image } from "expo-image";
 export type ThemedInputProps = {
   type?: "default" | "floating" | "rounded";
   placeholder?: string;
+  errorMessage?: string | null;
 } & TextInputProps;
 
 export function ThemedPassword({
   type = "default",
   placeholder,
+  errorMessage, 
   ...rest
 }: ThemedInputProps) {
   const bgColor = useThemeColor({}, "input");
-  const errorColor = useThemeColor({}, "error");
+  const errorColor = useThemeColor({}, "overdue");
   const iconColor = useThemeColor({}, "placeholder");
   const [value, setValue] = useState("");
-  const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
 
   const handleChangeText = (text: string) => {
     setValue(text);
-    if (text.length === 4) {
-      setError(null);
-    } else {
-      setError("Invalid password. Please try again");
-    }
     if (rest.onChangeText) rest.onChangeText(text);
   };
 
@@ -72,7 +68,6 @@ export function ThemedPassword({
           }}
           accessibilityLabel={showPassword ? "Hide password" : "Show password"}
         >
-          
           {showPassword ? (
             <Image
               source={require("../assets/icons/show.png")}
@@ -87,10 +82,10 @@ export function ThemedPassword({
         </TouchableOpacity>
       </View>
       <View style={{ height: 20, justifyContent: "center" }}>
-        {error && (
+        {errorMessage && (
           <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
             <View style={[styles.dot, { backgroundColor: errorColor }]} />
-            <Text style={[styles.error, { color: errorColor }]}>{error}</Text>
+            <Text style={[styles.error, { color: errorColor }]}>{errorMessage}</Text>
           </View>
         )}
       </View>

@@ -1,21 +1,60 @@
-import { KeyboardAvoidingView, Platform, StyleSheet, View } from "react-native";
+import {
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  StyleSheet,
+  View,
+   Pressable,
+} from "react-native";
 
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { Button } from "@/components/ui/Button";
 import { ThemedCheckbox, ThemedEmailInput } from "@/components/ThemedInput";
 import { ThemedPassword } from "@/components/ThemedPassword";
-
 import React, { useState } from "react";
 import { useRouter } from "expo-router";
 import { Image } from "expo-image";
 
-export default function LoginScreen() {
-  const [checked, setChecked] = useState(false);
-  const navigation = useRouter();
+import { useReduxAuth } from "@/hooks/useReduxAuth";
 
-  const handleSignin = (): void => {
-    navigation.replace("/(resident-manager)");
+export default function LoginScreen() {
+
+  const navigation = useRouter();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [checked, setChecked] = useState(false);
+
+  const { signin, loading, error } = useReduxAuth();
+
+
+  const handleSignin = async (): Promise<void> => {
+    if (!email || !password) {
+      Alert.alert("Missing Fields", "Please enter both email and password.");
+      return;
+    }
+
+    const resultAction = await signin(email, password);
+
+    // If using createAsyncThunk, check for fulfilled/rejected
+    if (resultAction.type && resultAction.type.endsWith("/fulfilled")) {
+      const role = resultAction.payload.role;
+      if (role === "SUPER_ADMIN" || role === "DIRECTOR") {
+        navigation.replace("/(director)");
+      } else if (role === "RESIDENT_MANAGER") {
+        navigation.replace("/(resident-manager)");
+      } else if (role === "FACILITY_MANAGER") {
+        navigation.replace("/(facility-manager)");
+      } else if (role === "RESIDENT") {
+        navigation.replace("/(residents)");
+      } else if (role === "INDIVIDUAL") {
+        navigation.replace("/(individuals)");
+      } else {
+        Alert.alert("Login Failed", "Unknown user role.");
+      }
+    } else {
+      Alert.alert("Login Failed", error || "Invalid login credentials.");
+    }
   };
 
   return (
@@ -27,7 +66,10 @@ export default function LoginScreen() {
           keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 0}
         >
           <ThemedView style={styles.logo}>
-            <Image source={require("../../assets/images/logo-new.png")} style={{height: 150, width: 150}}/>
+            <Image
+              source={require("../../assets/images/logo-new.png")}
+              style={{ height: 150, width: 150 }}
+            />
           </ThemedView>
 
           <ThemedText type="subtitle" style={{ marginBottom: "5%" }}>
@@ -36,12 +78,20 @@ export default function LoginScreen() {
 
           <ThemedView style={styles.inputField}>
             <ThemedText type="default">Email</ThemedText>
-            <ThemedEmailInput placeholder="Enter your email address" />
+            <ThemedEmailInput
+              placeholder="Enter your email address"
+              value={email}
+              onChangeText={setEmail}
+            />
           </ThemedView>
 
           <ThemedView style={styles.inputField}>
             <ThemedText type="default">Password</ThemedText>
-            <ThemedPassword placeholder="Enter your password" />
+            <ThemedPassword
+              placeholder="Enter your password"
+              value={password}
+              onChangeText={setPassword}
+            />
           </ThemedView>
 
           <View style={{ width: "100%", alignItems: "flex-end" }}>
@@ -62,7 +112,12 @@ export default function LoginScreen() {
           </View>
 
           <View style={{ marginTop: "5%", width: "100%" }}>
-            <Button type="default" title="Signin" onPress={handleSignin} />
+            <Button
+              type="default"
+              title="Signin"
+              onPress={handleSignin}
+              loading={loading}
+            />
           </View>
 
           <View
@@ -74,7 +129,9 @@ export default function LoginScreen() {
             }}
           >
             <ThemedText type="default">Don&apos;t have an account?</ThemedText>
+            <Pressable onPress={() => navigation.push("/auth/signup")}>
             <ThemedText type="link">Create Account</ThemedText>
+            </Pressable>
           </View>
         </KeyboardAvoidingView>
       </ThemedView>
@@ -94,8 +151,8 @@ const styles = StyleSheet.create({
     height: 160,
     width: 160,
     borderRadius: 200,
-    justifyContent: 'center',
-    alignItems: 'center'
+    justifyContent: "center",
+    alignItems: "center",
   },
   inputField: {
     width: "100%",

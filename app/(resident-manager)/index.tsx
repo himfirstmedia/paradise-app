@@ -1,49 +1,24 @@
 import React, { useEffect, useState } from "react";
-import { ScrollView, StyleSheet, View } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import {
+  ActivityIndicator,
+  ScrollView,
+  StyleSheet,
+  View,
+} from "react-native";
 
-import { ThemedView } from "@/components/ThemedView";
-import { useThemeColor } from "@/hooks/useThemeColor";
-import { ScriptureCardBoard } from "@/components/ScriptureCard";
+import { ScriptureCard } from "@/components/ScriptureCard";
 import { TaskCard } from "@/components/TaskCard";
-import { useRouter } from "expo-router";
-import { Avatar } from "@/components/ui/Avatar";
 import { ThemedText } from "@/components/ThemedText";
+import { ThemedView } from "@/components/ThemedView";
+import { Avatar } from "@/components/ui/Avatar";
+import { useThemeColor } from "@/hooks/useThemeColor";
 
-import type { ProgressType } from "@/components/TaskCard";
 
-const TASKS_DB = [
-  {
-    name: "Clearing the lawn",
-    description: "Remove debris and tidy up the lawn area.",
-    progress: "PENDING" as ProgressType,
-  },
-  {
-    name: "Watering plants",
-    description: "Ensure all plants are watered thoroughly.",
-    progress: "PENDING" as ProgressType,
-  },
-  {
-    name: "Trimming hedges",
-    description: "Trim the hedges to maintain a neat appearance.",
-    progress: "PENDING" as ProgressType,
-  },
-  {
-    name: "Weeding flower beds",
-    description: "Remove weeds from all flower beds.",
-    progress: "PENDING" as ProgressType,
-  },
-  {
-    name: "Clearing the lawn",
-    description: "Remove debris and tidy up the lawn area.",
-    progress: "PENDING" as ProgressType,
-  },
-  {
-    name: "Watering plants",
-    description: "Ensure all plants are watered thoroughly.",
-    progress: "PENDING" as ProgressType,
-  },
-];
+import { UserSessionUtils } from "@/utils/UserSessionUtils";
+
+import { useReduxScripture } from "@/hooks/useReduxScripture";
+import { useReduxTasks } from "@/hooks/useReduxTasks";
+
 
 function getGreeting() {
   const hour = new Date().getHours();
@@ -54,16 +29,21 @@ function getGreeting() {
 
 export default function HomeScreen() {
   const primaryColor = useThemeColor({}, "selection");
-  const navigation = useRouter();
   const [userName, setUserName] = useState("User");
+
+  const { tasks, loading: tasksLoading } = useReduxTasks();
+  const { scriptures, loading: scriptureLoading } = useReduxScripture();
+
+  const latestScripture = scriptures.length > 0 ? scriptures[0] : null;
 
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const userData = await AsyncStorage.getItem("user");
+        const userData = await UserSessionUtils.getUserDetails();
         if (userData) {
-          const user = JSON.parse(userData);
-          setUserName(user?.name || "User");
+          const fullName = userData.name || userData.fullName || "";
+          const firstName = fullName.split(" ")[0] || "";
+          setUserName(firstName);
         }
       } catch {
         setUserName("User");
@@ -71,15 +51,6 @@ export default function HomeScreen() {
     };
     fetchUser();
   }, []);
-
-  const tasks = TASKS_DB.map((task) => ({
-    ...task,
-    onPress: () =>
-      navigation.navigate({
-        pathname: "/task-detail",
-        params: { name: task.name, description: task.description },
-      }),
-  }));
 
   return (
     <>
@@ -118,24 +89,34 @@ export default function HomeScreen() {
                 type="title"
                 style={{ width: "80%", color: "#FFFFFF" }}
               >
-                Lillie Louise Woermer House
+                Welcome To Paradise Management.
               </ThemedText>
             </View>
           </ThemedView>
 
           <ThemedView style={styles.subContainer}>
-            <View style={{ marginBottom: "5%",  marginTop: "2%" }}>
-              <ScriptureCardBoard
-                verse="Proverbs 29:25"
-                version="NLT"
-                content="Fearing people is a dangerous trap, but trusting the LORD means safety."
+          <View style={{ marginBottom: "5%", marginTop: "2%" }}>
+            {!scriptureLoading && latestScripture && (
+              <ScriptureCard
+                verse={latestScripture.verse}
+                book={latestScripture.book}
+                version={latestScripture.version}
+                scripture={latestScripture.scripture}
               />
-            </View>
-
-            <View style={{ marginTop: "1%" }}>
+            )}
+          </View>
+          <View style={{ marginTop: "1%" }}>
+            {tasksLoading ? (
+              <ActivityIndicator
+                size="large"
+                color={primaryColor}
+                style={{ marginTop: "5%" }}
+              />
+            ) : (
               <TaskCard tasks={tasks} />
-            </View>
-          </ThemedView>
+            )}
+          </View>
+        </ThemedView>
         </ScrollView>
       </ThemedView>
     </>
@@ -169,7 +150,7 @@ const styles = StyleSheet.create({
     borderBottomStartRadius: 20,
     paddingHorizontal: 15,
     marginBottom: "5%",
-    paddingTop: "5%",
+    // paddingTop: "5%",
   },
   row: {
     flexDirection: "row",

@@ -1,37 +1,29 @@
 import React, { useState } from "react";
-import { Pressable, StyleSheet } from "react-native";
+import { Pressable, StyleSheet, ViewStyle } from "react-native";
 import { ThemedText } from "./ThemedText";
 import { ThemedView } from "./ThemedView";
 import { Image } from "expo-image";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { useSegments } from "expo-router";
-
-export type ProgressType = "PENDING" | "COMPLETED" | "OVERDUE";
-
-type Task = {
-  name: string;
-  description: string;
-  progress: ProgressType;
-  onPress: () => void;
-};
+import type { Task, ProgressType } from "@/redux/slices/taskSlice";
 
 interface TaskCardProps {
   tasks: Task[];
+  style?: ViewStyle;
+  onPress?: (task: Task) => void;
 }
 
 function useDynamicProgressLabels(): Record<ProgressType, string> {
-  const segments = useSegments(); // returns an array like ['(individuals)', 'home']
+  const segments = useSegments();
+  const userType = segments[0];
 
-  const userType = segments[0]; // Get the first segment
-
-  let pendingLabel = "Today's Pending Tasks";
-
+  let pendingLabel = "Pending Tasks";
   if (
     userType === "(resident-manager)" ||
     userType === "(facility-manager)" ||
     userType === "(director)"
   ) {
-    pendingLabel = "Today's Tasks";
+    pendingLabel = "Pending Tasks";
   } else if (userType === "(individuals)" || userType === "(residents)") {
     pendingLabel = "My Tasks";
   }
@@ -43,23 +35,20 @@ function useDynamicProgressLabels(): Record<ProgressType, string> {
   };
 }
 
-export function TaskCard({ tasks }: TaskCardProps) {
+export function TaskCard({ tasks, onPress }: TaskCardProps) {
   const bgColor = useThemeColor({}, "input");
-  // Use dynamic progress labels
   const PROGRESS_LABELS = useDynamicProgressLabels();
-  // Track expanded state per category
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
-  // Use dynamic progress labels
-  // Group tasks by progress
+  // Group tasks by progress, casting progress to ProgressType
   const groupedTasks: Record<ProgressType, Task[]> = {
     PENDING: [],
     COMPLETED: [],
     OVERDUE: [],
   };
   tasks.forEach((task) => {
-    if (!groupedTasks[task.progress]) groupedTasks[task.progress] = [];
-    groupedTasks[task.progress].push(task);
+    const progress = (task.progress ?? "PENDING").toUpperCase() as ProgressType;
+    if (groupedTasks[progress]) groupedTasks[progress].push(task);
   });
 
   return (
@@ -74,7 +63,7 @@ export function TaskCard({ tasks }: TaskCardProps) {
 
         return (
           <ThemedView style={styles.container} key={progress}>
-            <ThemedView style={[styles.row, { marginBottom: "5%" }]}>
+            <ThemedView style={[styles.row, { marginBottom: "3%" }]}>
               <ThemedText type="subtitle">
                 {PROGRESS_LABELS[progress]}
               </ThemedText>
@@ -94,15 +83,15 @@ export function TaskCard({ tasks }: TaskCardProps) {
               )}
             </ThemedView>
             <ThemedView style={styles.taskButtons}>
-              {displayedTasks.map((task, idx) => (
+              {displayedTasks.map((task) => (
                 <Pressable
-                  key={idx}
+                  key={task.id}
                   style={[
                     styles.row,
                     styles.button,
                     { backgroundColor: bgColor },
                   ]}
-                  onPress={task.onPress}
+                  onPress={() => onPress?.(task)}
                 >
                   <ThemedText type="default">{task.name}</ThemedText>
                   <Image
@@ -121,9 +110,8 @@ export function TaskCard({ tasks }: TaskCardProps) {
 
 const styles = StyleSheet.create({
   container: {
-    minHeight: "20%",
+    minHeight: "10%",
     width: "100%",
-    marginBottom: 15,
   },
   row: {
     flexDirection: "row",

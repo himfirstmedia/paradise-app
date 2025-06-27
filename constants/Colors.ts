@@ -7,6 +7,7 @@
 const tintColorLight = '#263B8E';
 const tintColorDark = '#263B8E';
 const primary= '#263B8E';
+const palePrimary = '#AAB7E7';
 
 const secondary= '#3A86FF';
 const success = '#4ADE80eb';
@@ -29,6 +30,7 @@ export const Colors = {
     completed: success,
     pending: warning,
     overdue: danger,
+    chartBg: palePrimary
   },
   dark: {
     
@@ -47,6 +49,7 @@ export const Colors = {
     completed: success,
     pending: warning,
     overdue: danger,
+    chartBg: palePrimary
   },
 };
 
