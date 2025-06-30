@@ -4,7 +4,8 @@ import {
   Platform,
   StyleSheet,
   View,
-   Pressable,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  Pressable,
 } from "react-native";
 
 import { ThemedText } from "@/components/ThemedText";
@@ -12,49 +13,56 @@ import { ThemedView } from "@/components/ThemedView";
 import { Button } from "@/components/ui/Button";
 import { ThemedCheckbox, ThemedEmailInput } from "@/components/ThemedInput";
 import { ThemedPassword } from "@/components/ThemedPassword";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "expo-router";
 import { Image } from "expo-image";
 
 import { useReduxAuth } from "@/hooks/useReduxAuth";
+import { useAppSelector } from "@/redux/hooks";
+
+type AppRoutes =
+  | "/(director)"
+  | "/(resident-manager)"
+  | "/(facility-manager)"
+  | "/(residents)"
+  | "/(individuals)"
+  | "/auth/login";
 
 export default function LoginScreen() {
-
-  const navigation = useRouter();
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [checked, setChecked] = useState(false);
+  const [checked, setChecked] = useState(true);
+  const { signin, loading } = useReduxAuth();
+  const { isAuthenticated, user } = useAppSelector((state) => state.auth);
 
-  const { signin, loading, error } = useReduxAuth();
+  // Handle redirection after successful login
+  useEffect(() => {
+    if (isAuthenticated && user?.role) {
 
+      console.log("✅ Logged in User:", user);
+
+
+      const roleRoutes: Record<string, AppRoutes> = {
+        SUPER_ADMIN: "/(director)",
+        DIRECTOR: "/(director)",
+        RESIDENT_MANAGER: "/(resident-manager)",
+        FACILITY_MANAGER: "/(facility-manager)",
+        RESIDENT: "/(residents)",
+        INDIVIDUAL: "/(individuals)",
+      };
+
+      const route = roleRoutes[user.role] || "/auth/login";
+      router.replace(route);
+    }
+  }, [isAuthenticated, user, router]);
 
   const handleSignin = async (): Promise<void> => {
     if (!email || !password) {
       Alert.alert("Missing Fields", "Please enter both email and password.");
       return;
     }
-
-    const resultAction = await signin(email, password);
-
-    // If using createAsyncThunk, check for fulfilled/rejected
-    if (resultAction.type && resultAction.type.endsWith("/fulfilled")) {
-      const role = resultAction.payload.role;
-      if (role === "SUPER_ADMIN" || role === "DIRECTOR") {
-        navigation.replace("/(director)");
-      } else if (role === "RESIDENT_MANAGER") {
-        navigation.replace("/(resident-manager)");
-      } else if (role === "FACILITY_MANAGER") {
-        navigation.replace("/(facility-manager)");
-      } else if (role === "RESIDENT") {
-        navigation.replace("/(residents)");
-      } else if (role === "INDIVIDUAL") {
-        navigation.replace("/(individuals)");
-      } else {
-        Alert.alert("Login Failed", "Unknown user role.");
-      }
-    } else {
-      Alert.alert("Login Failed", error || "Invalid login credentials.");
-    }
+    await signin(email, password);
   };
 
   return (
@@ -97,7 +105,7 @@ export default function LoginScreen() {
           <View style={{ width: "100%", alignItems: "flex-end" }}>
             <ThemedText
               type="link"
-              onPress={() => navigation.push("/auth/forgot_password")}
+              onPress={() => router.push("/auth/forgot_password")}
             >
               Forgot Password?
             </ThemedText>
@@ -120,7 +128,7 @@ export default function LoginScreen() {
             />
           </View>
 
-          <View
+          {/* <View
             style={{
               flexDirection: "row",
               alignItems: "center",
@@ -129,10 +137,10 @@ export default function LoginScreen() {
             }}
           >
             <ThemedText type="default">Don&apos;t have an account?</ThemedText>
-            <Pressable onPress={() => navigation.push("/auth/signup")}>
-            <ThemedText type="link">Create Account</ThemedText>
+            <Pressable onPress={() => router.push("/auth/signup")}>
+              <ThemedText type="link">Create Account</ThemedText>
             </Pressable>
-          </View>
+          </View> */}
         </KeyboardAvoidingView>
       </ThemedView>
     </>

@@ -1,4 +1,5 @@
-import { Scripture, useReduxScripture } from "@/hooks/useReduxScripture";
+import { useReduxScripture } from "@/hooks/useReduxScripture";
+import { Scripture } from "@/redux/slices/scriptureSlice";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import api from "@/utils/api";
 import { Image } from "expo-image";

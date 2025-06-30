@@ -5,8 +5,10 @@ import { useThemeColor } from "@/hooks/useThemeColor";
 import { UserSessionUtils } from "@/utils/UserSessionUtils";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { Pressable, ScrollView, StyleSheet, View, Alert } from "react-native";
+import { useReduxAuth } from "@/hooks/useReduxAuth";
+
 
 type ActionButton = {
   icon: any;
@@ -14,13 +16,6 @@ type ActionButton = {
   route: string;
 };
 
-type User = {
-  fullName?: string;
-  name?: string;
-  email?: string;
-  image?: string;
-  phone?: string;
-};
 
 const ACTION_BUTTONS: ActionButton[] = [
   {
@@ -67,27 +62,23 @@ const ACTION_BUTTONS: ActionButton[] = [
 ];
 
 export default function TabThreeScreen() {
-  const [user, setUser] = useState<User | null>(null);
   const primaryColor = useThemeColor({}, "selection");
   const bgColor = useThemeColor({}, "input");
   const navigation = useRouter();
+  const { user, signout } = useReduxAuth();
 
-  useEffect(() => {
-    const fetchUser = async () => {
-      const userData = await UserSessionUtils.getUserDetails();
-      setUser(userData);
-    };
-    fetchUser();
-  }, []);
+
 
   const handleLogout = async () => {
-    try {
-      await UserSessionUtils.logout();
-      navigation.replace("../auth");
-    } catch {
-      Alert.alert("Logout Failed", "An error occurred during logout.");
-    }
-  };
+  try {
+    await UserSessionUtils.logout(); // if this clears AsyncStorage or similar
+    await signout(); // dispatches Redux logout
+    navigation.replace("../auth");
+  } catch (error) {
+    console.error("Logout Error:", error);
+    Alert.alert("Logout Failed", "An error occurred during logout.");
+  }
+};
 
   return (
     <ThemedView style={styles.container}>

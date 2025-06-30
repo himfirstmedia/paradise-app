@@ -7,11 +7,11 @@ import {
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { Button } from "@/components/ui/Button";
+import { useReduxAuth } from "@/hooks/useReduxAuth";
 import { useReduxMembers } from "@/hooks/useReduxMembers";
 import api from "@/utils/api";
-import { UserSessionUtils } from "@/utils/UserSessionUtils";
 import { useRouter } from "expo-router";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   Alert,
   KeyboardAvoidingView,
@@ -54,17 +54,11 @@ export default function AddMemberScreen() {
   const [state, setState] = useState("");
   const [zipCode, setZipCode] = useState("");
   const [loading, setLoading] = useState(false);
-  const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
-
+  const {user} = useReduxAuth();
   const { reload } = useReduxMembers();
   const navigation = useRouter();
-
-  useEffect(() => {
-    (async () => {
-      const user = await UserSessionUtils.getUserDetails();
-      setCurrentUserRole(user?.role ?? null);
-    })();
-  }, []);
+  
+  const currentUserRole = user?.role;
 
   const roleOptions = ["Resident", "Individual"];
   if (currentUserRole === "DIRECTOR") {

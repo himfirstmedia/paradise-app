@@ -1,4 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { FeedbackCard } from "@/components/FeedbackCard";
 import { ThemedView } from "@/components/ThemedView";
 import { useReduxFeedback } from "@/hooks/useReduxFeedback";

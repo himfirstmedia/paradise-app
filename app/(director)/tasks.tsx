@@ -1,4 +1,3 @@
-import React, { useCallback } from "react";
 import {
   ActivityIndicator,
   Image,
@@ -14,7 +13,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { Avatar } from "@/components/ui/Avatar";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { useFocusEffect, useRouter } from "expo-router";
+import { useRouter } from "expo-router";
 
 import { useReduxTasks } from "@/hooks/useReduxTasks";
 
@@ -24,7 +23,7 @@ export default function TabTwoScreen() {
   const pendingColor = useThemeColor({}, "pending");
   const overdueColor = useThemeColor({}, "overdue");
   const navigation = useRouter();
-  const { loading, tasks, reload } = useReduxTasks();
+  const { loading, tasks } = useReduxTasks();
 
   let pending = 0,
     completed = 0,
@@ -40,11 +39,6 @@ export default function TabTwoScreen() {
   const completionPercent =
     totalTasks > 0 ? Math.round((completed / totalTasks) * 100) : 0;
 
-  useFocusEffect(
-    useCallback(() => {
-      reload();
-    }, [reload])
-  );
 
   return (
     <>

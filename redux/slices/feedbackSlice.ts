@@ -1,3 +1,4 @@
+// redux/slices/feedbackSlice.ts
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from '@/utils/api';
@@ -15,13 +16,13 @@ export interface Feedback {
 
 interface FeedbackState {
   feedbacks: Feedback[];
-  loading: boolean;
+  status: 'idle' | 'loading' | 'succeeded' | 'failed'; 
   error: string | null;
 }
 
 const initialState: FeedbackState = {
   feedbacks: [],
-  loading: false,
+  status: 'idle',
   error: null,
 };
 
@@ -40,8 +41,8 @@ export const loadFeedbacks = createAsyncThunk(
         return latest;
       }
       return cachedParsed;
-    } catch {
-      return rejectWithValue('Failed to load feedbacks.');
+    } catch (error: any) {
+      return rejectWithValue(error?.response?.data?.message || 'Failed to load feedbacks.');
     }
   }
 );
@@ -53,16 +54,15 @@ const feedbackSlice = createSlice({
   extraReducers: (builder) => {
     builder
       .addCase(loadFeedbacks.pending, (state) => {
-        state.loading = true;
+        state.status = 'loading'; 
         state.error = null;
       })
       .addCase(loadFeedbacks.fulfilled, (state, action) => {
-        state.loading = false;
+        state.status = 'succeeded'; 
         state.feedbacks = action.payload;
       })
       .addCase(loadFeedbacks.rejected, (state, action) => {
-        state.loading = false;
-        state.feedbacks = [];
+        state.status = 'failed'; 
         state.error = action.payload as string;
       });
   },

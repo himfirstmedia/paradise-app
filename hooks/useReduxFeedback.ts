@@ -1,16 +1,34 @@
-import { useAppDispatch, useAppSelector } from '@/redux/hooks';
-import { loadFeedbacks } from '@/redux/slices/feedbackSlice';
-import { useEffect } from 'react';
+// hooks/useReduxFeedback.ts
+import { useAppDispatch, useAppSelector } from "@/redux/hooks";
+import { loadFeedbacks } from "@/redux/slices/feedbackSlice";
+import { useEffect, useCallback } from "react";
 
-export function useReduxHouse() {
+export function useReduxFeedback() {
   const dispatch = useAppDispatch();
-  const { feedbacks, loading, error } = useAppSelector((state) => state.feedback);
+  
+  // Access state using the correct structure
+  const { feedbacks, status, error } = useAppSelector(
+    (state) => state.feedback
+  );
 
-  const reload = () => dispatch(loadFeedbacks());
-
-  useEffect(() => {
+  const reload = useCallback(() => {
     dispatch(loadFeedbacks());
-  }, []);
+  }, [dispatch]);
 
-  return { feedbacks, loading, error, reload };
+  // Auto-load feedbacks when status is idle
+  useEffect(() => {
+    if (status === 'idle') {
+      reload();
+    }
+  }, [status, reload]);
+
+  const loading = status === 'loading';
+  
+  return { 
+    feedbacks, 
+    loading, 
+    error, 
+    reload,
+    status
+  };
 }

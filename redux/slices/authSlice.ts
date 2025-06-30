@@ -1,7 +1,7 @@
 import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
 import api from '@/utils/api';
 
-import { UserSessionUtils } from '@/utils/UserSessionUtils';
+
 
 export interface User {
   id: number;
@@ -41,8 +41,7 @@ export const login = createAsyncThunk(
     try {
       const response = await api.post('/users/login', { email, password });
       if (response.data && response.data.id) {
-        await UserSessionUtils.setUserDetails(response.data);
-        await UserSessionUtils.setLoggedIn(true);
+        // REMOVE storage calls - handled by redux-persist
         return response.data;
       }
       return rejectWithValue('Invalid login response');
@@ -53,7 +52,8 @@ export const login = createAsyncThunk(
 );
 
 export const logoutAsync = createAsyncThunk('auth/logout', async () => {
-  await UserSessionUtils.logout();
+  // REMOVE storage calls - handled by redux-persist
+  return true;
 });
 
 const authSlice = createSlice({
@@ -69,6 +69,11 @@ const authSlice = createSlice({
       state.user = null;
       state.isAuthenticated = false;
       state.error = null;
+    },
+     updateUser: (state, action: PayloadAction<Partial<User>>) => {
+      if (state.user) {
+        state.user = { ...state.user, ...action.payload };
+      }
     },
   },
   extraReducers: (builder) => {
@@ -99,3 +104,4 @@ const authSlice = createSlice({
 
 export const { setUser, logout } = authSlice.actions;
 export default authSlice.reducer;
+export const selectCurrentUser = (state: { auth: AuthState }) => state.auth.user;

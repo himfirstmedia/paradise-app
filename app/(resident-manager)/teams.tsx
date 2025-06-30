@@ -5,17 +5,15 @@ import { ThemedView } from "@/components/ThemedView";
 import { Avatar } from "@/components/ui/Avatar";
 import { useReduxMembers } from "@/hooks/useReduxMembers";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { useRouter } from "expo-router";
+
 import React, { useMemo } from "react";
 import {
   ActivityIndicator,
-  Image,
-  Pressable,
+
   ScrollView,
   StyleSheet,
   View,
 } from "react-native";
-
 
 const houses = [
   { label: "LLW House", enum: "LILLIE_LOUISE_WOERMER_HOUSE" },
@@ -27,40 +25,46 @@ export default function TeamsScreen() {
   const completed = useThemeColor({}, "completed");
   const pending = useThemeColor({}, "pending");
   const overdue = useThemeColor({}, "overdue");
-  const navigation = useRouter();
+
   const { members, loading } = useReduxMembers();
 
   const houseReduxTaskstats = useMemo(() => {
     const stats: Record<
-      string, 
-      { pending: number; completed: number; overdue: number; totalTasks: number; completionPercent: number }
+      string,
+      {
+        pending: number;
+        completed: number;
+        overdue: number;
+        totalTasks: number;
+        completionPercent: number;
+      }
     > = {};
 
     // Initialize stats for all houses
-    houses.forEach(house => {
+    houses.forEach((house) => {
       stats[house.enum] = {
         pending: 0,
         completed: 0,
         overdue: 0,
         totalTasks: 0,
-        completionPercent: 0
+        completionPercent: 0,
       };
     });
 
     // Process all members
-    members.forEach(member => {
+    members.forEach((member) => {
       // Get the house enum from member's house name
-      const houseEnum = member.house?.name 
+      const houseEnum = member.house?.name
         ? member.house.name.toUpperCase().replace(/ /g, "_")
         : null;
-      
+
       // Skip if no house or house not in our list
       if (!houseEnum || !stats[houseEnum]) return;
 
       const houseStat = stats[houseEnum];
-      
+
       // Process each task for this member
-      member.task?.forEach(task => {
+      member.task?.forEach((task) => {
         // Only count tasks with valid progress states
         if (["PENDING", "COMPLETED", "OVERDUE"].includes(task.progress || "")) {
           switch (task.progress) {
@@ -80,10 +84,11 @@ export default function TeamsScreen() {
     });
 
     // Calculate percentages
-    Object.values(stats).forEach(stat => {
-      stat.completionPercent = stat.totalTasks > 0 
-        ? Math.round((stat.completed / stat.totalTasks) * 100) 
-        : 0;
+    Object.values(stats).forEach((stat) => {
+      stat.completionPercent =
+        stat.totalTasks > 0
+          ? Math.round((stat.completed / stat.totalTasks) * 100)
+          : 0;
     });
 
     return stats;
@@ -189,17 +194,6 @@ export default function TeamsScreen() {
           </ThemedView>
         </ScrollView>
 
-        <Pressable
-          style={[styles.taskCTAbtn, { backgroundColor: primaryColor }]}
-          onPress={() => {
-            navigation.push("/add-member");
-          }}
-        >
-          <Image
-            source={require("@/assets/icons/add.png")}
-            style={styles.icon}
-          />
-        </Pressable>
       </ThemedView>
     </>
   );

@@ -1,4 +1,4 @@
-import { Member } from "@/hooks/useReduxMembers";
+import {User as Member} from "@/redux/slices/userSlice"
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";

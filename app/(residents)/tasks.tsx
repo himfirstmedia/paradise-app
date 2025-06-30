@@ -17,7 +17,7 @@ export default function TabTwoScreen() {
   const pendingColor = useThemeColor({}, "pending");
   const overdueColor = useThemeColor({}, "overdue");
   const navigation = useRouter();
-  const { tasks, loading } = useReduxTasks({ onlyCurrentUser: true });
+  const { tasks, loading: tasksLoading } = useReduxTasks({ onlyCurrentUser: true });
 
   let pending = 0,
     completed = 0,
@@ -106,7 +106,7 @@ export default function TabTwoScreen() {
           </ThemedView>
 
           <ThemedView style={styles.subContainer}>
-            {loading ? (
+            {tasksLoading ? (
               <ActivityIndicator
                 size="large"
                 color={primaryColor}
