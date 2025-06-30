@@ -1,4 +1,4 @@
-import { Feedback } from "@/hooks/useReduxFeedback";
+import { Feedback } from "@/redux/slices/feedbackSlice";
 import { useReduxMembers } from "@/hooks/useReduxMembers";
 import { useReduxTasks } from "@/hooks/useReduxTasks";
 import { useThemeColor } from "@/hooks/useThemeColor";

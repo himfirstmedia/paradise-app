@@ -3,109 +3,120 @@ import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { Button } from "@/components/ui/Button";
 import api from "@/utils/api";
-import { UserSessionUtils } from "@/utils/UserSessionUtils";
+import { useReduxAuth } from "@/hooks/useReduxAuth";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Alert, KeyboardAvoidingView, Platform, StyleSheet } from "react-native";
 
+interface UserFormData {
+  id: number | null;
+  name: string;
+  email: string;
+  gender: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  phone: string;
+  role: string;
+  house: string | null;
+  image: string | null;
+  joinedDate: string | null;
+  leavingDate: string | null;
+  password: string;
+}
+
 export default function EditProfileScreen() {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [gender, setGender] = useState("");
-  const [city, setCity] = useState("");
-  const [state, setState] = useState("");
-  const [zipCode, setZipCode] = useState("");
-  const [phone, setPhone] = useState("");
-  const [role, setRole] = useState("");
-  const [house, setHouse] = useState<string | null>(null);
-  const [image, setImage] = useState<string | null>(null);
-  const [joinedDate, setJoinedDate] = useState<string | null>(null);
-  const [leavingDate, setLeavingDate] = useState<string | null>(null);
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [id, setId] = useState<number | null>(null);
-
   const navigation = useRouter();
-
   const params = useLocalSearchParams();
+  const { user: currentUser } = useReduxAuth();
+  
+  const [formData, setFormData] = useState<UserFormData>({
+    id: null,
+    name: "",
+    email: "",
+    gender: "",
+    city: "",
+    state: "",
+    zipCode: "",
+    phone: "",
+    role: "",
+    house: null,
+    image: null,
+    joinedDate: null,
+    leavingDate: null,
+    password: "",
+  });
+  
+  const [loading, setLoading] = useState(false);
+
+  const getParamValue = (value: any): string => {
+    return Array.isArray(value) ? value[0] || "" : value || "";
+  };
 
   useEffect(() => {
-    (async () => {
-      // If params has an id, use params for member info, else use current user
-      if (params?.id) {
-        setId(Number(params.id));
-        setName(Array.isArray(params.name) ? params.name[0] : params.name ?? "");
-        setEmail(Array.isArray(params.email) ? params.email[0] : params.email ?? "");
-        setGender(Array.isArray(params.gender) ? params.gender[0] : params.gender ?? "");
-        setCity(Array.isArray(params.city) ? params.city[0] : params.city ?? "");
-        setState(Array.isArray(params.state) ? params.state[0] : params.state ?? "");
-        setZipCode(Array.isArray(params.zipCode) ? params.zipCode[0] : params.zipCode ?? "");
-        setPhone(Array.isArray(params.phone) ? params.phone[0] : params.phone ?? "");
-        setRole(Array.isArray(params.role) ? params.role[0] : params.role ?? "");
-        setHouse(Array.isArray(params.house) ? params.house[0] : params.house ?? null);
-        setImage(Array.isArray(params.image) ? params.image[0] : params.image ?? null);
-        setJoinedDate(Array.isArray(params.joinedDate) ? params.joinedDate[0] : params.joinedDate ?? null);
-        setLeavingDate(Array.isArray(params.leavingDate) ? params.leavingDate[0] : params.leavingDate ?? null);
-        setPassword(Array.isArray(params.password) ? params.password[0] : params.password ?? "");
-      } else {
-        const user = await UserSessionUtils.getUserDetails();
-        if (user) {
-          setId(user.id ?? null);
-          setName(user.name ?? "");
-          setEmail(user.email ?? "");
-          setGender(user.gender ?? "");
-          setCity(user.city ?? "");
-          setState(user.state ?? "");
-          setZipCode(user.zipCode ?? "");
-          setPhone(user.phone ?? "");
-          setRole(user.role ?? "");
-          setHouse(user.house ?? null);
-          setImage(user.image ?? null);
-          setJoinedDate(user.joinedDate ?? null);
-          setLeavingDate(user.leavingDate ?? null);
-          setPassword(user.password ?? "");
-        }
-      }
-    })();
-  }, [params]);
+    if (params?.id) {
+      setFormData({
+        id: Number(params.id),
+        name: getParamValue(params.name),
+        email: getParamValue(params.email),
+        gender: getParamValue(params.gender),
+        city: getParamValue(params.city),
+        state: getParamValue(params.state),
+        zipCode: getParamValue(params.zipCode),
+        phone: getParamValue(params.phone),
+        role: getParamValue(params.role),
+        house: getParamValue(params.house) || null,
+        image: getParamValue(params.image) || null,
+        joinedDate: getParamValue(params.joinedDate) || null,
+        leavingDate: getParamValue(params.leavingDate) || null,
+        password: getParamValue(params.password),
+      });
+    } else if (currentUser) {
+      setFormData({
+        id: currentUser.id ?? null,
+        name: currentUser.name ?? "",
+        email: currentUser.email ?? "",
+        gender: currentUser.gender ?? "",
+        city: currentUser.city ?? "",
+        state: currentUser.state ?? "",
+        zipCode: currentUser.zipCode ?? "",
+        phone: currentUser.phone ?? "",
+        role: currentUser.role ?? "",
+        house: currentUser.house ?? null,
+        image: currentUser.image ?? null,
+        joinedDate: currentUser.joinedDate ?? null,
+        leavingDate: currentUser.leavingDate ?? null,
+        password: "",
+      });
+    }
+  }, [params, currentUser]);
 
-  // Handle update
-  const handleUpdate = async () => {
+  // Create a handler for each field
+  const handleNameChange = (value: string) => setFormData(prev => ({ ...prev, name: value }));
+  const handleEmailChange = (value: string) => setFormData(prev => ({ ...prev, email: value }));
+  const handleGenderChange = (value: string) => setFormData(prev => ({ ...prev, gender: value }));
+  const handleCityChange = (value: string) => setFormData(prev => ({ ...prev, city: value }));
+  const handleStateChange = (value: string) => setFormData(prev => ({ ...prev, state: value }));
+  const handleZipCodeChange = (value: string) => setFormData(prev => ({ ...prev, zipCode: value }));
+  const handlePhoneChange = (value: string) => setFormData(prev => ({ ...prev, phone: value }));
+
+  const handleUpdate = useCallback(async () => {
+    if (!formData.id) {
+      Alert.alert("Error", "User ID is missing");
+      return;
+    }
+
     setLoading(true);
     try {
-      await api.put(`/users/${id}`, {
-        name,
-        email,
-        gender,
-        city,
-        state,
-        zipCode,
-        phone,
-        role,
-        house,
-        image,
-        joinedDate,
-        leavingDate,
-        password,
-      });
-      await UserSessionUtils.setUserDetails({
-        id: id!,
-        name,
-        email,
-        gender,
-        city,
-        state,
-        zipCode,
-        phone,
-        role,
-        house,
-        image,
-        joinedDate,
-        leavingDate,
-        password,
-        feedback: [], // Add if you have feedback data
-        task: [],     // Add if you have task data
-      });
+      // Create a payload without password if it's empty
+      const payload = { ...formData };
+      if (payload.password === "") {
+        const { password, ...rest } = payload;
+        await api.put(`/users/${formData.id}`, rest);
+      } else {
+        await api.put(`/users/${formData.id}`, payload);
+      }
+      
       Alert.alert("Success", "Profile updated successfully!");
       navigation.back();
     } catch (error: any) {
@@ -113,106 +124,107 @@ export default function EditProfileScreen() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [formData, navigation]);
 
   return (
-    <>
-      <ThemedView style={styles.container}>
-        <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-          style={styles.keyboardAvoid}
-          keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 0}
-        >
-          <ThemedText type="title" style={{ marginBottom: "10%" }}>
-            Edit Profile
-          </ThemedText>
+    <ThemedView style={styles.container}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={styles.keyboardAvoid}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 0}
+      >
+        <ThemedText type="title" style={{ marginBottom: 20 }}>
+          Edit Profile
+        </ThemedText>
 
-          <ThemedView style={styles.inputField}>
-            <ThemedText type="default">Name</ThemedText>
+        <ThemedView style={styles.inputField}>
+          <ThemedText type="default">Name</ThemedText>
+          <ThemedTextInput
+            placeholder="Enter your full name"
+            value={formData.name}
+            onChangeText={handleNameChange}
+          />
+        </ThemedView>
+        
+        <ThemedView style={styles.inputField}>
+          <ThemedText type="default">Email Address</ThemedText>
+          <ThemedEmailInput
+            placeholder="Enter your email address"
+            value={formData.email}
+            onChangeText={handleEmailChange}
+          />
+        </ThemedView>
+        
+        <ThemedView style={styles.inputField}>
+          <ThemedText type="default">Gender</ThemedText>
+          <ThemedDropdown
+            placeholder="Select your gender"
+            items={["MALE", "FEMALE"]}
+            value={formData.gender}
+            onValueChange={handleGenderChange}
+          />
+        </ThemedView>
+
+        <ThemedView style={styles.row}>
+          <ThemedView style={{ width: "45%" }}>
+            <ThemedText type="default">City</ThemedText>
             <ThemedTextInput
-              placeholder="Enter your full name"
-              value={name}
-              onChangeText={setName}
+              placeholder="Enter city"
+              value={formData.city}
+              onChangeText={handleCityChange}
             />
           </ThemedView>
-          <ThemedView style={styles.inputField}>
-            <ThemedText type="default">Email Address</ThemedText>
-            <ThemedEmailInput
-              placeholder="Enter your email address"
-              value={email}
-              onChangeText={setEmail}
-            />
-          </ThemedView>
-          <ThemedView style={styles.inputField}>
-            <ThemedText type="default">Gender</ThemedText>
-            <ThemedDropdown
-              placeholder="Select your gender"
-              items={["MALE", "FEMALE"]}
-              value={gender}
-              onValueChange={setGender}
-            />
-          </ThemedView>
-
-          <ThemedView style={styles.row}>
-            <ThemedView style={{ width: "45%" }}>
-              <ThemedText type="default">City</ThemedText>
-              <ThemedTextInput
-                placeholder="Enter city"
-                value={city}
-                onChangeText={setCity}
-              />
-            </ThemedView>
-            <ThemedView style={{ width: "45%" }}>
-              <ThemedText type="default">State</ThemedText>
-              <ThemedTextInput
-                placeholder="Enter state"
-                value={state}
-                onChangeText={setState}
-              />
-            </ThemedView>
-          </ThemedView>
-
-          <ThemedView style={styles.inputField}>
-            <ThemedText type="default">Zip Code</ThemedText>
+          <ThemedView style={{ width: "45%" }}>
+            <ThemedText type="default">State</ThemedText>
             <ThemedTextInput
-              placeholder="Enter zip code"
-              value={zipCode}
-              onChangeText={setZipCode}
+              placeholder="Enter state"
+              value={formData.state}
+              onChangeText={handleStateChange}
             />
           </ThemedView>
-          <ThemedView style={styles.inputField}>
-            <ThemedText type="default">Phone</ThemedText>
-            <ThemedTextInput
-              placeholder="Enter phone"
-              value={phone}
-              onChangeText={setPhone}
-            />
-          </ThemedView>
-          {/* Add more fields as needed, e.g. house, image, etc. */}
+        </ThemedView>
 
-          <ThemedView style={{ marginTop: "5%", width: "100%" }}>
-            <Button
-              type="default"
-              title="Update Profile"
-              onPress={handleUpdate}
-              loading={loading}
-            />
-          </ThemedView>
-        </KeyboardAvoidingView>
-      </ThemedView>
-    </>
+        <ThemedView style={styles.inputField}>
+          <ThemedText type="default">Zip Code</ThemedText>
+          <ThemedTextInput
+            placeholder="Enter zip code"
+            value={formData.zipCode}
+            onChangeText={handleZipCodeChange}
+          />
+        </ThemedView>
+        
+        <ThemedView style={styles.inputField}>
+          <ThemedText type="default">Phone</ThemedText>
+          <ThemedTextInput
+            placeholder="Enter phone"
+            value={formData.phone}
+            onChangeText={handlePhoneChange}
+          />
+        </ThemedView>
+        
+
+        <ThemedView style={{ marginTop: 20, width: "100%" }}>
+          <Button
+            type="default"
+            title="Update Profile"
+            onPress={handleUpdate}
+            loading={loading}
+          />
+        </ThemedView>
+      </KeyboardAvoidingView>
+    </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingVertical: "5%",
+    paddingVertical: 20,
     paddingHorizontal: 15,
   },
   inputField: {
     width: "100%",
-    marginBottom: 10,
+    marginBottom: 16,
   },
   keyboardAvoid: {
     width: "100%",
@@ -220,7 +232,7 @@ const styles = StyleSheet.create({
   },
   row: {
     flexDirection: "row",
-    alignItems: "center",
     justifyContent: "space-between",
-  }
-})
+    marginBottom: 16,
+  },
+});

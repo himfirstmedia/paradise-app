@@ -11,19 +11,19 @@ export interface Task {
   description: string;
   progress: string;
   type: "PENDING" | "COMPLETED" | "OVERDUE";
-  userId?: number;
+  userId?: number | null;
   instruction?: string;
 }
 
 interface TaskState {
   tasks: Task[];
-  loading: boolean;
+  status: 'idle' | 'loading' | 'succeeded' | 'failed'; // Added status field
   error: string | null;
 }
 
 const initialState: TaskState = {
   tasks: [],
-  loading: false,
+  status: 'idle', // Initial status
   error: null,
 };
 
@@ -55,16 +55,15 @@ const taskSlice = createSlice({
   extraReducers: (builder) => {
     builder
       .addCase(loadTasks.pending, (state) => {
-        state.loading = true;
+        state.status = 'loading';
         state.error = null;
       })
       .addCase(loadTasks.fulfilled, (state, action) => {
-        state.loading = false;
+        state.status = 'succeeded';
         state.tasks = action.payload;
       })
       .addCase(loadTasks.rejected, (state, action) => {
-        state.loading = false;
-        state.tasks = [];
+        state.status = 'failed';
         state.error = action.payload as string;
       });
   },

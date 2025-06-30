@@ -4,49 +4,49 @@ import { ThemedText } from "./ThemedText";
 import { ThemedView } from "./ThemedView";
 import { Image } from "expo-image";
 import { useThemeColor } from "@/hooks/useThemeColor";
+import { useReduxTasks } from "@/hooks/useReduxTasks";
+import type { ProgressType } from "@/redux/slices/taskSlice";
+import { Task } from "@/redux/slices/taskSlice";
 import { useSegments } from "expo-router";
-import type { Task, ProgressType } from "@/redux/slices/taskSlice";
 
 interface TaskCardProps {
-  tasks: Task[];
+  tasks?: Task[];
   style?: ViewStyle;
   onPress?: (task: Task) => void;
 }
 
-function useDynamicProgressLabels(): Record<ProgressType, string> {
+export function TaskCard({ onPress, tasks }: TaskCardProps) {
+  const bgColor = useThemeColor({}, "input");
   const segments = useSegments();
   const userType = segments[0];
 
-  let pendingLabel = "Pending Tasks";
-  if (
-    userType === "(resident-manager)" ||
-    userType === "(facility-manager)" ||
-    userType === "(director)"
-  ) {
-    pendingLabel = "Pending Tasks";
-  } else if (userType === "(individuals)" || userType === "(residents)") {
-    pendingLabel = "My Tasks";
-  }
-
-  return {
-    PENDING: pendingLabel,
+  const PROGRESS_LABELS = {
+    PENDING:
+      userType === "(individuals)" || userType === "(residents)"
+        ? "Pending Tasks"
+        : "Pending Tasks",
     COMPLETED: "Completed Tasks",
     OVERDUE: "Overdue Tasks",
   };
-}
 
-export function TaskCard({ tasks, onPress }: TaskCardProps) {
-  const bgColor = useThemeColor({}, "input");
-  const PROGRESS_LABELS = useDynamicProgressLabels();
+  // Only call redux if props.tasks isn't given
+  const { tasks: reduxTasks, loading, error } = useReduxTasks();
+  const tasksToUse = tasks ?? reduxTasks;
+  const showLoading = tasks ? false : loading;
+  const showError = tasks ? null : error;
+
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
-  // Group tasks by progress, casting progress to ProgressType
+  if (showLoading) return <ThemedText>Loading tasks...</ThemedText>;
+  if (showError) return <ThemedText>Error: {showError}</ThemedText>;
+
   const groupedTasks: Record<ProgressType, Task[]> = {
     PENDING: [],
     COMPLETED: [],
     OVERDUE: [],
   };
-  tasks.forEach((task) => {
+
+  tasksToUse.forEach((task) => {
     const progress = (task.progress ?? "PENDING").toUpperCase() as ProgressType;
     if (groupedTasks[progress]) groupedTasks[progress].push(task);
   });
@@ -56,14 +56,14 @@ export function TaskCard({ tasks, onPress }: TaskCardProps) {
       {(Object.keys(groupedTasks) as ProgressType[]).map((progress) => {
         const groupTasks = groupedTasks[progress];
         if (!groupTasks || groupTasks.length === 0) return null;
+
         const showViewAll = groupTasks.length > 4;
         const isExpanded = expanded[progress] || false;
-        const displayedTasks =
-          showViewAll && !isExpanded ? groupTasks.slice(0, 4) : groupTasks;
+        const displayedTasks = isExpanded ? groupTasks : groupTasks.slice(0, 4);
 
         return (
           <ThemedView style={styles.container} key={progress}>
-            <ThemedView style={[styles.row, { marginBottom: "3%" }]}>
+            <ThemedView style={[styles.row, { marginBottom: 12 }]}>
               <ThemedText type="subtitle">
                 {PROGRESS_LABELS[progress]}
               </ThemedText>

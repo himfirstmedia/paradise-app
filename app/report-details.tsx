@@ -6,8 +6,8 @@ import { useReduxMembers } from "@/hooks/useReduxMembers";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import * as MediaLibrary from "expo-media-library";
 import * as Print from "expo-print";
-import { useFocusEffect, useLocalSearchParams } from "expo-router";
-import { useCallback } from "react";
+import { useLocalSearchParams } from "expo-router";
+import { useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Image,
@@ -17,242 +17,189 @@ import {
   View,
 } from "react-native";
 
-// Helper functions for house mapping
+// Unified house mapping
+const HOUSE_DISPLAY_NAMES: Record<string, string> = {
+  LILLIE_LOUISE_WOERMER_HOUSE: "LLW House",
+  CAROLYN_ECKMAN_HOUSE: "CE House",
+  ADMINISTRATION: "Administration",
+  ADIMINISTRATION: "Administration", 
+  "LLW House": "LLW House",
+  "CE House": "CE House",
+  "Administration": "Administration",
+};
+
 function getHouseDisplayName(houseValue: string | null): string {
   if (!houseValue) return "Individual";
-
-  const map: Record<string, string> = {
-    LILLIE_LOUISE_WOERMER_HOUSE: "LLW House",
-    CAROLYN_ECKMAN_HOUSE: "CE House",
-    ADIMINISTRATION: "Administration",
-    "LLW House": "LLW House",
-    "CE House": "CE House",
-    Administration: "Administration",
-  };
-
-  return map[houseValue.trim()] || houseValue;
-}
-
-function getHouseEnumValue(displayName: string): string {
-  const map: Record<string, string> = {
-    "LLW House": "LILLIE_LOUISE_WOERMER_HOUSE",
-    "CE House": "CAROLYN_ECKMAN_HOUSE",
-    Administration: "ADIMINISTRATION",
-  };
-
-  return map[displayName.trim()] || displayName;
+  return HOUSE_DISPLAY_NAMES[houseValue.trim()] || houseValue;
 }
 
 export default function ReportDetails() {
   const { type, house } = useLocalSearchParams();
-
   const primaryColor = useThemeColor({}, "selection");
   const completedColor = useThemeColor({}, "completed");
   const pendingColor = useThemeColor({}, "pending");
   const overdueColor = useThemeColor({}, "overdue");
-  const { loading, members, reload } = useReduxMembers();
+  
+  const { loading, members } = useReduxMembers();
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
 
   const houseParam = Array.isArray(house) ? house[0] : house;
   const typeParam = Array.isArray(type) ? type[0] : type;
 
-  let houseEnum: string | null = null;
-  let filteredMembers = members;
-  let reportTitle = "Report";
+  // Memoized filtered members and report data
+  const { filteredMembers, reportTitle, taskStats } = useMemo(() => {
+    let filtered = members;
+    let title = "Report";
+    let stats = { pending: 0, completed: 0, overdue: 0, totalTasks: 0 };
 
-  if (houseParam) {
-    houseEnum = getHouseEnumValue(houseParam);
-    filteredMembers = members.filter(
-      (m) => m.house && m.house.name === houseEnum
-    );
-    reportTitle = `${getHouseDisplayName(houseEnum)} Report`;
-  } else if (typeParam === "individuals") {
-    // Individuals are users without a house
-    filteredMembers = members.filter((m) => !m.house);
-    reportTitle = "Individuals Report";
-  }
+    if (houseParam) {
+      const displayName = getHouseDisplayName(houseParam);
+      title = `${displayName} Report`;
+      
+      filtered = members.filter(member => {
+        const memberHouse = member.house?.name || "";
+        return getHouseDisplayName(memberHouse) === displayName;
+      });
+    } else if (typeParam === "individuals") {
+      title = "Individuals Report";
+      filtered = members.filter(member => !member.house);
+    }
 
-  // --- Report title ---
-
-  if (house) {
-    reportTitle = `${getHouseDisplayName(houseEnum)} Report`;
-  } else if (type) {
-    const typeStr = Array.isArray(type) ? type[0] : type;
-    reportTitle = `${
-      typeStr.charAt(0).toUpperCase() + typeStr.slice(1)
-    } Report`;
-  }
-
-  // --- Task stats ---
-  let pending = 0,
-    completed = 0,
-    overdue = 0,
-    totalTasks = 0;
-
-  filteredMembers.forEach((member) => {
-    if (Array.isArray(member.task)) {
-      member.task.forEach((task) => {
+    // Calculate task statistics
+    filtered.forEach(member => {
+      member.task?.forEach(task => {
         if (["PENDING", "COMPLETED", "OVERDUE"].includes(task.progress || "")) {
-          totalTasks++;
+          stats.totalTasks++;
           switch (task.progress) {
-            case "PENDING":
-              pending++;
-              break;
-            case "COMPLETED":
-              completed++;
-              break;
-            case "OVERDUE":
-              overdue++;
-              break;
+            case "PENDING": stats.pending++; break;
+            case "COMPLETED": stats.completed++; break;
+            case "OVERDUE": stats.overdue++; break;
           }
         }
       });
-    }
-  });
+    });
 
-  useFocusEffect(
-      useCallback(() => {
-        reload();
-      }, [reload])
-    );
+    return { filteredMembers: filtered, reportTitle: title, taskStats: stats };
+  }, [members, houseParam, typeParam]);
 
-  // --- Calculate average completion percentage ---
-  let completionPercent = 0;
-  if (totalTasks > 0) {
-    completionPercent = Math.round((completed / totalTasks) * 100);
-  }
+  const completionPercent = useMemo(() => {
+    return taskStats.totalTasks > 0 
+      ? Math.round((taskStats.completed / taskStats.totalTasks) * 100)
+      : 0;
+  }, [taskStats]);
 
-  // --- PDF generation ---
-  const formatDate = (date = new Date()) => {
-    const pad = (n: number) => (n < 10 ? `0${n}` : n);
-    return `${pad(date.getFullYear())}-${pad(date.getMonth() + 1)}-${pad(
-      date.getDate()
-    )}`;
-  };
 
   const generatePDF = async () => {
-    const fileName = `${reportTitle.replace(/\s+/g, "_")}_${formatDate()}.pdf`;
+    setIsGeneratingPDF(true);
+    try {
+      const fileName = `${reportTitle.replace(/\s+/g, "_")}_${new Date().toISOString().slice(0, 10)}.pdf`;
 
-    const html = `
-    <html>
-      <head>
-        <style>
-          body { font-family: Arial, sans-serif; padding: 20px; }
-          h1 { font-size: 24px; }
-          h2 { font-size: 20px; margin-top: 20px; }
-          table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-          th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
-          th { background-color: #f0f0f0; }
-        </style>
-      </head>
-      <body>
-        <h1>${reportTitle}</h1>
-        <p><strong>Pending Tasks:</strong> ${pending}</p>
-        <p><strong>Completed Tasks:</strong> ${completed}</p>
-        <p><strong>Overdue Tasks:</strong> ${overdue}</p>
+      const html = `
+        <html>
+          <head>
+            <style>
+              body { font-family: Arial, sans-serif; padding: 20px; }
+              h1 { font-size: 24px; }
+              h2 { font-size: 20px; margin-top: 20px; }
+              table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+              th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+              th { background-color: #f0f0f0; }
+            </style>
+          </head>
+          <body>
+            <h1>${reportTitle}</h1>
+            <p><strong>Pending Tasks:</strong> ${taskStats.pending}</p>
+            <p><strong>Completed Tasks:</strong> ${taskStats.completed}</p>
+            <p><strong>Overdue Tasks:</strong> ${taskStats.overdue}</p>
 
-        ${filteredMembers
-          .map(
-            (member) => `
-          <h2>${member.name}</h2>
-          <p><strong>Phone:</strong> ${member.phone}<br/>
-             <strong>Email:</strong> ${member.email}<br/>
-             <strong>Team:</strong> ${member.role}<br/>
-              <strong>House:</strong> ${
-                member.house
-                  ? getHouseDisplayName(member.house.name)
-                  : "Individual"
-              }
-             <strong>Start Date:</strong> ${member.joinedDate}<br/>
-             <strong>End Date:</strong> ${member.leavingDate ?? ""}</p>
-          <table>
-            <thead>
-              <tr>
-                <th>Task Name</th>
-                <th>Description</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-    ${member.task
-      ?.map(
-        (task) => `
-      <tr>
-        <td>${task.name}</td>
-        <td>${task.description ?? ""}</td>
-        <td>${task.progress ?? ""}</td>
-      </tr>
-    `
-      )
-      .join("")}
-  </tbody>
-          </table>
-        `
-          )
-          .join("")}
-      </body>
-    </html>
-  `;
+            ${filteredMembers.map(member => `
+              <h2>${member.name}</h2>
+              <p>
+                <strong>Phone:</strong> ${member.phone || 'N/A'}<br/>
+                <strong>Email:</strong> ${member.email || 'N/A'}<br/>
+                <strong>Team:</strong> ${member.role || 'N/A'}<br/>
+                <strong>House:</strong> ${member.house ? getHouseDisplayName(member.house.name) : "Individual"}<br/>
+                <strong>Start Date:</strong> ${member.joinedDate || 'N/A'}<br/>
+                <strong>End Date:</strong> ${member.leavingDate || 'N/A'}
+              </p>
+              ${member.task?.length ? `
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Task Name</th>
+                      <th>Description</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${member.task.map(task => `
+                      <tr>
+                        <td>${task.name || 'N/A'}</td>
+                        <td>${task.description || ''}</td>
+                        <td>${task.progress || ''}</td>
+                      </tr>
+                    `).join('')}
+                  </tbody>
+                </table>
+              ` : '<p>No tasks assigned</p>'}
+            `).join('')}
+          </body>
+        </html>
+      `;
 
-    const { uri: tempUri } = await Print.printToFileAsync({ html });
+      const { uri } = await Print.printToFileAsync({ html });
+      
+      const { status } = await MediaLibrary.requestPermissionsAsync();
+      if (status !== "granted") {
+        alert("Permission required to save PDF");
+        return;
+      }
 
-    const { status } = await MediaLibrary.requestPermissionsAsync();
-    if (status !== "granted") {
-      alert("Permission required to save the PDF to your device.");
-      return;
-    }
-
-    const asset = await MediaLibrary.createAssetAsync(tempUri);
-    const album = await MediaLibrary.getAlbumAsync("Download");
-
-    if (album) {
+      const asset = await MediaLibrary.createAssetAsync(uri);
+      const album = await MediaLibrary.getAlbumAsync("Download") || 
+                   await MediaLibrary.createAlbumAsync("Download", asset, false);
+      
       await MediaLibrary.addAssetsToAlbumAsync([asset], album, false);
-    } else {
-      await MediaLibrary.createAlbumAsync("Download", asset, false);
+      alert(`PDF saved to Downloads folder as:\n${fileName}`);
+    } catch (error) {
+      alert("Failed to generate PDF");
+      console.error("PDF generation error:", error);
+    } finally {
+      setIsGeneratingPDF(false);
     }
-
-    alert(`PDF saved to your Downloads folder as:\n${fileName}`);
   };
 
   return (
     <ThemedView style={styles.container}>
       <ScrollView
-        contentContainerStyle={{
-          alignItems: "flex-start",
-          width: "100%",
-          paddingBottom: "30%",
-        }}
+        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
-        style={styles.innerContainer}
       >
         <ThemedText type="title" style={styles.title}>
           {reportTitle}
         </ThemedText>
-        <ThemedView style={styles.row}>
-          <ThemedText type="defaultSemiBold">Pending Tasks:</ThemedText>
-          <ThemedText type="default">{pending}</ThemedText>
-        </ThemedView>
-        <ThemedView style={styles.row}>
-          <ThemedText type="defaultSemiBold">Completed Tasks:</ThemedText>
-          <ThemedText type="default">{completed}</ThemedText>
-        </ThemedView>
-        <ThemedView style={styles.row}>
-          <ThemedText type="defaultSemiBold">Overdue Tasks:</ThemedText>
-          <ThemedText type="default">{overdue}</ThemedText>
+        
+        <ThemedView style={styles.statsContainer}>
+          <ThemedView style={styles.statRow}>
+            <ThemedText type="defaultSemiBold">Pending Tasks:</ThemedText>
+            <ThemedText type="default">{taskStats.pending}</ThemedText>
+          </ThemedView>
+          <ThemedView style={styles.statRow}>
+            <ThemedText type="defaultSemiBold">Completed Tasks:</ThemedText>
+            <ThemedText type="default">{taskStats.completed}</ThemedText>
+          </ThemedView>
+          <ThemedView style={styles.statRow}>
+            <ThemedText type="defaultSemiBold">Overdue Tasks:</ThemedText>
+            <ThemedText type="default">{taskStats.overdue}</ThemedText>
+          </ThemedView>
         </ThemedView>
 
-        <ThemedView
-          style={{
-            backgroundColor: primaryColor,
-            borderRadius: 20,
-            marginTop: 15,
-            width: "100%",
-          }}
-        >
+        <ThemedView style={[styles.chartContainer, { backgroundColor: primaryColor }]}>
           <HalfDonutChart
             data={[
-              { value: completed, color: completedColor, text: "Completed" },
-              { value: pending, color: pendingColor, text: "Pending" },
-              { value: overdue, color: overdueColor, text: "Overdue" },
+              { value: taskStats.completed, color: completedColor, text: "Completed" },
+              { value: taskStats.pending, color: pendingColor, text: "Pending" },
+              { value: taskStats.overdue, color: overdueColor, text: "Overdue" },
             ]}
             height={220}
             radius={90}
@@ -262,34 +209,22 @@ export default function ReportDetails() {
             strokeWidth={5}
             legendTitle="House Progress"
             centerLabelComponent={() => (
-              <View>
-                <ThemedText
-                  type="title"
-                  style={{
-                    fontWeight: "bold",
-                    textAlign: "center",
-                    color: "#FFFFFF",
-                  }}
-                >
-                  {totalTasks === 0 ? "0%" : `${completionPercent}%`}
-                </ThemedText>
-              </View>
+              <ThemedText
+                type="title"
+                style={styles.chartCenterText}
+              >
+                {taskStats.totalTasks === 0 ? "0%" : `${completionPercent}%`}
+              </ThemedText>
             )}
-            legendContainerStyle={{ marginTop: 10 }}
-            legendTitleStyle={{ color: "#fff", fontSize: 22 }}
-            legendTextStyle={{ color: "#fff", fontSize: 14 }}
+            legendContainerStyle={styles.legendContainer}
+            legendTitleStyle={styles.legendTitle}
+            legendTextStyle={styles.legendText}
           />
         </ThemedView>
 
-        <ThemedView
-          style={{ marginTop: 20, width: "100%", paddingHorizontal: 5 }}
-        >
+        <ThemedView style={styles.memberContainer}>
           {loading ? (
-            <ActivityIndicator
-              size="large"
-              color={primaryColor}
-              style={{ marginTop: "5%" }}
-            />
+            <ActivityIndicator size="large" color={primaryColor} />
           ) : (
             <MemberCard members={filteredMembers} />
           )}
@@ -297,28 +232,20 @@ export default function ReportDetails() {
       </ScrollView>
 
       <View style={styles.floatingContainer}>
-        <ThemedText
-          type="default"
-          style={{
-            paddingHorizontal: 12,
-            paddingVertical: 5,
-            color: "#fff",
-            borderRadius: 5,
-            backgroundColor: primaryColor,
-          }}
-        >
-          Download PDF
-        </ThemedText>
-
         <TouchableOpacity
           onPress={generatePDF}
           style={[styles.button, { backgroundColor: primaryColor }]}
+          disabled={isGeneratingPDF}
           activeOpacity={0.7}
         >
-          <Image
-            source={require("@/assets/icons/download.png")}
-            style={styles.icon}
-          />
+          {isGeneratingPDF ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Image
+              source={require("@/assets/icons/download.png")}
+              style={styles.icon}
+            />
+          )}
         </TouchableOpacity>
       </View>
     </ThemedView>
@@ -328,41 +255,63 @@ export default function ReportDetails() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 10,
-    paddingVertical: 15,
+    padding: 16,
   },
-  innerContainer: {
-    flex: 1,
-    width: "100%",
+  scrollContent: {
+    paddingBottom: 120,
   },
   title: {
     fontSize: 24,
     fontWeight: "bold",
     marginBottom: 16,
-    paddingHorizontal: 5,
+    textAlign: "center",
   },
-  row: {
+  statsContainer: {
+    marginBottom: 16,
+    paddingHorizontal: 16,
+  },
+  statRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 10,
-    marginBottom: 12,
-    width: "60%",
+    marginBottom: 8,
+  },
+  chartContainer: {
+    borderRadius: 20,
+    padding: 16,
+    marginBottom: 20,
+  },
+  chartCenterText: {
+    fontWeight: "bold",
+    textAlign: "center",
+    color: "#FFFFFF",
+  },
+  legendContainer: {
+    marginTop: 10,
+  },
+  legendTitle: {
+    color: "#fff",
+    fontSize: 18,
+    textAlign: "center",
+  },
+  legendText: {
+    color: "#fff",
+    fontSize: 14,
+  },
+  memberContainer: {
+    marginTop: 20,
+    paddingHorizontal: 8,
   },
   button: {
     width: 60,
     height: 60,
-    borderRadius: 999,
+    borderRadius: 30,
     justifyContent: "center",
     alignItems: "center",
+    elevation: 5,
     shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
-    elevation: 5,
   },
   icon: {
     width: 30,
@@ -373,9 +322,5 @@ const styles = StyleSheet.create({
     position: "absolute",
     bottom: 20,
     right: 20,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "flex-end",
-    gap: 15,
   },
 });

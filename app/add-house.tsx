@@ -2,7 +2,7 @@ import { ThemedTextInput } from "@/components/ThemedInput";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { Button } from "@/components/ui/Button";
-import { useHouse } from "@/hooks/useReduxHouse";
+import { useReduxHouse } from "@/hooks/useReduxHouse";
 import api from "@/utils/api";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
@@ -10,7 +10,7 @@ import { Alert, KeyboardAvoidingView, Platform, StyleSheet } from "react-native"
 
 export default function AddHouseScreen() {
   const navigation = useRouter();
-  const { reload } = useHouse();
+  const { reload } = useReduxHouse();
   const params = useLocalSearchParams();
 
   // If editing, params will have id, name, abbreviation, capacity

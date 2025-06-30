@@ -1,6 +1,6 @@
 import { HouseCard } from "@/components/HouseCard";
 import { ThemedView } from "@/components/ThemedView";
-import { useHouse } from "@/hooks/useReduxHouse";
+import { useReduxHouse } from "@/hooks/useReduxHouse";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { useRouter } from "expo-router";
 import { Image, Pressable, ScrollView, StyleSheet } from "react-native";
@@ -9,7 +9,7 @@ export default function HouseManagerScreen() {
   const primaryColor = useThemeColor({}, "selection");
   const navigation = useRouter();
 
-  const { houses } = useHouse();
+  const { houses } = useReduxHouse();
 
   return (
     <>

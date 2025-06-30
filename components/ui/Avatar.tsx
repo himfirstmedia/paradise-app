@@ -1,45 +1,34 @@
-import React, { useEffect, useState } from "react";
-import { StyleSheet, TouchableOpacity, Modal, Pressable } from "react-native";
+import React, { useState } from "react";
+import { StyleSheet, TouchableOpacity, Modal, Pressable, Alert } from "react-native";
 import { ThemedView } from "../ThemedView";
 import { Image } from "expo-image";
 import { ThemedText } from "../ThemedText";
 import { useRouter, usePathname } from "expo-router";
-import { UserSessionUtils } from "@/utils/UserSessionUtils";
-
-type User = {
-  fullName?: string;
-  name?: string;
-  email?: string;
-  image?: string;
-};
+import { useReduxAuth } from "@/hooks/useReduxAuth";
 
 type AvatarProps = {
   size?: number;
 };
 
 export function Avatar({ size = 40 }: AvatarProps) {
-  const [user, setUser] = useState<User | null>(null);
   const [popoverVisible, setPopoverVisible] = useState(false);
   const navigation = useRouter();
   const pathname = usePathname();
-
-  useEffect(() => {
-    const fetchUser = async () => {
-      const userData = await UserSessionUtils.getUserDetails();
-      setUser(userData);
-    };
-    fetchUser();
-  }, []);
+  const { user, signout } = useReduxAuth();
 
   const getInitial = () => {
-    const displayName = user?.fullName || user?.name || "";
-    if (!displayName) return "";
+    const displayName = user?.name || user?.name || "";
     return displayName.trim().charAt(0).toUpperCase();
   };
 
-  const handleLogout = () => {
-    UserSessionUtils.logout();
-    navigation.replace("/auth/login");
+  const handleLogout = async () => {
+    try {
+      await signout();
+      navigation.replace("../auth");
+    } catch (error) {
+      console.error("Logout Error:", error);
+      Alert.alert("Logout Failed", "An error occurred during logout.");
+    }
   };
 
   // Prevent modal if "profile" is in the URL
@@ -48,21 +37,18 @@ export function Avatar({ size = 40 }: AvatarProps) {
   return (
     <>
       <TouchableOpacity onPress={() => setPopoverVisible(true)} activeOpacity={0.7}>
-        <ThemedView style={[
-          styles.container,
-          { height: size, width: size, borderRadius: size / 2 }
-        ]}>
+        <ThemedView style={[styles.container, { height: size, width: size, borderRadius: size / 2 }]}>
           {user?.image ? (
-            <Image source={{ uri: user.image }} style={{
-              height: size,
-              width: size,
-              borderRadius: size / 2,
-            }} />
+            <Image
+              source={{ uri: user.image }}
+              style={{
+                height: size,
+                width: size,
+                borderRadius: size / 2,
+              }}
+            />
           ) : (
-            <ThemedView style={[
-              styles.initialContainer,
-              { height: size, width: size, borderRadius: size / 2 }
-            ]}>
+            <ThemedView style={[styles.initialContainer, { height: size, width: size, borderRadius: size / 2 }]}>
               <ThemedText type="default" style={[styles.initial, { fontSize: size * 0.5 }]}>
                 {getInitial()}
               </ThemedText>
@@ -70,6 +56,7 @@ export function Avatar({ size = 40 }: AvatarProps) {
           )}
         </ThemedView>
       </TouchableOpacity>
+
       <Modal
         visible={shouldShowModal}
         transparent
@@ -78,7 +65,7 @@ export function Avatar({ size = 40 }: AvatarProps) {
       >
         <Pressable style={styles.overlay} onPress={() => setPopoverVisible(false)}>
           <ThemedView style={styles.popover}>
-            <Pressable style={styles.button} onPress={() => {}}>
+            <Pressable style={styles.button} onPress={() => navigation.push("/profile")}>
               <ThemedText type="default">Profile</ThemedText>
             </Pressable>
             <Pressable style={styles.button} onPress={handleLogout}>
@@ -90,6 +77,7 @@ export function Avatar({ size = 40 }: AvatarProps) {
     </>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: {

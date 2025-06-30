@@ -1,5 +1,6 @@
 import { Alert } from "@/components/Alert";
-import { ProgressType, TaskCard } from "@/components/TaskCard";
+import { TaskCard } from "@/components/TaskCard";
+import type { ProgressType } from "@/redux/slices/taskSlice"; 
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { FloatingButton } from "@/components/ui/FloatingButton";

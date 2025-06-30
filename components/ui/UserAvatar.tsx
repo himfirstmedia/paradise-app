@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { StyleSheet, TouchableOpacity } from "react-native";
 import { ThemedView } from "../ThemedView";
 import { Image } from "expo-image";
 import { ThemedText } from "../ThemedText";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { UserSessionUtils } from "@/utils/UserSessionUtils";
+
+import { useReduxAuth } from "@/hooks/useReduxAuth";
 
 type User = {
   fullName?: string;
@@ -19,24 +20,13 @@ type AvatarProps = {
 };
 
 export function UserAvatar({ size = 40, user: propUser }: AvatarProps) {
-  const [user, setUser] = useState<User | null>(propUser ?? null);
   const profileBorder = useThemeColor({}, "text");
+  const { user } = useReduxAuth();
 
-  useEffect(() => {
-    if (propUser) {
-      setUser(propUser);
-      return;
-    }
-    const fetchUser = async () => {
-      const userData = await UserSessionUtils.getUserDetails();
-      setUser(userData);
-    };
-    fetchUser();
-  }, [propUser]);
+  
 
   const getInitial = () => {
-    const displayName = user?.fullName || user?.name || "";
-    if (!displayName) return "U";
+    const displayName = user?.name || user?.name || "";
     return displayName.trim().charAt(0).toUpperCase();
   };
 
