@@ -17,7 +17,7 @@ export function Avatar({ size = 40 }: AvatarProps) {
   const { user, signout } = useReduxAuth();
 
   const getInitial = () => {
-    const displayName = user?.name || user?.name || "";
+    const displayName = user?.name || user?.name || "U";
     return displayName.trim().charAt(0).toUpperCase();
   };
 

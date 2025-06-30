@@ -15,15 +15,17 @@ export default {
       bundleIdentifier: "com.albert2moon.ParadiseApp",
       infoPlist: {
         ITSAppUsesNonExemptEncryption: false
-      }
+      },
+      permissions: ["INTERNET", "NOTIFICATIONS"],
     },
     android: {
       adaptiveIcon: {
-        foregroundImage: "./assets/images/logo-new.png",
+        foregroundImage: "./assets/images/ic_launcher.png",
         backgroundColor: "#ffffff"
       },
       edgeToEdgeEnabled: true,
-      package: "com.albert2moon.ParadiseApp"
+      package: "com.albert2moon.ParadiseApp",
+      permissions: ["INTERNET", "NOTIFICATIONS"],
     },
     web: {
       bundler: "metro",

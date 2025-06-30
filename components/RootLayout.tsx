@@ -15,8 +15,6 @@ import { Colors } from "@/constants/Colors";
 import * as SplashScreen from "expo-splash-screen";
 import { useAppSelector } from "@/redux/hooks";
 
-
-
 // Prevent auto-hiding splash until manually dismissed
 SplashScreen.preventAutoHideAsync();
 

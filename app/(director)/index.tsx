@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { ActivityIndicator, ScrollView, StyleSheet, View } from "react-native";
 
 import { ScriptureCard } from "@/components/ScriptureCard";
@@ -11,6 +11,7 @@ import { useThemeColor } from "@/hooks/useThemeColor";
 import { useReduxAuth } from "@/hooks/useReduxAuth";
 import { useReduxScripture } from "@/hooks/useReduxScripture";
 import { useReduxTasks } from "@/hooks/useReduxTasks";
+import { useRouter } from "expo-router";
 
 function getGreeting() {
   const hour = new Date().getHours();
@@ -20,15 +21,22 @@ function getGreeting() {
 }
 
 export default function HomeScreen() {
+  const router = useRouter();
   const primaryColor = useThemeColor({}, "selection");
 
-  const { user } = useReduxAuth();
+  const { user, isAuthenticated } = useReduxAuth();
   const userName = user?.name?.split(" ")[0] || "User";
 
   const { tasks, loading: tasksLoading } = useReduxTasks();
   const { scriptures, loading: scriptureLoading } = useReduxScripture();
 
   const latestScripture = scriptures.length > 0 ? scriptures[0] : null;
+
+  useEffect(() => {
+  if (!isAuthenticated) {
+    router.replace("/auth/login");
+  }
+}, [isAuthenticated, router]);
 
   return (
     <ThemedView style={styles.container}>
