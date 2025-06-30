@@ -23,6 +23,7 @@ export function ThemedPassword({
   ...rest
 }: ThemedInputProps) {
   const bgColor = useThemeColor({}, "input");
+  const textColor = useThemeColor({}, "text");
   const errorColor = useThemeColor({}, "overdue");
   const iconColor = useThemeColor({}, "placeholder");
   const [value, setValue] = useState("");
@@ -40,6 +41,7 @@ export function ThemedPassword({
           style={[
             styles.input,
             { backgroundColor: bgColor },
+            { color: textColor },
             type === "default" ? styles.default : undefined,
             type === "floating" ? styles.floating : undefined,
             type === "rounded" ? styles.rounded : undefined,

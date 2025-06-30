@@ -26,7 +26,7 @@ export function UserAvatar({ size = 40, user: propUser }: AvatarProps) {
   
 
   const getInitial = () => {
-    const displayName = user?.name || user?.name || "";
+    const displayName = user?.name || user?.name || "U";
     return displayName.trim().charAt(0).toUpperCase();
   };
 

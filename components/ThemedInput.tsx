@@ -28,7 +28,7 @@ type ThemedDropdownProps = ThemedInputProps & {
   items: string[];
   value?: string;
   onSelect?: (item: string) => void;
-  onValueChange?: (item: string) => void; 
+  onValueChange?: (item: string) => void;
   placeholder?: string;
   errorMessage?: string | null;
   numColumns?: number;
@@ -49,6 +49,7 @@ export function ThemedEmailInput({
   ...rest
 }: ThemedInputProps) {
   const bgColor = useThemeColor({}, "input");
+  const textColor = useThemeColor({}, "text");
   const errorColor = useThemeColor({}, "overdue");
 
   return (
@@ -57,6 +58,7 @@ export function ThemedEmailInput({
         style={[
           styles.input,
           { backgroundColor: bgColor },
+          { color: textColor },
           type === "default" ? styles.default : undefined,
           type === "floating" ? styles.floating : undefined,
           type === "rounded" ? styles.rounded : undefined,
@@ -267,7 +269,7 @@ export function ThemedDropdown({
     }
   };
 
-   // Sync selected state with value prop
+  // Sync selected state with value prop
   React.useEffect(() => {
     setSelected(value ?? "");
   }, [value]);
@@ -277,7 +279,7 @@ export function ThemedDropdown({
     setSelected(item);
     setShowModal(false);
     if (onSelect) onSelect(item);
-    if (onValueChange) onValueChange(item); 
+    if (onValueChange) onValueChange(item);
     if (rest.onChangeText) rest.onChangeText(item);
   };
 
