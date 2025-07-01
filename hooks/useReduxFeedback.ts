@@ -6,7 +6,6 @@ import { useEffect, useCallback } from "react";
 export function useReduxFeedback() {
   const dispatch = useAppDispatch();
   
-  // Access state using the correct structure
   const { feedbacks, status, error } = useAppSelector(
     (state) => state.feedback
   );
@@ -15,7 +14,6 @@ export function useReduxFeedback() {
     dispatch(loadFeedbacks());
   }, [dispatch]);
 
-  // Auto-load feedbacks when status is idle
   useEffect(() => {
     if (status === 'idle') {
       reload();

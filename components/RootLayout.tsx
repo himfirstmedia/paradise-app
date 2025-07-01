@@ -127,7 +127,7 @@ export default function AppLayout() {
           />
           <Stack.Screen
             name="comments-manager"
-            options={{ header: () => <SimpleHeader title="Feedback" /> }}
+            options={{ header: () => <SimpleHeader title="Comments & Suggestions" /> }}
           />
           <Stack.Screen
             name="scriptures-manager"
@@ -141,7 +141,11 @@ export default function AppLayout() {
           />
           <Stack.Screen
             name="add-house"
-            options={{ header: () => <SimpleHeader title="Manage House" /> }}
+            options={{ header: () => <SimpleHeader title="Create New House" /> }}
+          />
+          <Stack.Screen
+            name="edit-house"
+            options={{ header: () => <SimpleHeader title="Update House" /> }}
           />
           <Stack.Screen
             name="house-manager"

@@ -7,13 +7,7 @@ import { useReduxMembers } from "@/hooks/useReduxMembers";
 import { useThemeColor } from "@/hooks/useThemeColor";
 
 import React, { useMemo } from "react";
-import {
-  ActivityIndicator,
-
-  ScrollView,
-  StyleSheet,
-  View,
-} from "react-native";
+import { ActivityIndicator, ScrollView, StyleSheet, View } from "react-native";
 
 const houses = [
   { label: "LLW House", enum: "LILLIE_LOUISE_WOERMER_HOUSE" },
@@ -104,6 +98,12 @@ export default function TeamsScreen() {
       completionPercent: 0,
     };
 
+  const nonAdminMembers = useMemo(() => {
+    return members.filter(
+      (member) => member.role !== "SUPER_ADMIN" && member.role !== "DIRECTOR"
+    );
+  }, [members]);
+
   return (
     <>
       <ThemedView style={styles.container}>
@@ -186,6 +186,17 @@ export default function TeamsScreen() {
                 color={primaryColor}
                 style={{ marginTop: "5%" }}
               />
+            ) : nonAdminMembers.length === 0 ? (
+              <ThemedText
+                type="default"
+                style={{
+                  textAlign: "center",
+                  marginTop: 24,
+                  color: "#888",
+                }}
+              >
+                There are no members yet.
+              </ThemedText>
             ) : (
               <>
                 <MemberCard members={members} />
@@ -193,7 +204,6 @@ export default function TeamsScreen() {
             )}
           </ThemedView>
         </ScrollView>
-
       </ThemedView>
     </>
   );
@@ -221,6 +231,8 @@ const styles = StyleSheet.create({
     borderBottomStartRadius: 20,
     paddingHorizontal: 15,
     marginBottom: 15,
+    paddingTop: 20,
+    paddingBottom: 20,
   },
   row: {
     flexDirection: "row",

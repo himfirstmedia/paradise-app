@@ -1,6 +1,6 @@
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import { loadHouses } from "@/redux/slices/houseSlice";
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 
 export function useReduxHouse() {
   const dispatch = useAppDispatch();
@@ -9,9 +9,9 @@ export function useReduxHouse() {
   // Use ref to track initial load
   const initialLoad = useRef(false);
 
-  const reload = () => {
-    dispatch(loadHouses());
-  };
+  const reload = useCallback(() => {
+    return dispatch(loadHouses());
+  }, [dispatch]);
 
   useEffect(() => {
     if (!initialLoad.current && houses.length === 0 && !loading) {

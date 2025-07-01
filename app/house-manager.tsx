@@ -1,15 +1,22 @@
 import { HouseCard } from "@/components/HouseCard";
+import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { useReduxHouse } from "@/hooks/useReduxHouse";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { useRouter } from "expo-router";
-import { Image, Pressable, ScrollView, StyleSheet } from "react-native";
+import {
+  ActivityIndicator,
+  Image,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+} from "react-native";
 
 export default function HouseManagerScreen() {
   const primaryColor = useThemeColor({}, "selection");
   const navigation = useRouter();
 
-  const { houses } = useReduxHouse();
+  const { houses, loading } = useReduxHouse();
 
   return (
     <>
@@ -22,7 +29,26 @@ export default function HouseManagerScreen() {
           }}
           style={styles.innerContainer}
         >
-          <HouseCard houses={houses} />
+          {loading ? (
+            <ActivityIndicator
+              size="large"
+              color={primaryColor}
+              style={{ marginTop: "5%" }}
+            />
+          ) : houses.length === 0 ? (
+            <ThemedText
+              type="default"
+              style={{
+                textAlign: "center",
+                marginTop: 24,
+                color: "#888",
+              }}
+            >
+              There are no houses created yet.
+            </ThemedText>
+          ) : (
+            <HouseCard houses={houses} />
+          )}
         </ScrollView>
 
         <Pressable

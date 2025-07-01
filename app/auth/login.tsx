@@ -36,34 +36,49 @@ export default function LoginScreen() {
   const { signin, loading } = useReduxAuth();
   const { isAuthenticated, user } = useAppSelector((state) => state.auth);
 
-  // Handle redirection after successful login
   useEffect(() => {
-    if (isAuthenticated && user?.role) {
+  if (isAuthenticated && user?.role) {
+    console.log("✅ Logged in User:", user);
+    
+    const roleRoutes: Record<string, AppRoutes> = {
+      SUPER_ADMIN: "/(director)",
+      DIRECTOR: "/(director)",
+      RESIDENT_MANAGER: "/(resident-manager)",
+      FACILITY_MANAGER: "/(facility-manager)",
+      RESIDENT: "/(residents)",
+      INDIVIDUAL: "/(individuals)",
+    };
 
-      console.log("✅ Logged in User:", user);
-
-
-      const roleRoutes: Record<string, AppRoutes> = {
-        SUPER_ADMIN: "/(director)",
-        DIRECTOR: "/(director)",
-        RESIDENT_MANAGER: "/(resident-manager)",
-        FACILITY_MANAGER: "/(facility-manager)",
-        RESIDENT: "/(residents)",
-        INDIVIDUAL: "/(individuals)",
-      };
-
-      const route = roleRoutes[user.role] || "/auth/login";
-      router.replace(route);
-    }
-  }, [isAuthenticated, user, router]);
+    console.log(`User role: ${user.role}`);
+    const route = roleRoutes[user.role] || "/auth/login";
+    console.log(`Redirecting to: ${route}`);
+    
+    router.replace(route);
+  } else if (isAuthenticated) {
+    console.warn("⚠️ Authenticated but missing role:", user);
+  }
+}, [isAuthenticated, user, router]);
 
   const handleSignin = async (): Promise<void> => {
-    if (!email || !password) {
-      Alert.alert("Missing Fields", "Please enter both email and password.");
-      return;
-    }
+  if (!email || !password) {
+    Alert.alert("Missing Fields", "Please enter both email and password.");
+    return;
+  }
+  
+  try {
     await signin(email, password);
-  };
+  } catch (error: unknown) {
+    let errorMessage = "Invalid credentials. Please try again.";
+    
+    if (error instanceof Error) {
+      errorMessage = error.message;
+    } else if (typeof error === 'string') {
+      errorMessage = error;
+    }
+    
+    Alert.alert("Login Failed", errorMessage);
+  }
+};
 
   return (
     <>

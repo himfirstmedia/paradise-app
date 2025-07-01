@@ -1,6 +1,6 @@
 import { useAppDispatch, useAppSelector } from '@/redux/hooks';
 import { loadUsers } from '@/redux/slices/userSlice';
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 
 export function useReduxMembers() {
   const dispatch = useAppDispatch();
@@ -9,9 +9,9 @@ export function useReduxMembers() {
     // Use ref to track initial load
     const initialLoad = useRef(false);
   
-    const reload = () => {
-      dispatch(loadUsers());
-    };
+    const reload = useCallback(() => {
+    return dispatch(loadUsers());
+  }, [dispatch]);
   
     useEffect(() => {
       if (!initialLoad.current && members.length === 0 && !loading) {

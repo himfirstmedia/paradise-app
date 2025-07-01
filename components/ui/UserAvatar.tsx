@@ -21,12 +21,12 @@ type AvatarProps = {
 
 export function UserAvatar({ size = 40, user: propUser }: AvatarProps) {
   const profileBorder = useThemeColor({}, "text");
-  const { user } = useReduxAuth();
+  const { user: authUser } = useReduxAuth();
 
-  
+ const displayUser = propUser || authUser;
 
   const getInitial = () => {
-    const displayName = user?.name || user?.name || "U";
+    const displayName = displayUser?.name || displayUser?.name || "U";
     return displayName.trim().charAt(0).toUpperCase();
   };
 
@@ -40,15 +40,15 @@ export function UserAvatar({ size = 40, user: propUser }: AvatarProps) {
             width: size,
             borderRadius: size / 2,
             backgroundColor: "#F2F2F2",
-            borderColor: user?.image ? "transparent" : profileBorder,
-            borderWidth: user?.image ? 0 : 3,
+            borderColor: displayUser?.image ? "transparent" : profileBorder,
+            borderWidth: displayUser?.image ? 0 : 3,
             overflow: "hidden",
           },
         ]}
       >
-        {user?.image ? (
+        {displayUser?.image ? (
           <Image
-            source={{ uri: user.image }}
+            source={{ uri: displayUser.image }}
             style={{
               height: size,
               width: size,

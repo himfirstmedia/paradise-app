@@ -1,4 +1,4 @@
-import 'dotenv/config';
+import "dotenv/config";
 
 export default {
   expo: {
@@ -6,7 +6,7 @@ export default {
     slug: "Paradise-App",
     version: "1.0.0",
     orientation: "portrait",
-    icon: "./assets/images/ic_launcher.png",
+    icon: "./assets/images/adaptive-icon.png",
     scheme: "paradiseapp",
     userInterfaceStyle: "automatic",
     newArchEnabled: true,
@@ -14,14 +14,18 @@ export default {
       supportsTablet: true,
       bundleIdentifier: "com.albert2moon.ParadiseApp",
       infoPlist: {
-        ITSAppUsesNonExemptEncryption: false
+        ITSAppUsesNonExemptEncryption: false,
       },
       permissions: ["INTERNET", "NOTIFICATIONS"],
+      icon: {
+        dark: "./assets/images/ios-dark.png",
+        light: "./assets/images/ios-light.png",
+      }
     },
     android: {
       adaptiveIcon: {
-        foregroundImage: "./assets/images/ic_launcher.png",
-        backgroundColor: "#ffffff"
+        foregroundImage: "./assets/images/adaptive-icon.png",
+        backgroundColor: "#ffffff",
       },
       edgeToEdgeEnabled: true,
       package: "com.albert2moon.ParadiseApp",
@@ -30,7 +34,7 @@ export default {
     web: {
       bundler: "metro",
       output: "static",
-      favicon: "./assets/images/ic_launcher-web.png"
+      favicon: "./assets/images/ic_launcher-web.png",
     },
     plugins: [
       "expo-router",
@@ -38,24 +42,30 @@ export default {
         "expo-splash-screen",
         {
           image: "./assets/images/logo-new.png",
-          imageWidth: 150,
+          imageWidth: 200,
           resizeMode: "contain",
-          backgroundColor: "#ffffff"
-        }
+          backgroundColor: "#ffffff",
+          dark: {
+            image: "./assets/images/splash-icon-dark.png",
+            imageWidth: 200,
+            resizeMode: "contain",
+            backgroundColor: "#151718",
+          },
+        },
       ],
       "expo-web-browser",
-      "expo-notifications"
+      "expo-notifications",
     ],
     experiments: {
-      typedRoutes: true
+      typedRoutes: true,
     },
     extra: {
       router: {},
       eas: {
-        projectId: "9f85f5ed-1107-4df2-87c0-24a04bdee28d"
+        projectId: "9f85f5ed-1107-4df2-87c0-24a04bdee28d",
       },
       BASE_URL: process.env.BASE_URL,
     },
-    owner: "albertmoon"
-  }
+    owner: "albertmoon",
+  },
 };

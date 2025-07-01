@@ -1,13 +1,16 @@
+// src/components/ui/Button.tsx
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { type ButtonProps, Pressable, StyleSheet, ActivityIndicator } from "react-native";
+import { type ButtonProps as RNButtonProps, Pressable, StyleSheet, ActivityIndicator } from "react-native";
 import { ThemedText } from "../ThemedText";
 
-export type ThemedButtonProps = ButtonProps & {
+export type ButtonProps = RNButtonProps & {
   lightColor?: string;
   darkColor?: string;
   type?: "default" | "icon" | "rounded" | "icon-rounded";
   title?: string;
   loading?: boolean;
+  style?: any;
+  textStyle?: any; // Add textStyle prop
 };
 
 export function Button({
@@ -16,10 +19,11 @@ export function Button({
   type = "default",
   title,
   onPress,
+  style,
+  textStyle,
   loading = false,
   ...rest
-}: ThemedButtonProps) {
-
+}: ButtonProps) {
   const bgColor = useThemeColor({}, "button");
 
   return (
@@ -27,11 +31,12 @@ export function Button({
       style={[
         styles.button,
         { backgroundColor: bgColor },
-        type === "default" ? styles.default : undefined,
-        type === "icon" ? styles.icon : undefined,
-        type === "rounded" ? styles.rounded : undefined,
-        type === "icon-rounded" ? styles.iconRounded : undefined,
+        type === "default" && styles.default,
+        type === "icon" && styles.icon,
+        type === "rounded" && styles.rounded,
+        type === "icon-rounded" && styles.iconRounded,
         loading && { opacity: 0.7 },
+        style, // Apply custom style
       ]}
       onPress={loading ? undefined : onPress}
       disabled={loading}
@@ -40,7 +45,9 @@ export function Button({
       {loading ? (
         <ActivityIndicator color="#fff" />
       ) : (
-        <ThemedText type='default' style={styles.text}>{title}</ThemedText>
+        <ThemedText type='default' style={[styles.text, textStyle]}>
+          {title}
+        </ThemedText>
       )}
     </Pressable>
   );
@@ -48,20 +55,25 @@ export function Button({
 
 const styles = StyleSheet.create({
   button: {
-    width: "100%",
-    height: 50,
+    minWidth: 100,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
     justifyContent: 'center',
     alignItems: 'center',
-    marginVertical: 10
+    borderRadius: 8,
   },
   text: {
-    color: "#fff"
+    color: "#fff",
+    fontSize: 16,
   },
-  default: {
-    minWidth: "100%",
-    borderRadius: 10,
-  },
+  default: {},
   icon: {},
-  rounded: {},
-  iconRounded: {},
+  rounded: {
+    borderRadius: 24,
+  },
+  iconRounded: {
+    borderRadius: 24,
+    width: 48,
+    height: 48,
+  },
 });

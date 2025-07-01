@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/Button";
 import api from "@/utils/api";
 import { useReduxAuth } from "@/hooks/useReduxAuth";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import {
   Alert,
   KeyboardAvoidingView,
@@ -17,6 +17,8 @@ import {
   ScrollView,
   StyleSheet,
 } from "react-native";
+import { useReduxHouse } from "@/hooks/useReduxHouse";
+import { useReduxMembers } from "@/hooks/useReduxMembers";
 
 interface UserFormData {
   id: number | null;
@@ -28,17 +30,39 @@ interface UserFormData {
   zipCode: string;
   phone: string;
   role: string;
-  house: string | null;
+  houseId: number | null;
   image: string | null;
   joinedDate: string | null;
   leavingDate: string | null;
   password: string;
 }
 
+const getSafeParam = (param: any): string => {
+  return Array.isArray(param) ? param[0] || "" : param || "";
+};
+
 export default function EditProfileScreen() {
   const navigation = useRouter();
   const params = useLocalSearchParams();
   const { user: currentUser } = useReduxAuth();
+  const { houses } = useReduxHouse();
+  const { reload } = useReduxMembers();
+
+  // Extract all params as primitives
+  const paramId = getSafeParam(params.id);
+  const paramName = getSafeParam(params.name);
+  const paramEmail = getSafeParam(params.email);
+  const paramGender = getSafeParam(params.gender);
+  const paramCity = getSafeParam(params.city);
+  const paramState = getSafeParam(params.state);
+  const paramZipCode = getSafeParam(params.zipCode);
+  const paramPhone = getSafeParam(params.phone);
+  const paramRole = getSafeParam(params.role);
+  const paramHouseId = getSafeParam(params.houseId);
+  const paramImage = getSafeParam(params.image);
+  const paramJoinedDate = getSafeParam(params.joinedDate);
+  const paramLeavingDate = getSafeParam(params.leavingDate);
+  const paramPassword = getSafeParam(params.password);
 
   const [formData, setFormData] = useState<UserFormData>({
     id: null,
@@ -50,7 +74,7 @@ export default function EditProfileScreen() {
     zipCode: "",
     phone: "",
     role: "",
-    house: null,
+    houseId: null,
     image: null,
     joinedDate: null,
     leavingDate: null,
@@ -58,30 +82,39 @@ export default function EditProfileScreen() {
   });
 
   const [loading, setLoading] = useState(false);
-
-  const getParamValue = (value: any): string => {
-    return Array.isArray(value) ? value[0] || "" : value || "";
-  };
+  const isMountedRef = useRef(true);
+  const currentUserId = currentUser?.id ?? null;
 
   useEffect(() => {
-    if (params?.id) {
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isMountedRef.current) return;
+
+    if (paramId) {
       setFormData({
-        id: Number(params.id),
-        name: getParamValue(params.name),
-        email: getParamValue(params.email),
-        gender: getParamValue(params.gender),
-        city: getParamValue(params.city),
-        state: getParamValue(params.state),
-        zipCode: getParamValue(params.zipCode),
-        phone: getParamValue(params.phone),
-        role: getParamValue(params.role),
-        house: getParamValue(params.house) || null,
-        image: getParamValue(params.image) || null,
-        joinedDate: getParamValue(params.joinedDate) || null,
-        leavingDate: getParamValue(params.leavingDate) || null,
-        password: getParamValue(params.password),
+        id: Number(paramId),
+        name: paramName,
+        email: paramEmail,
+        gender: paramGender,
+        city: paramCity,
+        state: paramState,
+        zipCode: paramZipCode,
+        phone: paramPhone,
+        role: paramRole,
+        houseId: Number(paramHouseId) || null,
+        image: paramImage || null,
+        joinedDate: paramJoinedDate || null,
+        leavingDate: paramLeavingDate || null,
+        password: paramPassword,
       });
-    } else if (currentUser) {
+    } else if (
+      currentUser &&
+      formData.id !== (currentUserId ? String(currentUserId) : null)
+    ) {
       setFormData({
         id: currentUser.id ?? null,
         name: currentUser.name ?? "",
@@ -92,14 +125,32 @@ export default function EditProfileScreen() {
         zipCode: currentUser.zipCode ?? "",
         phone: currentUser.phone ?? "",
         role: currentUser.role ?? "",
-        house: currentUser.house ?? null,
+        houseId: currentUser.houseId ? currentUser.houseId : null,
         image: currentUser.image ?? null,
         joinedDate: currentUser.joinedDate ?? null,
         leavingDate: currentUser.leavingDate ?? null,
         password: "",
       });
     }
-  }, [params, currentUser]);
+  }, [
+    paramId,
+    paramName,
+    paramEmail,
+    paramGender,
+    paramCity,
+    paramState,
+    paramZipCode,
+    paramPhone,
+    paramRole,
+    paramHouseId,
+    paramImage,
+    paramJoinedDate,
+    paramLeavingDate,
+    paramPassword,
+    currentUserId,
+    formData.id,
+    currentUser,
+  ]);
 
   // Create a handler for each field
   const handleNameChange = (value: string) =>
@@ -116,6 +167,9 @@ export default function EditProfileScreen() {
     setFormData((prev) => ({ ...prev, zipCode: value }));
   const handlePhoneChange = (value: string) =>
     setFormData((prev) => ({ ...prev, phone: value }));
+  const handleHouseChange = (value: number | null) => {
+    setFormData((prev) => ({ ...prev, houseId: value }));
+  };
 
   const handleUpdate = useCallback(async () => {
     if (!formData.id) {
@@ -125,7 +179,6 @@ export default function EditProfileScreen() {
 
     setLoading(true);
     try {
-      // Create a payload without password if it's empty
       const payload = { ...formData };
       if (payload.password === "") {
         const { password, ...rest } = payload;
@@ -135,6 +188,8 @@ export default function EditProfileScreen() {
       }
 
       Alert.alert("Success", "Profile updated successfully!");
+
+      await reload();
       navigation.back();
     } catch (error: any) {
       Alert.alert(
@@ -144,7 +199,12 @@ export default function EditProfileScreen() {
     } finally {
       setLoading(false);
     }
-  }, [formData, navigation]);
+  }, [formData, navigation, reload]);
+
+  const houseOptions = houses.map((house) => ({
+    label: house.name,
+    value: house.id,
+  }));
 
   return (
     <ThemedView style={styles.container}>
@@ -191,6 +251,21 @@ export default function EditProfileScreen() {
               items={["MALE", "FEMALE"]}
               value={formData.gender}
               onValueChange={handleGenderChange}
+            />
+          </ThemedView>
+          <ThemedView style={styles.inputField}>
+            <ThemedText type="default">House</ThemedText>
+            <ThemedDropdown
+              placeholder="Select house"
+              items={houseOptions.map((h) => h.label)}
+              value={
+                houseOptions.find((h) => h.value === formData.houseId)?.label ||
+                ""
+              }
+              onSelect={(label) => {
+                const found = houseOptions.find((h) => h.label === label);
+                handleHouseChange(found?.value || null);
+              }}
             />
           </ThemedView>
 
@@ -253,7 +328,6 @@ const styles = StyleSheet.create({
   },
   inputField: {
     width: "100%",
-    marginBottom: 16,
   },
   keyboardAvoid: {
     width: "100%",

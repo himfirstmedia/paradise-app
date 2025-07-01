@@ -64,7 +64,7 @@ export default function HomeScreen() {
           </ThemedView>
 
           <View style={{ marginTop: "8%", gap: 12 }}>
-            <ThemedText type="title" style={{ width: "80%", color: "#FFFFFF" }}>
+            <ThemedText type="title" style={{ width: "100%", color: "#FFFFFF" }}>
               Welcome To Paradise Management.
             </ThemedText>
           </View>
@@ -72,14 +72,26 @@ export default function HomeScreen() {
 
         <ThemedView style={styles.subContainer}>
           <View style={{ marginBottom: "5%", marginTop: "2%", height: 130 }}>
-            {!scriptureLoading && latestScripture && (
-              <ScriptureCard
-                verse={latestScripture.verse}
-                book={latestScripture.book}
-                version={latestScripture.version}
-                scripture={latestScripture.scripture}
-              />
-            )}
+            {!scriptureLoading ? (
+              latestScripture ? (
+                <ScriptureCard
+                  verse={latestScripture.verse}
+                  book={latestScripture.book}
+                  version={latestScripture.version}
+                  scripture={latestScripture.scripture}
+                />
+              ) : (
+                <ThemedText
+                  type="default"
+                  style={{
+                    textAlign: "center",
+                    color: "#888",
+                  }}
+                >
+                  No scriptures to display at the moment.
+                </ThemedText>
+              )
+            ) : null}
           </View>
 
           <View style={{ marginTop: "1%" }}>
@@ -132,6 +144,8 @@ const styles = StyleSheet.create({
     borderBottomStartRadius: 20,
     paddingHorizontal: 15,
     marginBottom: "5%",
+    paddingTop: 20,
+    paddingBottom: 20
   },
   row: {
     flexDirection: "row",

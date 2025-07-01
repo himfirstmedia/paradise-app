@@ -11,23 +11,19 @@ import {
 } from "react-native";
 import api from "@/utils/api";
 import { useRouter } from "expo-router";
-import { UserSessionUtils } from "@/utils/UserSessionUtils";
+import { useReduxAuth } from "@/hooks/useReduxAuth";
 
 export default function ChangePasswordScreen() {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
-
-  const [currentPasswordError, setCurrentPasswordError] = useState<
-    string | null
-  >(null);
+  const [currentPasswordError, setCurrentPasswordError] = useState<string | null>(null);
   const [newPasswordError, setNewPasswordError] = useState<string | null>(null);
-  const [confirmPasswordError, setConfirmPasswordError] = useState<
-    string | null
-  >(null);
+  const [confirmPasswordError, setConfirmPasswordError] = useState<string | null>(null);
 
   const navigation = useRouter();
+  const { user } = useReduxAuth(); 
 
   const validate = () => {
     let valid = true;
@@ -54,33 +50,42 @@ export default function ChangePasswordScreen() {
   };
 
   const handlePasswordChange = async () => {
-    if (!validate()) return;
-    setLoading(true);
-    try {
-      const user = await UserSessionUtils.getUserDetails();
-      if (!user) {
-        Alert.alert("Error", "User not found.");
-        setLoading(false);
-        return;
-      }
-      await api.put(`/users/${user.id}`, {
-        password: newPassword,
-        oldPassword: currentPassword,
-      });
-      Alert.alert("Success", "Password updated successfully!");
-      setCurrentPassword("");
-      setNewPassword("");
-      setConfirmPassword("");
-      navigation.back();
-    } catch (error: any) {
-      Alert.alert(
-        "Error",
-        error?.response?.data?.message || "Failed to update password."
-      );
-    } finally {
+  if (!validate()) return;
+  setLoading(true);
+  
+  try {
+    if (!user || !user.id) {
+      Alert.alert("Error", "User not found.");
       setLoading(false);
+      return;
     }
-  };
+
+    // Send password data at root level
+    await api.put(`/users/${user.id}`, {
+      oldPassword: currentPassword,
+      password: newPassword
+    });
+    
+    Alert.alert("Success", "Password updated successfully!");
+    setCurrentPassword("");
+    setNewPassword("");
+    setConfirmPassword("");
+    navigation.back();
+  } catch (error: any) {
+    let errorMessage = "Failed to update password. Please try again.";
+    
+    if (error.response) {
+      // Handle backend error messages
+      errorMessage = error.response.data.message || errorMessage;
+    } else if (error.message) {
+      errorMessage = error.message;
+    }
+    
+    Alert.alert("Error", errorMessage);
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <>

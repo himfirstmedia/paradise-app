@@ -31,7 +31,7 @@ export function Avatar({ size = 40 }: AvatarProps) {
     }
   };
 
-  // Prevent modal if "profile" is in the URL
+
   const shouldShowModal = popoverVisible && !pathname.includes("profile");
 
   return (

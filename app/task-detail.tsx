@@ -2,19 +2,24 @@ import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { useReduxTasks } from "@/hooks/useReduxTasks";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import api from "@/utils/api"; // <-- Make sure this import is present
+import api from "@/utils/api";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { Alert, Image, Pressable, ScrollView, StyleSheet } from "react-native";
+import {
+  Alert,
+  Image,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  ActivityIndicator,
+} from "react-native";
 
 export default function TaskDetailScreen() {
   const primaryColor = useThemeColor({}, "selection");
-  const navigation = useRouter();
-  const params = useLocalSearchParams();
-  const name = params.name as string;
-  const description = params.description as string;
-  const instruction = params.instruction as string;
-  const id = params.id as string; // <-- Make sure you pass id in params when navigating
-  const { reload } = useReduxTasks();
+  const router = useRouter();
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const { tasks, reload, loading } = useReduxTasks();
+
+  const task = tasks.find((t) => t.id.toString() === id);
 
   const handleDelete = () => {
     Alert.alert("Delete Task", "Are you sure you want to delete this Task?", [
@@ -27,7 +32,7 @@ export default function TaskDetailScreen() {
             await api.delete(`/tasks/${id}`);
             await reload();
             Alert.alert("Deleted", "Task deleted successfully.");
-            navigation.back();
+            router.back();
           } catch (error: any) {
             Alert.alert(
               "Error",
@@ -39,28 +44,34 @@ export default function TaskDetailScreen() {
     ]);
   };
 
+  if (loading || !task) {
+    return (
+      <ThemedView style={[styles.container, { justifyContent: "center", alignItems: "center" }]}>
+        <ActivityIndicator size="large" color={primaryColor} />
+        <ThemedText>Loading Task...</ThemedText>
+      </ThemedView>
+    );
+  }
+
   return (
     <ThemedView style={styles.container}>
       <ScrollView
-        contentContainerStyle={{
-          width: "100%",
-          paddingBottom: "30%",
-        }}
-        style={[styles.innerContainer]}
+        contentContainerStyle={{ width: "100%", paddingBottom: "30%" }}
+        style={styles.innerContainer}
       >
         <ThemedText type="title" style={{ marginBottom: "4%" }}>
-          {name}
+          {task.name}
         </ThemedText>
 
         <ThemedView style={styles.column}>
           <ThemedText type="subtitle">Task Description</ThemedText>
-          <ThemedText type="default">{description}</ThemedText>
+          <ThemedText type="default">{task.description}</ThemedText>
         </ThemedView>
 
-        {instruction && instruction.trim() !== "" && (
+        {task.instruction?.trim() !== "" && (
           <ThemedView style={styles.column}>
             <ThemedText type="subtitle">Special Instruction</ThemedText>
-            <ThemedText type="default">{instruction}</ThemedText>
+            <ThemedText type="default">{task.instruction}</ThemedText>
           </ThemedView>
         )}
       </ScrollView>
@@ -78,6 +89,7 @@ export default function TaskDetailScreen() {
   );
 }
 
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -93,6 +105,7 @@ const styles = StyleSheet.create({
   column: {
     flexDirection: "column",
     alignItems: "flex-start",
+    marginBottom: 20
   },
   taskCTAbtn: {
     height: 60,

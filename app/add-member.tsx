@@ -9,6 +9,7 @@ import { ThemedView } from "@/components/ThemedView";
 import { Button } from "@/components/ui/Button";
 import { useReduxAuth } from "@/hooks/useReduxAuth";
 import { useReduxMembers } from "@/hooks/useReduxMembers";
+import { useReduxHouse } from "@/hooks/useReduxHouse";
 import api from "@/utils/api";
 import { useRouter } from "expo-router";
 import { useState } from "react";
@@ -36,11 +37,6 @@ const roleMap: Record<string, string> = {
   Individual: "INDIVIDUAL",
 };
 
-const houseOptions = [
-  { label: "LLW House", value: 1 },
-  { label: "CE House", value: 2 },
-  // Add more houses as needed, ensure the value matches the house.id in your DB
-];
 
 export default function AddMemberScreen() {
   const [name, setName] = useState("");
@@ -56,6 +52,7 @@ export default function AddMemberScreen() {
   const [loading, setLoading] = useState(false);
   const {user} = useReduxAuth();
   const { reload } = useReduxMembers();
+  const { houses, loading: housesLoading, error: housesError } = useReduxHouse();
   const navigation = useRouter();
   
   const currentUserRole = user?.role;
@@ -64,6 +61,11 @@ export default function AddMemberScreen() {
   if (currentUserRole === "DIRECTOR") {
     roleOptions.push("Facility Manager", "Resident Manager");
   }
+
+   const houseOptions = houses.map(house => ({
+    label: house.name,
+    value: house.id
+  }));
 
   const handleMemberCreation = async (): Promise<void> => {
     if (
@@ -188,18 +190,24 @@ export default function AddMemberScreen() {
               selectedRole === "Facility Manager" ||
               selectedRole === "Resident Manager") && (
               <ThemedView style={styles.inputField}>
-              <ThemedText type="default">House</ThemedText>
-              <ThemedDropdown
-                placeholder="Select house"
-                items={houseOptions.map((h) => h.label)}
-                value={
-                houseOptions.find((h) => h.value === houseId)?.label || ""
-                }
-                onSelect={(label) => {
-                const found = houseOptions.find((h) => h.label === label);
-                setHouseId(found ? found.value : null);
-                }}
-              />
+                <ThemedText type="default">House</ThemedText>
+                {housesLoading ? (
+                  <ThemedText>Loading houses...</ThemedText>
+                ) : housesError ? (
+                  <ThemedText style={{ color: "red" }}>
+                    Error loading houses
+                  </ThemedText>
+                ) : (
+                  <ThemedDropdown
+                    placeholder="Select house"
+                    items={houseOptions.map(h => h.label)}
+                    value={houseOptions.find(h => h.value === houseId)?.label || ""}
+                    onSelect={(label) => {
+                      const found = houseOptions.find(h => h.label === label);
+                      setHouseId(found ? found.value : null);
+                    }}
+                  />
+                )}
               </ThemedView>
             )}
 

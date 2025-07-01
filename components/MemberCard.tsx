@@ -1,4 +1,4 @@
-import { Member } from "@/hooks/useReduxMembers";
+import { User } from '@/redux/slices/userSlice'; // Import User type from slice
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
@@ -9,28 +9,31 @@ import { ThemedView } from "./ThemedView";
 
 export type RoleType = "RESIDENT" | "INDIVIDUAL";
 
-interface TeamCardProps {
-  members: Member[];
+interface MemberCardProps {
+  members: User[]; // Use User interface from slice
 }
 
-// Static labels based on role type
 const ROLE_LABELS: Record<RoleType, string> = {
   RESIDENT: "Residents",
   INDIVIDUAL: "Individuals",
 };
 
-export function MemberCard({ members }: TeamCardProps) {
+function isRoleType(role: string): role is RoleType {
+  return role === "RESIDENT" || role === "INDIVIDUAL";
+}
+
+export function MemberCard({ members }: MemberCardProps) {
   const bgColor = useThemeColor({}, "input");
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
-  const navigation = useRouter();
+  const router = useRouter();
 
-  // Group teams by role type
-  const groupedMembers: Record<RoleType, Member[]> = {
+  const groupedMembers: Record<RoleType, User[]> = {
     RESIDENT: [],
     INDIVIDUAL: [],
   };
+  
   members.forEach((member) => {
-    if (member.role === "RESIDENT" || member.role === "INDIVIDUAL") {
+    if (isRoleType(member.role)) {
       groupedMembers[member.role].push(member);
     }
   });
@@ -39,26 +42,26 @@ export function MemberCard({ members }: TeamCardProps) {
     <>
       {(Object.keys(groupedMembers) as RoleType[]).map((role) => {
         const groupMembers = groupedMembers[role];
-        if (!groupMembers || groupMembers.length === 0) return null;
+        if (groupMembers.length === 0) return null;
+        
         const showViewAll = groupMembers.length > 4;
         const isExpanded = expanded[role] || false;
-        const displayedMembers =
-          showViewAll && !isExpanded ? groupMembers.slice(0, 4) : groupMembers;
+        const displayedMembers = showViewAll && !isExpanded 
+          ? groupMembers.slice(0, 4) 
+          : groupMembers;
 
         return (
           <ThemedView style={styles.container} key={role}>
-            <ThemedView style={[styles.row, { marginBottom: "5%" }]}>
+            <ThemedView style={[styles.row, { marginBottom: 12 }]}>
               <ThemedText type="subtitle">
                 {ROLE_LABELS[role]}
               </ThemedText>
               {showViewAll && (
                 <Pressable
-                  onPress={() =>
-                    setExpanded((prev) => ({
-                      ...prev,
-                      [role]: !prev[role],
-                    }))
-                  }
+                  onPress={() => setExpanded(prev => ({
+                    ...prev,
+                    [role]: !prev[role]
+                  }))}
                 >
                   <ThemedText type="default">
                     {isExpanded ? "View Less" : "View All"}
@@ -67,24 +70,16 @@ export function MemberCard({ members }: TeamCardProps) {
               )}
             </ThemedView>
             <ThemedView style={styles.taskButtons}>
-              {displayedMembers.map((member, idx) => (
+              {displayedMembers.map((member) => (
                 <Pressable
-                  key={idx}
-                  style={[
-                    styles.row,
-                    styles.button,
-                    { backgroundColor: bgColor },
-                  ]}
-                  onPress={() =>
-                    navigation.push({
-                      pathname: "/member-detail",
-                      params: {
-                        ...member,
-                        house: member.house ? member.house.name : null, // Pass house as string or null
-                        task: JSON.stringify(member.task ?? []), // Pass tasks as JSON string
-                      },
-                    })
-                  }
+                  key={member.id}
+                  style={[styles.row, styles.button, { backgroundColor: bgColor }]}
+                  onPress={() => router.push({
+                    pathname: "/member-detail",
+                    params: {
+                      id: member.id,
+                    }
+                  })}
                 >
                   <ThemedText type="default">
                     {member.name}

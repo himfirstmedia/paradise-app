@@ -46,11 +46,14 @@ export function Alert({
 
 const styles = StyleSheet.create({
     alertContainer: {
+        position: "absolute",
         padding: 16,
-        borderRadius: 8,
+        borderRadius: 12,
         marginVertical: 8,
         alignItems: "center",
         justifyContent: "center",
+        bottom: 60,
+        left: 15
     },
     alertText: {
         fontSize: 16,

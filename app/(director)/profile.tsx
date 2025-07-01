@@ -218,6 +218,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     marginBottom: 15,
     paddingTop: 20,
+    paddingBottom: 20
   },
   row: {
     flexDirection: "row",

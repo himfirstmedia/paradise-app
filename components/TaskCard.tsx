@@ -7,7 +7,7 @@ import { useThemeColor } from "@/hooks/useThemeColor";
 import { useReduxTasks } from "@/hooks/useReduxTasks";
 import type { ProgressType } from "@/redux/slices/taskSlice";
 import { Task } from "@/redux/slices/taskSlice";
-import { useSegments } from "expo-router";
+import { useRouter, useSegments } from "expo-router";
 
 interface TaskCardProps {
   tasks?: Task[];
@@ -16,6 +16,7 @@ interface TaskCardProps {
 }
 
 export function TaskCard({ onPress, tasks }: TaskCardProps) {
+  const router = useRouter();
   const bgColor = useThemeColor({}, "input");
   const segments = useSegments();
   const userType = segments[0];
@@ -91,7 +92,13 @@ export function TaskCard({ onPress, tasks }: TaskCardProps) {
                     styles.button,
                     { backgroundColor: bgColor },
                   ]}
-                  onPress={() => onPress?.(task)}
+                  onPress={() => {
+                    router.push({
+                      pathname: "/task-detail",
+                      params: { id: task.id },
+                    });
+                    onPress?.(task);
+                  }}
                 >
                   <ThemedText type="default">{task.name}</ThemedText>
                   <Image

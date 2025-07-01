@@ -62,13 +62,14 @@ const styles = StyleSheet.create({
   header: {
     paddingVertical: 5,
     paddingHorizontal: 15,
-    height: 60,
+    paddingTop: "10%",
+    height: 100,
     flexDirection: "row",
     alignItems: "center",
-    borderBottomEndRadius: 20,
-    borderBottomStartRadius: 20,
     justifyContent: "space-between",
     width: "100%",
+    borderBottomEndRadius: 20,
+    borderBottomStartRadius: 20,
   },
   backIcon: {
     width: 26,

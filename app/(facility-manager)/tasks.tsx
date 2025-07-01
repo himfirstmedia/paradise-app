@@ -24,7 +24,7 @@ export default function TabTwoScreen() {
   const pendingColor = useThemeColor({}, "pending");
   const overdueColor = useThemeColor({}, "overdue");
   const navigation = useRouter();
-  const { loading, tasks } = useReduxTasks();
+  const { loading: tasksLoading, tasks } = useReduxTasks();
 
   let pending = 0,
     completed = 0,
@@ -102,15 +102,28 @@ export default function TabTwoScreen() {
           </ThemedView>
 
           <ThemedView style={styles.subContainer}>
-            {loading ? (
-              <ActivityIndicator
-                size="large"
-                color={primaryColor}
-                style={{ marginTop: "5%" }}
-              />
-            ) : (
-              <TaskCard tasks={tasks} />
-            )}
+            <View style={{ marginTop: "1%" }}>
+              {tasksLoading ? (
+                <ActivityIndicator
+                  size="large"
+                  color={primaryColor}
+                  style={{ marginTop: "5%" }}
+                />
+              ) : tasks.length === 0 ? (
+                <ThemedText
+                  type="default"
+                  style={{
+                    textAlign: "center",
+                    marginTop: 24,
+                    color: "#888",
+                  }}
+                >
+                  There are no tasks assigned yet.
+                </ThemedText>
+              ) : (
+                <TaskCard tasks={tasks} />
+              )}
+            </View>
           </ThemedView>
         </ScrollView>
 
@@ -155,6 +168,8 @@ const styles = StyleSheet.create({
     borderBottomStartRadius: 20,
     paddingHorizontal: 15,
     marginBottom: 15,
+    paddingTop: 20,
+    paddingBottom: 20
   },
   row: {
     flexDirection: "row",

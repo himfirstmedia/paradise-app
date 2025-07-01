@@ -1,16 +1,20 @@
 import { Alert } from "@/components/Alert";
 import { TaskCard } from "@/components/TaskCard";
-import type { ProgressType } from "@/redux/slices/taskSlice"; 
+import type { ProgressType } from "@/redux/slices/taskSlice";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { FloatingButton } from "@/components/ui/FloatingButton";
 import { UserAvatar } from "@/components/ui/UserAvatar";
 import { useReduxTasks } from "@/hooks/useReduxTasks";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { UserSessionUtils } from "@/utils/UserSessionUtils";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
+import { useReduxHouse } from "@/hooks/useReduxHouse";
+import { useReduxMembers } from "@/hooks/useReduxMembers";
+import { AlertDialog } from "@/components/ui/AlertDialog";
+import api from "@/utils/api";
+import { useReduxAuth } from "@/hooks/useReduxAuth";
 
 function getFriendlyHouseName(house?: string | null) {
   if (!house) return "";
@@ -26,17 +30,53 @@ function getFriendlyHouseName(house?: string | null) {
 }
 
 export default function MemberDetailScreen() {
-  const param = useLocalSearchParams();
+  const params = useLocalSearchParams();
+  const userId = Array.isArray(params.id) ? params.id[0] : params.id;
+
   const bgColor = useThemeColor({}, "background");
   const navigation = useRouter();
-  const [showAlert, setShowAlert] = useState(false);
   const [alertMessage, setAlertMessage] = useState("");
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
+  
   const { tasks, reload: reloadTasks } = useReduxTasks();
+  const { houses } = useReduxHouse();
+  const { members, reload } = useReduxMembers();
+  const { user } = useReduxAuth();
+
+  useEffect(() => {
+    setCurrentUserRole(user?.role ?? null);
+  }, [user]);
+
+  useFocusEffect(
+    useCallback(() => {
+      reloadTasks();
+      reload();
+    }, [reloadTasks, reload])
+  );
+
+  if (!userId) {
+    return (
+      <ThemedView style={styles.container}>
+        <ThemedText type="default">Member ID is missing.</ThemedText>
+      </ThemedView>
+    );
+  }
+
+  const member = members.find((m) => m.id === Number(userId));
+
+
+  if (!member) {
+    return (
+      <ThemedView style={styles.container}>
+        <ThemedText type="default">Member not found.</ThemedText>
+      </ThemedView>
+    );
+  }
 
   const {
-    id,
     name,
-    house,
+    houseId,
     role,
     phone,
     email,
@@ -47,20 +87,45 @@ export default function MemberDetailScreen() {
     zipCode,
     gender,
     image,
-    password,
-  } = param;
+  } = member;
 
-  const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
+  // Fixed: Convert task.userId to string for consistent comparison
+  const assignedTasks = tasks.filter(
+    (task) => task.userId !== null && task.userId !== undefined && String(task.userId) === userId
+  );
 
-  useEffect(() => {
-    (async () => {
-      const user = await UserSessionUtils.getUserDetails();
-      setCurrentUserRole(user?.role ?? null);
-    })();
-  }, []);
+  // Fixed: Handle all types of house IDs consistently
+  const getHouseNameById = (id: number | string | null) => {
+    if (id === null || id === undefined) return "";
+    
+    // Convert to string for consistent comparison
+    const idStr = String(id);
+    const foundHouse = houses.find((house) => 
+      house.id !== null && house.id !== undefined && String(house.id) === idStr
+    );
+    
+    return foundHouse ? foundHouse.name : "";
+  };
 
-  const memberId = typeof id === "string" ? Number(id) : id;
-  const assignedTasks = tasks.filter((task) => task.userId === memberId);
+  // Fixed: Simplify house display logic
+  const houseDisplayName = houseId !== null && houseId !== undefined
+    ? getHouseNameById(houseId)
+    : getFriendlyHouseName(houseId ? String(houseId) : null);
+
+  const showEditDelete = currentUserRole !== "FACILITY_MANAGER";
+
+  const handleDeleteMember = async () => {
+    try {
+      await api.delete(`/users/${userId}`);
+      setAlertMessage(`${name} has been successfully removed`);
+      await reload();
+      setTimeout(() => navigation.back(), 1500);
+    } catch {
+      setAlertMessage("Failed to delete member. Please try again.");
+    } finally {
+      setShowDeleteDialog(false);
+    }
+  };
 
   const assignmentsWithOnPress = assignedTasks.map((assignment) => ({
     ...assignment,
@@ -77,18 +142,6 @@ export default function MemberDetailScreen() {
         },
       }),
   }));
-
-  useEffect(() => {
-    console.log("Assigned tasks for member", memberId, assignedTasks);
-  }, [memberId, assignedTasks]);
-
-  useFocusEffect(
-    useCallback(() => {
-      reloadTasks();
-    }, [reloadTasks])
-  );
-
-  const showEditDelete = currentUserRole !== "FACILITY_MANAGER";
 
   return (
     <ThemedView style={styles.container}>
@@ -120,9 +173,7 @@ export default function MemberDetailScreen() {
         {role !== "INDIVIDUAL" && (
           <View style={styles.row}>
             <ThemedText type="defaultSemiBold">House:</ThemedText>
-            <ThemedText type="default">
-              {getFriendlyHouseName(house as string)}
-            </ThemedText>
+            <ThemedText type="default">{houseDisplayName}</ThemedText>
           </View>
         )}
         <View style={styles.row}>
@@ -138,7 +189,7 @@ export default function MemberDetailScreen() {
           <ThemedText type="default">{zipCode}</ThemedText>
         </View>
 
-        <View style={[styles.row, {gap: 20}]}>
+        <View style={[styles.row, { gap: 20 }]}>
           <View style={styles.row}>
             <ThemedText type="defaultSemiBold">City:</ThemedText>
             <ThemedText type="default">{city}</ThemedText>
@@ -188,12 +239,7 @@ export default function MemberDetailScreen() {
                 {
                   label: "Delete Member",
                   icon: require("@/assets/icons/delete.png"),
-                  onPress: () => {
-                    setAlertMessage(
-                      `You are removing ${name} from the system. This action cannot be undone.`
-                    );
-                    setShowAlert(true);
-                  },
+                  onPress: () => setShowDeleteDialog(true), // Updated
                 },
                 {
                   label: "Edit Profile",
@@ -202,9 +248,8 @@ export default function MemberDetailScreen() {
                     navigation.push({
                       pathname: "/edit-profile",
                       params: {
-                        id,
                         name,
-                        house,
+                        houseId,
                         role,
                         phone,
                         email,
@@ -215,7 +260,6 @@ export default function MemberDetailScreen() {
                         zipCode,
                         gender,
                         image,
-                        password,
                       },
                     }),
                 },
@@ -235,7 +279,23 @@ export default function MemberDetailScreen() {
         ]}
       />
 
-      {showAlert && <Alert type="error" message={alertMessage} />}
+      {/* Alert Dialog for delete confirmation */}
+      <AlertDialog
+        visible={showDeleteDialog}
+        title="Delete Member"
+        message={`Are you sure you want to remove ${name} from the system? This action cannot be undone.`}
+        type="destructive"
+        onCancel={() => setShowDeleteDialog(false)}
+        onConfirm={handleDeleteMember}
+        confirmText="Delete"
+      />
+
+      {alertMessage && (
+        <Alert
+          type={alertMessage.includes("successfully") ? "success" : "error"}
+          message={alertMessage}
+        />
+      )}
     </ThemedView>
   );
 }

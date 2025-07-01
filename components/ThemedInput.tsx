@@ -88,17 +88,20 @@ export function ThemedTextInput({
   type = "default",
   placeholder,
   errorMessage,
+  value, // Add value prop
+  onChangeText, // Add onChangeText prop
   ...rest
 }: ThemedInputProps) {
   const bgColor = useThemeColor({}, "input");
   const errorColor = useThemeColor({}, "overdue");
+  const textColor = useThemeColor({}, "text"); // Add text color
 
   return (
     <>
       <TextInput
         style={[
           styles.input,
-          { backgroundColor: bgColor },
+          { backgroundColor: bgColor, color: textColor }, // Add text color
           type === "default" ? styles.default : undefined,
           type === "floating" ? styles.floating : undefined,
           type === "rounded" ? styles.rounded : undefined,
@@ -106,6 +109,8 @@ export function ThemedTextInput({
         selectionColor={useThemeColor({}, "selection")}
         placeholder={placeholder}
         placeholderTextColor={useThemeColor({}, "placeholder")}
+        value={value} // Pass value prop
+        onChangeText={onChangeText} // Pass onChangeText prop
         {...rest}
       />
       <View style={{ height: 20, justifyContent: "center" }}>

@@ -1,6 +1,6 @@
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import { loadScriptures } from "@/redux/slices/scriptureSlice";
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 
 export function useReduxScripture() {
   const dispatch = useAppDispatch();
@@ -8,12 +8,11 @@ export function useReduxScripture() {
     (state) => state.scripture
   );
 
-  // Use ref to track initial load
   const initialLoad = useRef(false);
 
-  const reload = () => {
-    dispatch(loadScriptures());
-  };
+  const reload = useCallback(() => {
+    return dispatch(loadScriptures());
+  }, [dispatch]);
 
   useEffect(() => {
     if (!initialLoad.current && scriptures.length === 0 && !loading) {

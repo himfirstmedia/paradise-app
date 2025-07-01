@@ -106,6 +106,12 @@ export default function TeamsScreen() {
       completionPercent: 0,
     };
 
+  const nonAdminMembers = useMemo(() => {
+    return members.filter(
+      (member) => member.role !== "SUPER_ADMIN" && member.role !== "DIRECTOR"
+    );
+  }, [members]);
+
   return (
     <>
       <ThemedView style={styles.container}>
@@ -188,6 +194,17 @@ export default function TeamsScreen() {
                 color={primaryColor}
                 style={{ marginTop: "5%" }}
               />
+            ) : nonAdminMembers.length === 0 ? (
+              <ThemedText
+                type="default"
+                style={{
+                  textAlign: "center",
+                  marginTop: 24,
+                  color: "#888",
+                }}
+              >
+                There are no members yet.
+              </ThemedText>
             ) : (
               <>
                 <AdministratorCard members={members} />
@@ -229,12 +246,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
   },
   headerCard: {
-    height: 430,
+    height: 440,
     width: "100%",
     borderBottomEndRadius: 20,
     borderBottomStartRadius: 20,
     paddingHorizontal: 15,
     marginBottom: 15,
+    paddingTop: 20,
+    paddingBottom: 20,
   },
   row: {
     flexDirection: "row",
