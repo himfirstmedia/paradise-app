@@ -42,12 +42,12 @@ export default {
         "expo-splash-screen",
         {
           image: "./assets/images/logo-new.png",
-          imageWidth: 200,
+          imageWidth: 150,
           resizeMode: "contain",
           backgroundColor: "#ffffff",
           dark: {
             image: "./assets/images/splash-icon-dark.png",
-            imageWidth: 200,
+            imageWidth: 150,
             resizeMode: "contain",
             backgroundColor: "#151718",
           },
