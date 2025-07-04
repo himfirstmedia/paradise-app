@@ -78,7 +78,7 @@ export default function TabTwoScreen() {
               innerRadius={60}
               showGradient={false}
               strokeColor={primaryColor}
-              strokeWidth={10}
+              strokeWidth={5}
               legendTitle="Tasks Progress"
               centerLabelComponent={() => (
                 <View>

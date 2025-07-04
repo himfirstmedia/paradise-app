@@ -25,16 +25,19 @@ interface ScriptureCardProps {
 }
 
 function filterScriptures(scriptures: Scripture[]) {
-  const today = new Date();
   const isToday = (dateString: string | undefined) => {
-    if (!dateString) return false;
-    const date = new Date(dateString);
-    return (
-      date.getDate() === today.getDate() &&
-      date.getMonth() === today.getMonth() &&
-      date.getFullYear() === today.getFullYear()
-    );
-  };
+  if (!dateString) return false;
+
+  const date = new Date(dateString); // UTC ISO timestamp → local time
+  const now = new Date(); // local time
+
+  return (
+    date.getFullYear() === now.getFullYear() &&
+    date.getMonth() === now.getMonth() &&
+    date.getDate() === now.getDate()
+  );
+};
+
 
   const todaysVerses = scriptures.filter((s) => isToday(s.createdAt));
   const previousVerses = scriptures.filter((s) => !isToday(s.createdAt));
@@ -97,6 +100,7 @@ export function ScriptureItemCard({ scriptures, style }: ScriptureCardProps) {
               await api.delete(`/scriptures/${scripture.id}`);
               Alert.alert("Deleted", "Scripture deleted successfully.");
               // Optionally trigger a reload in parent
+              await reload();
             } catch {
               Alert.alert("Error", "Failed to delete scripture.");
             }
@@ -117,7 +121,6 @@ export function ScriptureItemCard({ scriptures, style }: ScriptureCardProps) {
         createdAt: new Date().toISOString(),
       });
       Alert.alert("Reposted", "Scripture moved to Today's Verses.");
-      // Optionally trigger a reload in parent
       await reload();
     } catch {
       Alert.alert("Error", "Failed to repost scripture.");
@@ -134,7 +137,7 @@ export function ScriptureItemCard({ scriptures, style }: ScriptureCardProps) {
       if (nodeHandle != null) {
         UIManager.measure(nodeHandle, (x, y, width, height, pageX, pageY) => {
           let left = pageX;
-          const verticalOffset = -45; // distance below the button
+          const verticalOffset = -45; 
           if (left + POPOVER_WIDTH > screenWidth) {
             left = screenWidth - POPOVER_WIDTH - 20;
           }
@@ -227,13 +230,14 @@ export function ScriptureItemCard({ scriptures, style }: ScriptureCardProps) {
                       style={StyleSheet.absoluteFill}
                       onPress={() => setPopoverVisible(null)}
                     >
-                      <View
+                      <ThemedView
                         style={[
                           styles.popover,
                           {
                             position: "absolute",
                             top: popoverPosition.top,
                             left: popoverPosition.left,
+                            shadowColor: "#222"
                           },
                         ]}
                       >
@@ -259,7 +263,7 @@ export function ScriptureItemCard({ scriptures, style }: ScriptureCardProps) {
                             Delete
                           </ThemedText>
                         </Pressable>
-                      </View>
+                      </ThemedView>
                     </Pressable>
                   </Modal>
                 </ThemedView>
@@ -280,7 +284,7 @@ const styles = StyleSheet.create({
   },
   row: {
     flexDirection: "row",
-    alignItems: "flex-start", // Align items to the top for better verse/scripture layout
+    alignItems: "flex-start", 
     justifyContent: "space-between",
     width: "100%",
   },
@@ -302,7 +306,7 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: "column",
     marginLeft: 10,
-    marginRight: 40, // space for the options button
+    marginRight: 40,
   },
   verseTitle: {
     fontSize: 18,
@@ -312,20 +316,18 @@ const styles = StyleSheet.create({
   },
   scriptureText: {
     fontSize: 16,
-    color: "#444",
+    color: "#666",
     flexWrap: "wrap",
   },
   popover: {
-    backgroundColor: "#fff",
     borderRadius: 10,
     paddingHorizontal: 16,
     paddingVertical: 10,
     minWidth: 180,
-    elevation: 5,
-    shadowColor: "#000",
+    elevation: 2,
     shadowOpacity: 0.15,
     shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 2, height: 2 },
     zIndex: 1000,
   },
   popoverButton: {

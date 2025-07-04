@@ -85,7 +85,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     position: "absolute",
-    bottom: "10%",
+    bottom: "5%",
     right: "5%",
   },
   icon: {

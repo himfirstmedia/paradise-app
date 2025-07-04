@@ -7,7 +7,7 @@ import { StyleSheet } from "react-native";
 export function Alert({
     message,
     type = "default",
-    duration = 3000, // duration in ms, default 3 seconds
+    duration = 3000, 
 }: {
     message: string;
     type?: "default" | "error" | "success";
@@ -53,7 +53,7 @@ const styles = StyleSheet.create({
         alignItems: "center",
         justifyContent: "center",
         bottom: 60,
-        left: 15
+        width: "100%"
     },
     alertText: {
         fontSize: 16,

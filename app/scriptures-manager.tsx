@@ -1,16 +1,23 @@
 import { ScriptureItemCard } from "@/components/ScriptureItemCard";
+import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { useReduxScripture } from "@/hooks/useReduxScripture";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { useRouter } from "expo-router";
 
-import { Image, Pressable, ScrollView, StyleSheet } from "react-native";
+import {
+  ActivityIndicator,
+  Image,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+} from "react-native";
 
 export default function ScripturesManagerScreen() {
   const primaryColor = useThemeColor({}, "selection");
 
   const navigation = useRouter();
-  const { scriptures } = useReduxScripture();
+  const { scriptures, loading } = useReduxScripture();
 
   return (
     <>
@@ -23,7 +30,26 @@ export default function ScripturesManagerScreen() {
           }}
           style={[styles.innerContainer]}
         >
-          <ScriptureItemCard scriptures={scriptures} />
+          {loading ? (
+            <ActivityIndicator
+              size="large"
+              color={primaryColor}
+              style={{ marginTop: "5%" }}
+            />
+          ) : scriptures.length === 0 ? (
+            <ThemedText
+              type="default"
+              style={{
+                textAlign: "center",
+                marginTop: 24,
+                color: "#888",
+              }}
+            >
+              There are no scriptures added yet.
+            </ThemedText>
+          ) : (
+            <ScriptureItemCard scriptures={scriptures} />
+          )}
         </ScrollView>
         <Pressable
           style={[styles.taskCTAbtn, { backgroundColor: primaryColor }]}
@@ -59,7 +85,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     position: "absolute",
-    bottom: "10%",
+    bottom: "5%",
     right: "5%",
   },
   icon: {

@@ -12,7 +12,7 @@ export default {
     newArchEnabled: true,
     ios: {
       supportsTablet: true,
-      bundleIdentifier: "com.albert2moon.ParadiseApp",
+      bundleIdentifier: "com.himfirstapps.ParadiseApp",
       infoPlist: {
         ITSAppUsesNonExemptEncryption: false,
       },
@@ -28,25 +28,25 @@ export default {
         backgroundColor: "#ffffff",
       },
       edgeToEdgeEnabled: true,
-      package: "com.albert2moon.ParadiseApp",
+      package: "com.himfirstapps.ParadiseApp",
       permissions: ["INTERNET", "NOTIFICATIONS"],
     },
     web: {
       bundler: "metro",
       output: "static",
-      favicon: "./assets/images/ic_launcher-web.png",
+      favicon: "./assets/images/favicon.png",
     },
     plugins: [
       "expo-router",
       [
         "expo-splash-screen",
         {
-          image: "./assets/images/logo-new.png",
+          image: "./assets/images/splash-icon-light.png",
           imageWidth: 150,
           resizeMode: "contain",
           backgroundColor: "#ffffff",
           dark: {
-            image: "./assets/images/splash-icon-dark.png",
+            image: "./assets/images/splash-icon-light.png",
             imageWidth: 150,
             resizeMode: "contain",
             backgroundColor: "#151718",
@@ -61,11 +61,10 @@ export default {
     },
     extra: {
       router: {},
-      eas: {
-        projectId: "9f85f5ed-1107-4df2-87c0-24a04bdee28d",
-      },
       BASE_URL: process.env.BASE_URL,
+      eas: {
+        projectId: "1c4bcd8c-d599-43cc-8cae-decc1a455423",
+      },
     },
-    owner: "albertmoon",
   },
 };

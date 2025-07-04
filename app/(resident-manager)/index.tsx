@@ -50,11 +50,6 @@ export default function HomeScreen() {
                 style={{ fontWeight: "600", color: "#FFFFFF" }}
               >
                 {getGreeting()}
-              </ThemedText>
-              <ThemedText
-                type="subtitle"
-                style={{ fontWeight: "600", color: "#FFFFFF" }}
-              >
                 {userName}
               </ThemedText>
             </ThemedView>
@@ -63,13 +58,13 @@ export default function HomeScreen() {
 
           <View style={{ marginTop: "8%", gap: 12 }}>
             <ThemedText type="title" style={{ width: "100%", color: "#FFFFFF" }}>
-              Welcome To Paradise Management.
+              Welcome To Paradise App.
             </ThemedText>
           </View>
         </ThemedView>
 
         <ThemedView style={styles.subContainer}>
-          <View style={{ marginBottom: "5%", marginTop: "2%", height: 130 }}>
+          <View style={{ marginBottom: "5%", marginTop: "2%", height: 150 }}>
             {!scriptureLoading ? (
               latestScripture ? (
                 <ScriptureCard
@@ -136,7 +131,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
   },
   headerCard: {
-    minHeight: 200,
+    minHeight: 160,
     width: "100%",
     borderBottomEndRadius: 20,
     borderBottomStartRadius: 20,

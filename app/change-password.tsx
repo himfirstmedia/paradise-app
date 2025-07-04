@@ -12,8 +12,10 @@ import {
 import api from "@/utils/api";
 import { useRouter } from "expo-router";
 import { useReduxAuth } from "@/hooks/useReduxAuth";
+import { useThemeColor } from "@/hooks/useThemeColor";
 
 export default function ChangePasswordScreen() {
+  const errorColor = useThemeColor({}, "overdue");
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -87,6 +89,12 @@ export default function ChangePasswordScreen() {
   }
 };
 
+const Dot = () => {
+    return (
+      <ThemedText style={{ color: errorColor }}>*</ThemedText>
+    );
+  };
+
   return (
     <>
       <ThemedView style={styles.container}>
@@ -103,7 +111,7 @@ export default function ChangePasswordScreen() {
           </ThemedText>
 
           <ThemedView style={styles.inputField}>
-            <ThemedText type="default">Current Password</ThemedText>
+            <ThemedText type="default">Current Password <Dot /></ThemedText>
             <ThemedPassword
               placeholder="Enter your current password"
               value={currentPassword}
@@ -112,7 +120,7 @@ export default function ChangePasswordScreen() {
             />
           </ThemedView>
           <ThemedView style={styles.inputField}>
-            <ThemedText type="default">New Password</ThemedText>
+            <ThemedText type="default">New Password <Dot /></ThemedText>
             <ThemedPassword
               placeholder="Enter your new password"
               value={newPassword}
@@ -121,7 +129,7 @@ export default function ChangePasswordScreen() {
             />
           </ThemedView>
           <ThemedView style={styles.inputField}>
-            <ThemedText type="default">Confirm Password</ThemedText>
+            <ThemedText type="default">Confirm Password <Dot /></ThemedText>
             <ThemedPassword
               placeholder="Confirm your new password"
               value={confirmPassword}

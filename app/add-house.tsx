@@ -12,27 +12,24 @@ export default function AddHouseScreen() {
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (values: HouseFormValues) => {
-    const { houseName, abbreviation, capacity } = values;
-    const name = houseName.trim();
-    const abbrev = abbreviation.trim();
-    const capacityNum = Number(capacity);
+    const name = values.houseName.trim();
+    const abbrev = values.abbreviation.trim();
+    const capacityStr = values.capacity.trim();
+    const capacityNum = Number(capacityStr);
 
-    
-    if (!name || !abbrev || !capacity) {
+    if (!name || !abbrev || !capacityStr) {
       Alert.alert("Error", "Please fill in all fields.");
       return;
     }
-
     if (isNaN(capacityNum) || capacityNum <= 0) {
       Alert.alert("Error", "Capacity must be a valid positive number.");
       return;
     }
 
     setLoading(true);
-    
     try {
       await api.post("/houses", {
-        name,
+        name, // <-- backend expects this key
         abbreviation: abbrev,
         capacity: capacityNum,
       });
@@ -50,7 +47,7 @@ export default function AddHouseScreen() {
   return (
     <HouseForm
       mode="add"
-      initialValues={{ name: "", abbreviation: "", capacity: "" }}
+      initialValues={{ houseName: "", abbreviation: "", capacity: "" }}
       onSubmit={handleSubmit}
       loading={loading}
     />

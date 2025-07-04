@@ -1,43 +1,77 @@
 import { AdministratorCard } from "@/components/AdministratorCard";
 import { MemberCard } from "@/components/MemberCard";
+import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
-import { useReduxAuth } from "@/hooks/useReduxAuth"; // Changed to use auth hook
+import { useReduxAuth } from "@/hooks/useReduxAuth";
 import { useReduxMembers } from "@/hooks/useReduxMembers";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { useRouter } from "expo-router";
-import { Image, Pressable, ScrollView, StyleSheet } from "react-native";
+import { useMemo } from "react";
+import {
+  ActivityIndicator,
+  Image,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+} from "react-native";
 
 export default function MembersScreen() {
   const navigation = useRouter();
   const primaryColor = useThemeColor({}, "selection");
   const bgColor = useThemeColor({}, "background");
-  
-  // Get members from redux
-  const { members } = useReduxMembers();
-  
-  // Get current user from auth state
-  const { user: currentUser } = useReduxAuth(); // Use auth hook to get current user
-  
-  // Determine if admin card should be shown
-  const showAdminCard = currentUser?.role === "DIRECTOR" || currentUser?.role === "SUPER_ADMIN";
+
+  const { members, loading } = useReduxMembers();
+  const { user: currentUser } = useReduxAuth();
+
+  const nonAdminMembers = useMemo(() => {
+    return members.filter(
+      (member) =>
+        member.role !== "SUPER_ADMIN" && member.role !== "DIRECTOR"
+    );
+  }, [members]);
+
+  const showAdminCard =
+    currentUser?.role === "DIRECTOR" || currentUser?.role === "SUPER_ADMIN";
 
   return (
     <ThemedView style={[styles.container, { backgroundColor: bgColor }]}>
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         style={styles.innerContainer}
+        showsVerticalScrollIndicator={false}
       >
-        {showAdminCard && <AdministratorCard members={members} />}
-        <MemberCard members={members} />
+        {loading ? (
+          <ActivityIndicator
+            size="large"
+            color={primaryColor}
+            style={{ marginTop: "5%" }}
+          />
+        ) : nonAdminMembers.length === 0 ? (
+          <ThemedText
+            type="default"
+            style={{
+              textAlign: "center",
+              marginTop: 24,
+              color: "#888",
+            }}
+          >
+            There are no members added yet.
+          </ThemedText>
+        ) : (
+          <>
+            {showAdminCard && <AdministratorCard members={members} />}
+            <MemberCard members={members} />
+          </>
+        )}
       </ScrollView>
 
       <Pressable
         style={[styles.floatingBtn, { backgroundColor: primaryColor }]}
         onPress={() => navigation.push("/add-member")}
       >
-        <Image 
-          source={require("@/assets/icons/add.png")} 
-          style={styles.icon} 
+        <Image
+          source={require("@/assets/icons/add.png")}
+          style={styles.icon}
         />
       </Pressable>
     </ThemedView>
@@ -47,20 +81,21 @@ export default function MembersScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
   },
   scrollContent: {
-    alignItems: "flex-start",
+    flexGrow: 1,
+    alignItems: "center",
     width: "100%",
-    paddingBottom: 120, // Use fixed value instead of percentage
+    paddingBottom: 120,
   },
   innerContainer: {
     flex: 1,
     width: "100%",
+    padding: 16,
   },
   floatingBtn: {
     position: "absolute",
-    bottom: 20,
+    bottom: "5%",
     right: 20,
     width: 60,
     height: 60,

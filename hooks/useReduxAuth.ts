@@ -1,5 +1,6 @@
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
-import { login, logoutAsync } from "@/redux/slices/authSlice";
+import { login, logoutAsync, updateUser } from "@/redux/slices/authSlice";
+import type { User } from "@/redux/slices/authSlice";
 
 export function useReduxAuth() {
   const dispatch = useAppDispatch();
@@ -10,6 +11,10 @@ export function useReduxAuth() {
 
   const signout = () => dispatch(logoutAsync());
 
+  const updateCurrentUser = (userData: Partial<User>) => {
+    dispatch(updateUser(userData));
+  };
+
   return {
     user,
     isAuthenticated,
@@ -17,5 +22,6 @@ export function useReduxAuth() {
     error,
     signin,
     signout,
+    updateCurrentUser,
   };
 }

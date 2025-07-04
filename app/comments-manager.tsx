@@ -3,11 +3,19 @@ import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { useReduxFeedback } from "@/hooks/useReduxFeedback";
 import { useThemeColor } from "@/hooks/useThemeColor";
+import { useFocusEffect } from "expo-router";
+import { useCallback } from "react";
 import { ActivityIndicator, StyleSheet } from "react-native";
 
 export default function CommentsManagerScreen() {
-  const { feedbacks, loading } = useReduxFeedback();
+  const { feedbacks, loading, reload } = useReduxFeedback();
   const primaryColor = useThemeColor({}, "selection");
+
+  useFocusEffect(
+  useCallback(() => {
+    reload();
+  }, [reload])
+);
 
   return (
     <>

@@ -1,5 +1,5 @@
+import React, { useEffect, useState } from "react";
 import {
-  Alert,
   KeyboardAvoidingView,
   Platform,
   StyleSheet,
@@ -8,12 +8,13 @@ import {
   Pressable,
 } from "react-native";
 
+import { Alert } from "@/components/Alert";
+
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { Button } from "@/components/ui/Button";
 import { ThemedCheckbox, ThemedEmailInput } from "@/components/ThemedInput";
 import { ThemedPassword } from "@/components/ThemedPassword";
-import React, { useEffect, useState } from "react";
 import { useRouter } from "expo-router";
 import { Image } from "expo-image";
 
@@ -30,6 +31,10 @@ type AppRoutes =
 
 export default function LoginScreen() {
   const router = useRouter();
+  const [alertMessage, setAlertMessage] = useState("");
+  const [alertType, setAlertType] = useState<"default" | "error" | "success">(
+    "default"
+  );
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [checked, setChecked] = useState(true);
@@ -37,48 +42,57 @@ export default function LoginScreen() {
   const { isAuthenticated, user } = useAppSelector((state) => state.auth);
 
   useEffect(() => {
-  if (isAuthenticated && user?.role) {
-    console.log("✅ Logged in User:", user);
-    
-    const roleRoutes: Record<string, AppRoutes> = {
-      SUPER_ADMIN: "/(director)",
-      DIRECTOR: "/(director)",
-      RESIDENT_MANAGER: "/(resident-manager)",
-      FACILITY_MANAGER: "/(facility-manager)",
-      RESIDENT: "/(residents)",
-      INDIVIDUAL: "/(individuals)",
-    };
+    if (alertMessage) {
+      const timeout = setTimeout(() => setAlertMessage(""), 6000);
+      return () => clearTimeout(timeout);
+    }
+  }, [alertMessage]);
 
-    console.log(`User role: ${user.role}`);
-    const route = roleRoutes[user.role] || "/auth/login";
-    console.log(`Redirecting to: ${route}`);
-    
-    router.replace(route);
-  } else if (isAuthenticated) {
-    console.warn("⚠️ Authenticated but missing role:", user);
-  }
-}, [isAuthenticated, user, router]);
+  useEffect(() => {
+    if (isAuthenticated && user?.role) {
+      console.log("✅ Logged in User:", user);
+
+      const roleRoutes: Record<string, AppRoutes> = {
+        SUPER_ADMIN: "/(director)",
+        DIRECTOR: "/(director)",
+        RESIDENT_MANAGER: "/(resident-manager)",
+        FACILITY_MANAGER: "/(facility-manager)",
+        RESIDENT: "/(residents)",
+        INDIVIDUAL: "/(individuals)",
+      };
+
+      console.log(`User role: ${user.role}`);
+      const route = roleRoutes[user.role] || "/auth/login";
+      console.log(`Redirecting to: ${route}`);
+
+      router.replace(route);
+    } else if (isAuthenticated) {
+      console.warn("⚠️ Authenticated but missing role:", user);
+    }
+  }, [isAuthenticated, user, router]);
 
   const handleSignin = async (): Promise<void> => {
-  if (!email || !password) {
-    Alert.alert("Missing Fields", "Please enter both email and password.");
-    return;
-  }
-  
-  try {
-    await signin(email, password);
-  } catch (error: unknown) {
-    let errorMessage = "Invalid credentials. Please try again.";
-    
-    if (error instanceof Error) {
-      errorMessage = error.message;
-    } else if (typeof error === 'string') {
-      errorMessage = error;
+    if (!email || !password) {
+      setAlertMessage("Please enter both email and password.");
+      setAlertType("error");
+      return;
     }
-    
-    Alert.alert("Login Failed", errorMessage);
-  }
-};
+
+    try {
+      await signin(email, password);
+    } catch (error: unknown) {
+      let errorMessage = "Invalid credentials. Please try again.";
+
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      } else if (typeof error === "string") {
+        errorMessage = error;
+      }
+
+      setAlertMessage(errorMessage);
+      setAlertType("error");
+    }
+  };
 
   return (
     <>
@@ -98,6 +112,10 @@ export default function LoginScreen() {
           <ThemedText type="subtitle" style={{ marginBottom: "5%" }}>
             Sign into your account
           </ThemedText>
+
+          {alertMessage ? (
+            <Alert message={alertMessage} type={alertType} duration={6000} />
+          ) : null}
 
           <ThemedView style={styles.inputField}>
             <ThemedText type="default">Email</ThemedText>

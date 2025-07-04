@@ -2,18 +2,20 @@ import React, { useState, useRef } from "react";
 import {
   Pressable,
   StyleSheet,
-  View,
   Modal,
   Alert,
   findNodeHandle,
   UIManager,
   Dimensions,
+  View,
 } from "react-native";
 import { ThemedText } from "./ThemedText";
 import { ThemedView } from "./ThemedView";
 import { Image } from "expo-image";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { useRouter } from "expo-router";
+import api from "@/utils/api";
+import { useReduxHouse } from "@/hooks/useReduxHouse";
 
 export interface House {
   id: number;
@@ -43,7 +45,9 @@ function getFriendlyHouseName(name: string) {
 
 export function HouseCard({ houses, style }: HouseCardProps) {
   const bgColor = useThemeColor({}, "input");
+  const textColor = useThemeColor({}, "text");
   const [expanded, setExpanded] = useState(false);
+  const {reload} = useReduxHouse();
   const [popoverVisible, setPopoverVisible] = useState<number | null>(null);
   const [popoverPosition, setPopoverPosition] = useState<{
     top: number;
@@ -97,19 +101,26 @@ export function HouseCard({ houses, style }: HouseCardProps) {
   };
 
   const handleDelete = (house: House) => {
-    setPopoverVisible(null);
-    Alert.alert("Delete House", "Are you sure you want to delete this house?", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Delete",
-        style: "destructive",
-        onPress: async () => {
-          // TODO: Replace with your delete API logic
+  setPopoverVisible(null);
+  Alert.alert("Delete House", "Are you sure you want to delete this house?", [
+    { text: "Cancel", style: "cancel" },
+    {
+      text: "Delete",
+      style: "destructive",
+      onPress: async () => {
+        try {
+          await api.delete(`/houses/${house.id}`);
           Alert.alert("Deleted", "House deleted successfully.");
-        },
+          await reload();
+        } catch (error) {
+          console.error("Delete failed:", error);
+          Alert.alert("Error", "Failed to delete the house.");
+        }
       },
-    ]);
-  };
+    },
+  ]);
+};
+
 
   const handleView = (house: House) => {
     setPopoverVisible(null);
@@ -148,10 +159,7 @@ export function HouseCard({ houses, style }: HouseCardProps) {
               <ThemedText type="defaultSemiBold" style={{ color: "#888" }}>
                 ({house.abbreviation})
               </ThemedText>
-              <ThemedText
-                type="defaultSemiBold"
-                style={{ fontSize: 14, color: "#333" }}
-              >
+              <ThemedText type="defaultSemiBold" style={{ fontSize: 14 }}>
                 {house.users.length} / {house.capacity} Occupied
               </ThemedText>
             </View>
@@ -164,7 +172,7 @@ export function HouseCard({ houses, style }: HouseCardProps) {
             >
               <Image
                 source={require("../assets/icons/options.png")}
-                style={{ width: 24, height: 24, tintColor: "#333" }}
+                style={{ width: 24, height: 24, tintColor: textColor }}
               />
             </Pressable>
             {/* Popover */}
@@ -178,7 +186,7 @@ export function HouseCard({ houses, style }: HouseCardProps) {
                 style={StyleSheet.absoluteFill}
                 onPress={() => setPopoverVisible(null)}
               >
-                <View
+                <ThemedView
                   style={[
                     styles.popover,
                     {
@@ -208,7 +216,7 @@ export function HouseCard({ houses, style }: HouseCardProps) {
                       Delete
                     </ThemedText>
                   </Pressable>
-                </View>
+                </ThemedView>
               </Pressable>
             </Modal>
           </ThemedView>
@@ -248,7 +256,6 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   popover: {
-    backgroundColor: "#fff",
     borderRadius: 10,
     paddingHorizontal: 16,
     paddingVertical: 10,

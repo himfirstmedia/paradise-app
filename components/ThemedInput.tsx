@@ -94,14 +94,14 @@ export function ThemedTextInput({
 }: ThemedInputProps) {
   const bgColor = useThemeColor({}, "input");
   const errorColor = useThemeColor({}, "overdue");
-  const textColor = useThemeColor({}, "text"); // Add text color
+  const textColor = useThemeColor({}, "text");
 
   return (
     <>
       <TextInput
         style={[
           styles.input,
-          { backgroundColor: bgColor, color: textColor }, // Add text color
+          { backgroundColor: bgColor, color: textColor },
           type === "default" ? styles.default : undefined,
           type === "floating" ? styles.floating : undefined,
           type === "rounded" ? styles.rounded : undefined,
@@ -109,8 +109,8 @@ export function ThemedTextInput({
         selectionColor={useThemeColor({}, "selection")}
         placeholder={placeholder}
         placeholderTextColor={useThemeColor({}, "placeholder")}
-        value={value} // Pass value prop
-        onChangeText={onChangeText} // Pass onChangeText prop
+        value={value} 
+        onChangeText={onChangeText}
         {...rest}
       />
       <View style={{ height: 20, justifyContent: "center" }}>
@@ -135,13 +135,14 @@ export function ThemedTextArea({
 }: ThemedInputProps) {
   const bgColor = useThemeColor({}, "input");
   const errorColor = useThemeColor({}, "overdue");
+  const textColor = useThemeColor({}, "text");
 
   return (
     <>
       <TextInput
         style={[
           styles.input,
-          { backgroundColor: bgColor, height: 200, textAlignVertical: "top" },
+          { backgroundColor: bgColor, height: 200, textAlignVertical: "top", color: textColor },
           type === "default" ? styles.default : undefined,
           type === "floating" ? styles.floating : undefined,
           type === "rounded" ? styles.rounded : undefined,
@@ -380,6 +381,8 @@ export function ThemedDropdown({
                       : dropdownLayout.y + dropdownLayout.height + 2,
                   width: dropdownLayout.width,
                   zIndex: 1000,
+                  elevation: 2,
+                  shadowColor: "#222"
                 },
               ]}
             >

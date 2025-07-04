@@ -3,10 +3,12 @@ import { MemberCard } from "@/components/MemberCard";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { Avatar } from "@/components/ui/Avatar";
+import { useReduxAuth } from "@/hooks/useReduxAuth";
 import { useReduxMembers } from "@/hooks/useReduxMembers";
 import { useThemeColor } from "@/hooks/useThemeColor";
+import { useFocusEffect } from "expo-router";
 
-import React, { useMemo } from "react";
+import React, { useCallback, useMemo } from "react";
 import { ActivityIndicator, ScrollView, StyleSheet, View } from "react-native";
 
 const houses = [
@@ -19,8 +21,16 @@ export default function TeamsScreen() {
   const completed = useThemeColor({}, "completed");
   const pending = useThemeColor({}, "pending");
   const overdue = useThemeColor({}, "overdue");
+  const { user } = useReduxAuth();
+  const isFacilityManager = user?.role === "FACILITY_MANAGER";
 
-  const { members, loading } = useReduxMembers();
+  const { members, loading, reload } = useReduxMembers();
+
+  useFocusEffect(
+    useCallback(() => {
+      reload();
+    }, [reload])
+  );
 
   const houseReduxTaskstats = useMemo(() => {
     const stats: Record<
@@ -34,7 +44,6 @@ export default function TeamsScreen() {
       }
     > = {};
 
-    // Initialize stats for all houses
     houses.forEach((house) => {
       stats[house.enum] = {
         pending: 0,
@@ -45,21 +54,19 @@ export default function TeamsScreen() {
       };
     });
 
-    // Process all members
     members.forEach((member) => {
       // Get the house enum from member's house name
       const houseEnum = member.house?.name
         ? member.house.name.toUpperCase().replace(/ /g, "_")
         : null;
 
-      // Skip if no house or house not in our list
       if (!houseEnum || !stats[houseEnum]) return;
 
       const houseStat = stats[houseEnum];
 
-      // Process each task for this member
       member.task?.forEach((task) => {
-        // Only count tasks with valid progress states
+        if (isFacilityManager && task.category !== "MAINTENANCE") return;
+
         if (["PENDING", "COMPLETED", "OVERDUE"].includes(task.progress || "")) {
           switch (task.progress) {
             case "PENDING":
@@ -77,7 +84,6 @@ export default function TeamsScreen() {
       });
     });
 
-    // Calculate percentages
     Object.values(stats).forEach((stat) => {
       stat.completionPercent =
         stat.totalTasks > 0
@@ -86,9 +92,8 @@ export default function TeamsScreen() {
     });
 
     return stats;
-  }, [members]);
+  }, [members, isFacilityManager]);
 
-  // Helper to get stats for a house
   const getHouseStats = (houseEnum: string) =>
     houseReduxTaskstats[houseEnum] || {
       pending: 0,

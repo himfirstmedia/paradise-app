@@ -5,9 +5,17 @@ import { ThemedView } from "@/components/ThemedView";
 import { Avatar } from "@/components/ui/Avatar";
 import { useReduxMembers } from "@/hooks/useReduxMembers";
 import { useThemeColor } from "@/hooks/useThemeColor";
+import { useFocusEffect, useRouter } from "expo-router";
 
-import React, { useMemo } from "react";
-import { ActivityIndicator, ScrollView, StyleSheet, View } from "react-native";
+import React, { useCallback, useMemo } from "react";
+import {
+  ActivityIndicator,
+  Image,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  View,
+} from "react-native";
 
 const houses = [
   { label: "LLW House", enum: "LILLIE_LOUISE_WOERMER_HOUSE" },
@@ -19,8 +27,15 @@ export default function TeamsScreen() {
   const completed = useThemeColor({}, "completed");
   const pending = useThemeColor({}, "pending");
   const overdue = useThemeColor({}, "overdue");
+  const navigation = useRouter();
 
-  const { members, loading } = useReduxMembers();
+  const { members, loading, reload } = useReduxMembers();
+
+  useFocusEffect(
+      useCallback(() => {
+        reload();
+      }, [reload])
+    );
 
   const houseReduxTaskstats = useMemo(() => {
     const stats: Record<
@@ -100,7 +115,10 @@ export default function TeamsScreen() {
 
   const nonAdminMembers = useMemo(() => {
     return members.filter(
-      (member) => member.role !== "SUPER_ADMIN" && member.role !== "DIRECTOR"
+      (member) =>
+        member.role !== "SUPER_ADMIN" &&
+        member.role !== "DIRECTOR" &&
+        member.role !== "RESIDENT_MANAGER"
     );
   }, [members]);
 
@@ -186,24 +204,37 @@ export default function TeamsScreen() {
                 color={primaryColor}
                 style={{ marginTop: "5%" }}
               />
-            ) : nonAdminMembers.length === 0 ? (
-              <ThemedText
-                type="default"
-                style={{
-                  textAlign: "center",
-                  marginTop: 24,
-                  color: "#888",
-                }}
-              >
-                There are no members yet.
-              </ThemedText>
             ) : (
               <>
-                <MemberCard members={members} />
+                {nonAdminMembers.length === 0 ? (
+                  <ThemedText
+                    type="default"
+                    style={{
+                      textAlign: "center",
+                      marginTop: 24,
+                      color: "#888",
+                    }}
+                  >
+                    There are no members yet.
+                  </ThemedText>
+                ) : (
+                  <MemberCard members={nonAdminMembers} />
+                )}
               </>
             )}
           </ThemedView>
         </ScrollView>
+        <Pressable
+          style={[styles.taskCTAbtn, { backgroundColor: primaryColor }]}
+          onPress={() => {
+            navigation.push("/add-member");
+          }}
+        >
+          <Image
+            source={require("@/assets/icons/add.png")}
+            style={styles.icon}
+          />
+        </Pressable>
       </ThemedView>
     </>
   );

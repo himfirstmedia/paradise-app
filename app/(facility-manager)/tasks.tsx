@@ -17,6 +17,7 @@ import { useThemeColor } from "@/hooks/useThemeColor";
 import { useRouter } from "expo-router";
 
 import { useReduxTasks } from "@/hooks/useReduxTasks";
+import { useReduxAuth } from "@/hooks/useReduxAuth";
 
 export default function TabTwoScreen() {
   const primaryColor = useThemeColor({}, "selection");
@@ -25,13 +26,19 @@ export default function TabTwoScreen() {
   const overdueColor = useThemeColor({}, "overdue");
   const navigation = useRouter();
   const { loading: tasksLoading, tasks } = useReduxTasks();
+  const { user } = useReduxAuth();
+
+  const isFacilityManager = user?.role === "FACILITY_MANAGER";
+  const filteredTasks = isFacilityManager
+    ? tasks.filter((task) => task.category === "MAINTENANCE")
+    : tasks;
 
   let pending = 0,
     completed = 0,
     overdue = 0,
-    totalTasks = 0;
-  tasks.forEach((task) => {
-    totalTasks++;
+    totalTasks = filteredTasks.length;
+
+  filteredTasks.forEach((task) => {
     if (task.progress === "PENDING") pending++;
     else if (task.progress === "COMPLETED") completed++;
     else if (task.progress === "OVERDUE") overdue++;
@@ -78,7 +85,7 @@ export default function TabTwoScreen() {
               innerRadius={60}
               showGradient={false}
               strokeColor={primaryColor}
-              strokeWidth={10}
+              strokeWidth={5}
               legendTitle="Tasks Progress"
               centerLabelComponent={() => (
                 <View>
@@ -109,19 +116,28 @@ export default function TabTwoScreen() {
                   color={primaryColor}
                   style={{ marginTop: "5%" }}
                 />
-              ) : tasks.length === 0 ? (
-                <ThemedText
-                  type="default"
-                  style={{
-                    textAlign: "center",
-                    marginTop: 24,
-                    color: "#888",
-                  }}
-                >
-                  There are no tasks assigned yet.
-                </ThemedText>
               ) : (
-                <TaskCard tasks={tasks} />
+                (() => {
+                  const isFacilityManager = user?.role === "FACILITY_MANAGER";
+                  const visibleTasks = isFacilityManager
+                    ? tasks.filter((task) => task.category === "MAINTENANCE")
+                    : tasks;
+
+                  return visibleTasks.length === 0 ? (
+                    <ThemedText
+                      type="default"
+                      style={{
+                        textAlign: "center",
+                        marginTop: 24,
+                        color: "#888",
+                      }}
+                    >
+                      There are no tasks to display.
+                    </ThemedText>
+                  ) : (
+                    <TaskCard tasks={visibleTasks} />
+                  );
+                })()
               )}
             </View>
           </ThemedView>
@@ -169,7 +185,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     marginBottom: 15,
     paddingTop: 20,
-    paddingBottom: 20
+    paddingBottom: 20,
   },
   row: {
     flexDirection: "row",

@@ -6,12 +6,15 @@ import {
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { Button } from "@/components/ui/Button";
+import { useReduxAuth } from "@/hooks/useReduxAuth";
 import { useReduxMembers } from "@/hooks/useReduxMembers";
 import { useReduxTasks } from "@/hooks/useReduxTasks";
+import { useThemeColor } from "@/hooks/useThemeColor";
 import api from "@/utils/api";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
 import {
+  ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
   Platform,
@@ -20,6 +23,7 @@ import {
 } from "react-native";
 
 export default function AssignTaskScreen() {
+  const primaryColor = useThemeColor({}, "selection")
   const params = useLocalSearchParams();
   const preselectedMember =
     typeof params.memberName === "string" ? params.memberName : "";
@@ -31,6 +35,13 @@ export default function AssignTaskScreen() {
   const [instruction, setInstruction] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const navigation = useRouter();
+  const { user } = useReduxAuth();
+
+  const isFacilityManager = user?.role === "FACILITY_MANAGER";
+
+  const visibleTasks = isFacilityManager
+    ? tasks.filter((task) => task.category === "MAINTENANCE")
+    : tasks;
 
   const handleTaskAssignment = async () => {
     if (!selectedMember || !selectedTask) {
@@ -50,7 +61,6 @@ export default function AssignTaskScreen() {
         instruction,
       };
 
-      // Temporarily comment out the API call
       await api.put(`/tasks/${task.id}`, payload);
 
       setSelectedTask("");
@@ -106,13 +116,37 @@ export default function AssignTaskScreen() {
 
           <ThemedView style={styles.inputField}>
             <ThemedText type="default">Task</ThemedText>
-            <ThemedDropdown
-              placeholder="Select a task"
-              items={tasks.map((t) => t.name)}
-              value={selectedTask}
-              onSelect={setSelectedTask}
-              loading={tasksLoading}
-            />
+            {tasksLoading ? (
+              <ActivityIndicator size="small" color={primaryColor} />
+            ) : (
+              <>
+                <ThemedDropdown
+                  placeholder={
+                    visibleTasks.length === 0
+                      ? "No tasks available"
+                      : "Select Task"
+                  }
+                  value={selectedTask}
+                  onValueChange={setSelectedTask}
+                  items={visibleTasks.map(task => task.name)}
+                  // disabled={visibleTasks.length === 0}
+                />
+                {visibleTasks.length === 0 && (
+                  <ThemedText
+                    type="defaultSemiBold"
+                    style={{
+                      textAlign: "center",
+                      marginTop: 24,
+                      color: "#888",
+                    }}
+                  >
+                    {isFacilityManager
+                      ? "No maintenance tasks available"
+                      : "No tasks available"}
+                  </ThemedText>
+                )}
+              </>
+            )}
           </ThemedView>
 
           <ThemedView style={styles.inputField}>

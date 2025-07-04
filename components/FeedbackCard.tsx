@@ -89,6 +89,7 @@ export function FeedbackCard({ feedbacks }: FeedbackCardProps) {
                     style={{
                       flexDirection: "column",
                       alignItems: "flex-start",
+                      justifyContent: "center",
                       flex: 1,
                     }}
                   >
@@ -136,7 +137,7 @@ export function FeedbackCard({ feedbacks }: FeedbackCardProps) {
             >
               <Image
                 source={require("../assets/icons/dismiss.png")}
-                style={{ height: 24, width: 24 }}
+                style={{ height: 20, width: 20 }}
               />
             </Pressable>
             <ScrollView contentContainerStyle={styles.modalInnerCard}>
@@ -167,9 +168,9 @@ export function FeedbackCard({ feedbacks }: FeedbackCardProps) {
                               type="subtitle"
                               style={{ color: textColor, marginBottom: 5 }}
                             >
-                              Reason:
+                              Commenting On:
                             </ThemedText>
-                            <View style={[styles.row, { gap: 8 }]}>
+                            <View style={[styles.row, { gap: 8, justifyContent: "flex-start" }]}>
                               <View
                                 style={[
                                   styles.dot,
@@ -223,20 +224,19 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     paddingHorizontal: 18,
     paddingVertical: 6,
-    minHeight: 95,
+    minHeight: 70,
     alignItems: "center",
     flexDirection: "row",
     justifyContent: "space-between",
   },
   name: {
     marginBottom: 2,
-    color: "#333",
     maxWidth: 180,
   },
   message: {
     flex: 1,
     marginRight: 10,
-    color: "#444",
+    color: "#666",
   },
   modalOverlay: {
     flex: 1,
@@ -245,10 +245,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   modalContent: {
-    padding: 25,
+    padding: 15,
     height: "100%",
     width: "100%",
-    alignItems: "center",
+    alignItems: "flex-start",
     elevation: 5,
   },
   modalInnerCard: {

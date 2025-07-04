@@ -4,8 +4,9 @@ import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { useReduxMembers } from "@/hooks/useReduxMembers";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import * as MediaLibrary from "expo-media-library";
 import * as Print from "expo-print";
+import * as Sharing from "expo-sharing";
+import * as FileSystem from "expo-file-system";
 import { useLocalSearchParams } from "expo-router";
 import { useMemo, useState } from "react";
 import {
@@ -17,20 +18,9 @@ import {
   View,
 } from "react-native";
 
-// Unified house mapping
-const HOUSE_DISPLAY_NAMES: Record<string, string> = {
-  LILLIE_LOUISE_WOERMER_HOUSE: "LLW House",
-  CAROLYN_ECKMAN_HOUSE: "CE House",
-  ADMINISTRATION: "Administration",
-  ADIMINISTRATION: "Administration", 
-  "LLW House": "LLW House",
-  "CE House": "CE House",
-  "Administration": "Administration",
-};
 
 function getHouseDisplayName(houseValue: string | null): string {
-  if (!houseValue) return "Individual";
-  return HOUSE_DISPLAY_NAMES[houseValue.trim()] || houseValue;
+  return houseValue?.trim() || "Individual";
 }
 
 export default function ReportDetails() {
@@ -39,7 +29,7 @@ export default function ReportDetails() {
   const completedColor = useThemeColor({}, "completed");
   const pendingColor = useThemeColor({}, "pending");
   const overdueColor = useThemeColor({}, "overdue");
-  
+
   const { loading, members } = useReduxMembers();
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
 
@@ -55,25 +45,31 @@ export default function ReportDetails() {
     if (houseParam) {
       const displayName = getHouseDisplayName(houseParam);
       title = `${displayName} Report`;
-      
-      filtered = members.filter(member => {
+
+      filtered = members.filter((member) => {
         const memberHouse = member.house?.name || "";
         return getHouseDisplayName(memberHouse) === displayName;
       });
     } else if (typeParam === "individuals") {
       title = "Individuals Report";
-      filtered = members.filter(member => !member.house);
+      filtered = members.filter((member) => !member.house);
     }
 
     // Calculate task statistics
-    filtered.forEach(member => {
-      member.task?.forEach(task => {
+    filtered.forEach((member) => {
+      member.task?.forEach((task) => {
         if (["PENDING", "COMPLETED", "OVERDUE"].includes(task.progress || "")) {
           stats.totalTasks++;
           switch (task.progress) {
-            case "PENDING": stats.pending++; break;
-            case "COMPLETED": stats.completed++; break;
-            case "OVERDUE": stats.overdue++; break;
+            case "PENDING":
+              stats.pending++;
+              break;
+            case "COMPLETED":
+              stats.completed++;
+              break;
+            case "OVERDUE":
+              stats.overdue++;
+              break;
           }
         }
       });
@@ -83,11 +79,10 @@ export default function ReportDetails() {
   }, [members, houseParam, typeParam]);
 
   const completionPercent = useMemo(() => {
-    return taskStats.totalTasks > 0 
+    return taskStats.totalTasks > 0
       ? Math.round((taskStats.completed / taskStats.totalTasks) * 100)
       : 0;
   }, [taskStats]);
-
 
   const generatePDF = async () => {
     setIsGeneratingPDF(true);
@@ -112,17 +107,21 @@ export default function ReportDetails() {
             <p><strong>Completed Tasks:</strong> ${taskStats.completed}</p>
             <p><strong>Overdue Tasks:</strong> ${taskStats.overdue}</p>
 
-            ${filteredMembers.map(member => `
+            ${filteredMembers
+              .map(
+                (member) => `
               <h2>${member.name}</h2>
               <p>
-                <strong>Phone:</strong> ${member.phone || 'N/A'}<br/>
-                <strong>Email:</strong> ${member.email || 'N/A'}<br/>
-                <strong>Team:</strong> ${member.role || 'N/A'}<br/>
+                <strong>Phone:</strong> ${member.phone || "N/A"}<br/>
+                <strong>Email:</strong> ${member.email || "N/A"}<br/>
+                <strong>Team:</strong> ${member.role || "N/A"}<br/>
                 <strong>House:</strong> ${member.house ? getHouseDisplayName(member.house.name) : "Individual"}<br/>
-                <strong>Start Date:</strong> ${member.joinedDate || 'N/A'}<br/>
-                <strong>End Date:</strong> ${member.leavingDate || 'N/A'}
+                <strong>Start Date:</strong> ${member.joinedDate || "N/A"}<br/>
+                <strong>End Date:</strong> ${member.leavingDate || "N/A"}
               </p>
-              ${member.task?.length ? `
+              ${
+                member.task?.length
+                  ? `
                 <table>
                   <thead>
                     <tr>
@@ -132,38 +131,46 @@ export default function ReportDetails() {
                     </tr>
                   </thead>
                   <tbody>
-                    ${member.task.map(task => `
+                    ${member.task
+                      .map(
+                        (task) => `
                       <tr>
-                        <td>${task.name || 'N/A'}</td>
-                        <td>${task.description || ''}</td>
-                        <td>${task.progress || ''}</td>
+                        <td>${task.name || "N/A"}</td>
+                        <td>${task.description || ""}</td>
+                        <td>${task.progress || ""}</td>
                       </tr>
-                    `).join('')}
+                    `
+                      )
+                      .join("")}
                   </tbody>
                 </table>
-              ` : '<p>No tasks assigned</p>'}
-            `).join('')}
+              `
+                  : "<p>No tasks assigned</p>"
+              }
+            `
+              )
+              .join("")}
           </body>
         </html>
       `;
 
       const { uri } = await Print.printToFileAsync({ html });
-      
-      const { status } = await MediaLibrary.requestPermissionsAsync();
-      if (status !== "granted") {
-        alert("Permission required to save PDF");
+
+      const newPath = `${FileSystem.documentDirectory}${fileName}`;
+      await FileSystem.moveAsync({ from: uri, to: newPath });
+
+      if (!(await Sharing.isAvailableAsync())) {
+        alert("Sharing is not available on this device");
         return;
       }
 
-      const asset = await MediaLibrary.createAssetAsync(uri);
-      const album = await MediaLibrary.getAlbumAsync("Download") || 
-                   await MediaLibrary.createAlbumAsync("Download", asset, false);
-      
-      await MediaLibrary.addAssetsToAlbumAsync([asset], album, false);
-      alert(`PDF saved to Downloads folder as:\n${fileName}`);
+      await Sharing.shareAsync(newPath, {
+        mimeType: "application/pdf",
+        dialogTitle: "Share or Save PDF",
+      });
     } catch (error) {
-      alert("Failed to generate PDF");
       console.error("PDF generation error:", error);
+      alert("Failed to generate PDF");
     } finally {
       setIsGeneratingPDF(false);
     }
@@ -178,7 +185,7 @@ export default function ReportDetails() {
         <ThemedText type="title" style={styles.title}>
           {reportTitle}
         </ThemedText>
-        
+
         <ThemedView style={styles.statsContainer}>
           <ThemedView style={styles.statRow}>
             <ThemedText type="defaultSemiBold">Pending Tasks:</ThemedText>
@@ -194,12 +201,26 @@ export default function ReportDetails() {
           </ThemedView>
         </ThemedView>
 
-        <ThemedView style={[styles.chartContainer, { backgroundColor: primaryColor }]}>
+        <ThemedView
+          style={[styles.chartContainer, { backgroundColor: primaryColor }]}
+        >
           <HalfDonutChart
             data={[
-              { value: taskStats.completed, color: completedColor, text: "Completed" },
-              { value: taskStats.pending, color: pendingColor, text: "Pending" },
-              { value: taskStats.overdue, color: overdueColor, text: "Overdue" },
+              {
+                value: taskStats.completed,
+                color: completedColor,
+                text: "Completed",
+              },
+              {
+                value: taskStats.pending,
+                color: pendingColor,
+                text: "Pending",
+              },
+              {
+                value: taskStats.overdue,
+                color: overdueColor,
+                text: "Overdue",
+              },
             ]}
             height={220}
             radius={90}
@@ -209,10 +230,7 @@ export default function ReportDetails() {
             strokeWidth={5}
             legendTitle="House Progress"
             centerLabelComponent={() => (
-              <ThemedText
-                type="title"
-                style={styles.chartCenterText}
-              >
+              <ThemedText type="title" style={styles.chartCenterText}>
                 {taskStats.totalTasks === 0 ? "0%" : `${completionPercent}%`}
               </ThemedText>
             )}
@@ -314,13 +332,13 @@ const styles = StyleSheet.create({
     shadowRadius: 3.84,
   },
   icon: {
-    width: 30,
-    height: 30,
+    width: 40,
+    height: 40,
     tintColor: "#fff",
   },
   floatingContainer: {
     position: "absolute",
-    bottom: 20,
+    bottom: "5%",
     right: 20,
   },
 });

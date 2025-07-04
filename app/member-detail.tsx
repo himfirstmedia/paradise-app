@@ -38,7 +38,7 @@ export default function MemberDetailScreen() {
   const [alertMessage, setAlertMessage] = useState("");
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
-  
+
   const { tasks, reload: reloadTasks } = useReduxTasks();
   const { houses } = useReduxHouse();
   const { members, reload } = useReduxMembers();
@@ -65,7 +65,6 @@ export default function MemberDetailScreen() {
 
   const member = members.find((m) => m.id === Number(userId));
 
-
   if (!member) {
     return (
       <ThemedView style={styles.container}>
@@ -75,6 +74,7 @@ export default function MemberDetailScreen() {
   }
 
   const {
+    id,
     name,
     houseId,
     role,
@@ -86,31 +86,37 @@ export default function MemberDetailScreen() {
     state,
     zipCode,
     gender,
-    image,
   } = member;
 
   // Fixed: Convert task.userId to string for consistent comparison
   const assignedTasks = tasks.filter(
-    (task) => task.userId !== null && task.userId !== undefined && String(task.userId) === userId
+    (task) =>
+      task.userId !== null &&
+      task.userId !== undefined &&
+      String(task.userId) === userId
   );
 
   // Fixed: Handle all types of house IDs consistently
   const getHouseNameById = (id: number | string | null) => {
     if (id === null || id === undefined) return "";
-    
+
     // Convert to string for consistent comparison
     const idStr = String(id);
-    const foundHouse = houses.find((house) => 
-      house.id !== null && house.id !== undefined && String(house.id) === idStr
+    const foundHouse = houses.find(
+      (house) =>
+        house.id !== null &&
+        house.id !== undefined &&
+        String(house.id) === idStr
     );
-    
+
     return foundHouse ? foundHouse.name : "";
   };
 
   // Fixed: Simplify house display logic
-  const houseDisplayName = houseId !== null && houseId !== undefined
-    ? getHouseNameById(houseId)
-    : getFriendlyHouseName(houseId ? String(houseId) : null);
+  const houseDisplayName =
+    houseId !== null && houseId !== undefined
+      ? getHouseNameById(houseId)
+      : getFriendlyHouseName(houseId ? String(houseId) : null);
 
   const showEditDelete = currentUserRole !== "FACILITY_MANAGER";
 
@@ -233,34 +239,23 @@ export default function MemberDetailScreen() {
 
       <FloatingButton
         type="icon-rounded"
+        style={styles.floatingBtn}
         childrenButtons={[
           ...(showEditDelete
             ? [
                 {
                   label: "Delete Member",
                   icon: require("@/assets/icons/delete.png"),
-                  onPress: () => setShowDeleteDialog(true), // Updated
+                  onPress: () => setShowDeleteDialog(true),
                 },
+                // FloatingButton changes
                 {
                   label: "Edit Profile",
                   icon: require("@/assets/icons/edit-info.png"),
                   onPress: () =>
                     navigation.push({
                       pathname: "/edit-profile",
-                      params: {
-                        name,
-                        houseId,
-                        role,
-                        phone,
-                        email,
-                        joinedDate,
-                        leavingDate,
-                        city,
-                        state,
-                        zipCode,
-                        gender,
-                        image,
-                      },
+                      params: { id: id },
                     }),
                 },
               ]
@@ -328,8 +323,8 @@ const styles = StyleSheet.create({
   },
   floatingBtn: {
     position: "absolute",
-    bottom: 10,
-    right: 15,
+    bottom: "10%",
+    right: "5%",
     height: 50,
     width: 50,
     borderRadius: 60,

@@ -1,79 +1,88 @@
-// src/components/ui/Button.tsx
+import React from "react";
+import {
+  TouchableOpacity,
+  Text,
+  ActivityIndicator,
+  StyleSheet,
+  Image,
+  GestureResponderEvent,
+  ViewStyle,
+  ImageSourcePropType,
+  StyleProp,
+  TextStyle,
+} from "react-native";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { type ButtonProps as RNButtonProps, Pressable, StyleSheet, ActivityIndicator } from "react-native";
-import { ThemedText } from "../ThemedText";
 
-export type ButtonProps = RNButtonProps & {
-  lightColor?: string;
-  darkColor?: string;
-  type?: "default" | "icon" | "rounded" | "icon-rounded";
+type ButtonProps = {
   title?: string;
+  onPress: (event: GestureResponderEvent) => void;
   loading?: boolean;
-  style?: any;
-  textStyle?: any; // Add textStyle prop
+  type?: "default" | "icon-rounded";
+  disabled?: boolean;
+  icon?: ImageSourcePropType;
+  style?: StyleProp<ViewStyle>;
+  textStyle?: StyleProp<TextStyle>;
 };
 
-export function Button({
-  lightColor,
-  darkColor,
-  type = "default",
+export const Button: React.FC<ButtonProps> = ({
   title,
   onPress,
-  style,
-  textStyle,
   loading = false,
-  ...rest
-}: ButtonProps) {
-  const bgColor = useThemeColor({}, "button");
+  disabled = false,
+  type = "default",
+  icon,
+  style,
+}) => {
+  const bgColor = useThemeColor({}, "selection");
+  const isIconRounded = type === "icon-rounded";
 
   return (
-    <Pressable
+    <TouchableOpacity
+      onPress={onPress}
       style={[
         styles.button,
-        { backgroundColor: bgColor },
-        type === "default" && styles.default,
-        type === "icon" && styles.icon,
-        type === "rounded" && styles.rounded,
-        type === "icon-rounded" && styles.iconRounded,
-        loading && { opacity: 0.7 },
-        style, // Apply custom style
+        isIconRounded ? styles.rounded : styles.default,
+        { backgroundColor: disabled || loading ? bgColor : bgColor },
+        style
       ]}
-      onPress={loading ? undefined : onPress}
-      disabled={loading}
-      {...rest}
+      disabled={disabled || loading}
     >
       {loading ? (
         <ActivityIndicator color="#fff" />
+      ) : isIconRounded && icon ? (
+        <Image source={icon} style={styles.iconImage} />
       ) : (
-        <ThemedText type='default' style={[styles.text, textStyle]}>
-          {title}
-        </ThemedText>
+        <Text style={styles.text}>{title}</Text>
       )}
-    </Pressable>
+    </TouchableOpacity>
   );
-}
+};
 
 const styles = StyleSheet.create({
   button: {
-    minWidth: 100,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  default: {
+    height: 50,
     borderRadius: 8,
+    paddingHorizontal: 16,
+    width: "100%",
+  },
+  rounded: {
+    width: 60,
+    height: 60,
+    borderRadius: 999,
   },
   text: {
-    color: "#fff",
+    color: "#FFF",
     fontSize: 16,
+    fontWeight: "600",
   },
-  default: {},
-  icon: {},
-  rounded: {
-    borderRadius: 24,
-  },
-  iconRounded: {
-    borderRadius: 24,
-    width: 48,
-    height: 48,
+  iconImage: {
+    width: 28,
+    height: 28,
+    tintColor: "#FFF", // Optional, remove if you want original icon colors
+    resizeMode: "contain",
   },
 });

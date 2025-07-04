@@ -4,6 +4,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { ThemedText } from "./ThemedText";
+import { ThemedView } from "./ThemedView";
 
 type UpdateHeaderProps = {
   title?: string;
@@ -32,29 +33,35 @@ export function UpdateHeader({ title, onUpdatePress }: UpdateHeaderProps) {
     loadUserRole();
   }, []);
 
-  const canUpdate = ["director", "facility-manager", "resident-manager"].includes(role ?? "");
+  const canUpdate = [
+    "director",
+    "facility-manager",
+    "resident-manager",
+  ].includes(role ?? "");
 
   return (
-    <View style={[styles.header, { backgroundColor: bgColor }]}>
-      <View style={styles.row}>
-        <Pressable onPress={() => navigation.back()}>
-          <Image
-            source={require("@/assets/icons/arrow-left.png")}
-            style={styles.backIcon}
-          />
-        </Pressable>
-        <ThemedText style={styles.title}>{title}</ThemedText>
-      </View>
+    <ThemedView>
+      <ThemedView style={[styles.header, { backgroundColor: bgColor }]}>
+        <View style={styles.row}>
+          <Pressable onPress={() => navigation.back()}>
+            <Image
+              source={require("@/assets/icons/arrow-left.png")}
+              style={styles.backIcon}
+            />
+          </Pressable>
+          <ThemedText style={styles.title}>{title}</ThemedText>
+        </View>
 
-      {canUpdate && (
-        <Pressable onPress={onUpdatePress}>
-          <Image
-            source={require("@/assets/icons/update-task.png")}
-            style={styles.updateIcon}
-          />
-        </Pressable>
-      )}
-    </View>
+        {canUpdate && (
+          <Pressable onPress={onUpdatePress}>
+            <Image
+              source={require("@/assets/icons/update-task.png")}
+              style={styles.updateIcon}
+            />
+          </Pressable>
+        )}
+      </ThemedView>
+    </ThemedView>
   );
 }
 

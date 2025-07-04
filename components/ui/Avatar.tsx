@@ -1,5 +1,11 @@
 import React, { useState } from "react";
-import { StyleSheet, TouchableOpacity, Modal, Pressable, Alert } from "react-native";
+import {
+  StyleSheet,
+  TouchableOpacity,
+  Modal,
+  Pressable,
+  Alert,
+} from "react-native";
 import { ThemedView } from "../ThemedView";
 import { Image } from "expo-image";
 import { ThemedText } from "../ThemedText";
@@ -31,13 +37,20 @@ export function Avatar({ size = 40 }: AvatarProps) {
     }
   };
 
-
   const shouldShowModal = popoverVisible && !pathname.includes("profile");
 
   return (
     <>
-      <TouchableOpacity onPress={() => setPopoverVisible(true)} activeOpacity={0.7}>
-        <ThemedView style={[styles.container, { height: size, width: size, borderRadius: size / 2 }]}>
+      <TouchableOpacity
+        onPress={() => setPopoverVisible(true)}
+        activeOpacity={0.7}
+      >
+        <ThemedView
+          style={[
+            styles.container,
+            { height: size, width: size, borderRadius: size / 2 },
+          ]}
+        >
           {user?.image ? (
             <Image
               source={{ uri: user.image }}
@@ -48,8 +61,16 @@ export function Avatar({ size = 40 }: AvatarProps) {
               }}
             />
           ) : (
-            <ThemedView style={[styles.initialContainer, { height: size, width: size, borderRadius: size / 2 }]}>
-              <ThemedText type="default" style={[styles.initial, { fontSize: size * 0.5 }]}>
+            <ThemedView
+              style={[
+                styles.initialContainer,
+                { height: size, width: size, borderRadius: size / 2 },
+              ]}
+            >
+              <ThemedText
+                type="default"
+                style={[styles.initial, { fontSize: size * 0.5 }]}
+              >
                 {getInitial()}
               </ThemedText>
             </ThemedView>
@@ -63,9 +84,18 @@ export function Avatar({ size = 40 }: AvatarProps) {
         animationType="none"
         onRequestClose={() => setPopoverVisible(false)}
       >
-        <Pressable style={styles.overlay} onPress={() => setPopoverVisible(false)}>
+        <Pressable
+          style={styles.overlay}
+          onPress={() => setPopoverVisible(false)}
+        >
           <ThemedView style={styles.popover}>
-            <Pressable style={styles.button} onPress={() => navigation.push("/profile")}>
+            <Pressable
+              style={styles.button}
+              onPress={() => {
+                navigation.push("/profile");
+                setPopoverVisible(false);
+              }}
+            >
               <ThemedText type="default">Profile</ThemedText>
             </Pressable>
             <Pressable style={styles.button} onPress={handleLogout}>
@@ -77,7 +107,6 @@ export function Avatar({ size = 40 }: AvatarProps) {
     </>
   );
 }
-
 
 const styles = StyleSheet.create({
   container: {
@@ -97,8 +126,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
     height: "100%",
     width: "100%",
-    textAlignVertical: "center"
-
+    textAlignVertical: "center",
   },
   overlay: {
     flex: 1,
@@ -114,7 +142,7 @@ const styles = StyleSheet.create({
     elevation: 5,
     shadowColor: "rgba(0, 0, 0, 0.03)",
     alignItems: "flex-start",
-    marginTop: 50,
+    marginTop: "18%",
     marginRight: 15,
   },
   button: {

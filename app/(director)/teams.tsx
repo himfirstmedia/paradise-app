@@ -6,8 +6,8 @@ import { ThemedView } from "@/components/ThemedView";
 import { Avatar } from "@/components/ui/Avatar";
 import { useReduxMembers } from "@/hooks/useReduxMembers";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { useRouter } from "expo-router";
-import React, { useMemo } from "react";
+import { useFocusEffect, useRouter } from "expo-router";
+import React, { useCallback, useMemo } from "react";
 import {
   ActivityIndicator,
   Image,
@@ -28,7 +28,15 @@ export default function TeamsScreen() {
   const pending = useThemeColor({}, "pending");
   const overdue = useThemeColor({}, "overdue");
   const navigation = useRouter();
-  const { members, loading } = useReduxMembers();
+  const { members, loading, reload } = useReduxMembers();
+
+
+  useFocusEffect(
+    useCallback(() => {
+      reload();
+    }, [reload])
+  );
+
 
   const houseReduxTaskstats = useMemo(() => {
     const stats: Record<
@@ -111,6 +119,8 @@ export default function TeamsScreen() {
       (member) => member.role !== "SUPER_ADMIN" && member.role !== "DIRECTOR"
     );
   }, [members]);
+
+  
 
   return (
     <>

@@ -5,6 +5,7 @@ import { ThemedView } from "@/components/ThemedView";
 import { Button } from "@/components/ui/Button";
 import { KeyboardAvoidingView, Platform, StyleSheet } from "react-native";
 import { useState } from "react";
+import { useThemeColor } from "@/hooks/useThemeColor";
 
 export interface HouseFormValues {
   houseName: string;
@@ -12,10 +13,11 @@ export interface HouseFormValues {
   capacity: string;
 }
 
+
 export interface HouseFormProps {
   mode: "add" | "edit";
   initialValues: {
-    name: string;
+    houseName: string;
     abbreviation: string;
     capacity: string;
   };
@@ -29,9 +31,16 @@ export function HouseForm({
   onSubmit,
   loading,
 }: HouseFormProps) {
-  const [houseName, setHouseName] = useState(initialValues.name);
+  const errorColor = useThemeColor({}, "overdue");
+  const [houseName, setHouseName] = useState(initialValues.houseName);
   const [abbreviation, setAbbreviation] = useState(initialValues.abbreviation);
   const [capacity, setCapacity] = useState(initialValues.capacity);
+
+  const Dot = () => {
+    return (
+      <ThemedText style={{ color: errorColor }}>*</ThemedText>
+    );
+  };
 
   return (
     <ThemedView style={styles.container}>
@@ -45,7 +54,7 @@ export function HouseForm({
         </ThemedText>
 
         <ThemedView style={styles.inputField}>
-          <ThemedText type="default">House Full Name</ThemedText>
+          <ThemedText type="default">House Full Name <Dot /></ThemedText>
           <ThemedTextInput
             placeholder="Enter house full name"
             value={houseName}
@@ -55,7 +64,7 @@ export function HouseForm({
         </ThemedView>
 
         <ThemedView style={styles.inputField}>
-          <ThemedText type="default">Short Name</ThemedText>
+          <ThemedText type="default">Short Name <Dot /></ThemedText>
           <ThemedTextInput
             placeholder="Enter house short name"
             value={abbreviation}
@@ -65,7 +74,7 @@ export function HouseForm({
         </ThemedView>
 
         <ThemedView style={styles.inputField}>
-          <ThemedText type="default">Capacity</ThemedText>
+          <ThemedText type="default">Capacity <Dot /></ThemedText>
           <ThemedTextInput
             placeholder="Enter house capacity"
             value={capacity}

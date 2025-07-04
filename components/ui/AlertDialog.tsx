@@ -1,16 +1,25 @@
 // src/components/ui/AlertDialog.tsx
-import React from "react";
-import { Modal, Pressable, View, StyleSheet } from "react-native";
-import { ThemedView } from "@/components/ThemedView";
 import { ThemedText } from "@/components/ThemedText";
-import { useThemeColor } from "@/hooks/useThemeColor";
+import { ThemedView } from "@/components/ThemedView";
 import { Button } from "@/components/ui/Button"; // Import the updated Button
+import { useThemeColor } from "@/hooks/useThemeColor";
+import React from "react";
+import {
+  Modal,
+  Pressable,
+  StyleProp,
+  StyleSheet,
+  View,
+  ViewStyle,
+} from "react-native";
 
 type AlertDialogProps = {
   visible: boolean;
   title?: string;
   message: string;
   confirmText?: string;
+  style?: StyleProp<ViewStyle>;
+
   cancelText?: string;
   onConfirm: () => void;
   onCancel: () => void;
@@ -91,7 +100,7 @@ const styles = StyleSheet.create({
   },
   dialogContainer: {
     width: "100%",
-    borderRadius:20,
+    borderRadius: 20,
     padding: 24,
   },
   title: {
@@ -111,7 +120,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   button: {
-    maxWidth: 100,
+    width: 100,
   },
   confirmText: {
     color: "white",

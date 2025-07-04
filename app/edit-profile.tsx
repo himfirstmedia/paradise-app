@@ -19,6 +19,8 @@ import {
 } from "react-native";
 import { useReduxHouse } from "@/hooks/useReduxHouse";
 import { useReduxMembers } from "@/hooks/useReduxMembers";
+import { User } from "@/redux/slices/userSlice";
+import { useThemeColor } from "@/hooks/useThemeColor";
 
 interface UserFormData {
   id: number | null;
@@ -37,32 +39,21 @@ interface UserFormData {
   password: string;
 }
 
-const getSafeParam = (param: any): string => {
-  return Array.isArray(param) ? param[0] || "" : param || "";
-};
-
 export default function EditProfileScreen() {
+  const errorColor = useThemeColor({}, "overdue");
   const navigation = useRouter();
   const params = useLocalSearchParams();
-  const { user: currentUser } = useReduxAuth();
-  const { houses } = useReduxHouse();
-  const { reload } = useReduxMembers();
+  const { user: currentUser, updateCurrentUser } = useReduxAuth();
 
-  // Extract all params as primitives
-  const paramId = getSafeParam(params.id);
-  const paramName = getSafeParam(params.name);
-  const paramEmail = getSafeParam(params.email);
-  const paramGender = getSafeParam(params.gender);
-  const paramCity = getSafeParam(params.city);
-  const paramState = getSafeParam(params.state);
-  const paramZipCode = getSafeParam(params.zipCode);
-  const paramPhone = getSafeParam(params.phone);
-  const paramRole = getSafeParam(params.role);
-  const paramHouseId = getSafeParam(params.houseId);
-  const paramImage = getSafeParam(params.image);
-  const paramJoinedDate = getSafeParam(params.joinedDate);
-  const paramLeavingDate = getSafeParam(params.leavingDate);
-  const paramPassword = getSafeParam(params.password);
+  const { houses } = useReduxHouse();
+  const { members, reload: reloadMembers } = useReduxMembers();
+
+  // Get user ID from params
+  const paramId = Array.isArray(params.id) ? params.id[0] : params.id;
+  const userId = paramId ? Number(paramId) : currentUser?.id || null;
+
+  // Find member in Redux store
+  const member = userId ? members.find((m) => m.id === userId) : null;
 
   const [formData, setFormData] = useState<UserFormData>({
     id: null,
@@ -81,9 +72,8 @@ export default function EditProfileScreen() {
     password: "",
   });
 
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const isMountedRef = useRef(true);
-  const currentUserId = currentUser?.id ?? null;
 
   useEffect(() => {
     return () => {
@@ -94,29 +84,27 @@ export default function EditProfileScreen() {
   useEffect(() => {
     if (!isMountedRef.current) return;
 
-    if (paramId) {
+    if (member) {
       setFormData({
-        id: Number(paramId),
-        name: paramName,
-        email: paramEmail,
-        gender: paramGender,
-        city: paramCity,
-        state: paramState,
-        zipCode: paramZipCode,
-        phone: paramPhone,
-        role: paramRole,
-        houseId: Number(paramHouseId) || null,
-        image: paramImage || null,
-        joinedDate: paramJoinedDate || null,
-        leavingDate: paramLeavingDate || null,
-        password: paramPassword,
+        id: member.id,
+        name: member.name ?? "",
+        email: member.email ?? "",
+        gender: member.gender ?? "",
+        city: member.city ?? "",
+        state: member.state ?? "",
+        zipCode: member.zipCode ?? "",
+        phone: member.phone ?? "",
+        role: member.role ?? "",
+        houseId: member.houseId || null,
+        image: member.image || null,
+        joinedDate: member.joinedDate || null,
+        leavingDate: member.leavingDate || null,
+        password: "",
       });
-    } else if (
-      currentUser &&
-      formData.id !== (currentUserId ? String(currentUserId) : null)
-    ) {
+      setLoading(false);
+    } else if (currentUser && !member) {
       setFormData({
-        id: currentUser.id ?? null,
+        id: currentUser.id,
         name: currentUser.name ?? "",
         email: currentUser.email ?? "",
         gender: currentUser.gender ?? "",
@@ -125,32 +113,15 @@ export default function EditProfileScreen() {
         zipCode: currentUser.zipCode ?? "",
         phone: currentUser.phone ?? "",
         role: currentUser.role ?? "",
-        houseId: currentUser.houseId ? currentUser.houseId : null,
-        image: currentUser.image ?? null,
-        joinedDate: currentUser.joinedDate ?? null,
-        leavingDate: currentUser.leavingDate ?? null,
+        houseId: currentUser.houseId || null,
+        image: currentUser.image || null,
+        joinedDate: currentUser.joinedDate || null,
+        leavingDate: currentUser.leavingDate || null,
         password: "",
       });
+      setLoading(false);
     }
-  }, [
-    paramId,
-    paramName,
-    paramEmail,
-    paramGender,
-    paramCity,
-    paramState,
-    paramZipCode,
-    paramPhone,
-    paramRole,
-    paramHouseId,
-    paramImage,
-    paramJoinedDate,
-    paramLeavingDate,
-    paramPassword,
-    currentUserId,
-    formData.id,
-    currentUser,
-  ]);
+  }, [member, currentUser]);
 
   // Create a handler for each field
   const handleNameChange = (value: string) =>
@@ -187,9 +158,34 @@ export default function EditProfileScreen() {
         await api.put(`/users/${formData.id}`, payload);
       }
 
-      Alert.alert("Success", "Profile updated successfully!");
+      const isValidGender = (val: string): val is User["gender"] =>
+        ["MALE", "FEMALE", "OTHER"].includes(val);
 
-      await reload();
+      const isValidRole = (val: string): val is User["role"] =>
+        [
+          "SUPER_ADMIN",
+          "ADMIN",
+          "DIRECTOR",
+          "RESIDENT_MANAGER",
+          "FACILITY_MANAGER",
+          "RESIDENT",
+          "INDIVIDUAL",
+        ].includes(val);
+
+      if (currentUser?.id === formData.id) {
+        updateCurrentUser({
+          ...formData,
+          id: formData.id ?? undefined,
+          gender: isValidGender(formData.gender) ? formData.gender : undefined,
+          role: isValidRole(formData.role) ? formData.role : undefined,
+          image: formData.image ?? undefined,
+          joinedDate: formData.joinedDate ?? undefined,
+          leavingDate: formData.leavingDate ?? undefined,
+        });
+      }
+
+      Alert.alert("Success", "Profile updated successfully!");
+      await reloadMembers();
       navigation.back();
     } catch (error: any) {
       Alert.alert(
@@ -199,35 +195,40 @@ export default function EditProfileScreen() {
     } finally {
       setLoading(false);
     }
-  }, [formData, navigation, reload]);
+  }, [formData, navigation, reloadMembers, currentUser?.id, updateCurrentUser]);
 
   const houseOptions = houses.map((house) => ({
     label: house.name,
     value: house.id,
   }));
 
+  const Dot = () => {
+    return (
+      <ThemedText style={{ color: errorColor }}>*</ThemedText>
+    );
+  };
+
   return (
     <ThemedView style={styles.container}>
-      <ScrollView
-        contentContainerStyle={{
-          alignItems: "center",
-          width: "100%",
-          paddingBottom: "20%",
-        }}
-        showsVerticalScrollIndicator={false}
-        style={styles.innerContainer}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={styles.keyboardAvoid}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 0}
       >
-        <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-          style={styles.keyboardAvoid}
-          keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 0}
+        <ScrollView
+          contentContainerStyle={{
+            width: "100%",
+            paddingBottom: "20%",
+          }}
+          showsVerticalScrollIndicator={false}
+          style={styles.innerContainer}
         >
           <ThemedText type="title" style={{ marginBottom: 20 }}>
             Edit Profile
           </ThemedText>
 
           <ThemedView style={styles.inputField}>
-            <ThemedText type="default">Name</ThemedText>
+            <ThemedText type="default">Name <Dot /></ThemedText>
             <ThemedTextInput
               placeholder="Enter your full name"
               value={formData.name}
@@ -236,7 +237,7 @@ export default function EditProfileScreen() {
           </ThemedView>
 
           <ThemedView style={styles.inputField}>
-            <ThemedText type="default">Email Address</ThemedText>
+            <ThemedText type="default">Email Address <Dot /></ThemedText>
             <ThemedEmailInput
               placeholder="Enter your email address"
               value={formData.email}
@@ -245,7 +246,7 @@ export default function EditProfileScreen() {
           </ThemedView>
 
           <ThemedView style={styles.inputField}>
-            <ThemedText type="default">Gender</ThemedText>
+            <ThemedText type="default">Gender <Dot /></ThemedText>
             <ThemedDropdown
               placeholder="Select your gender"
               items={["MALE", "FEMALE"]}
@@ -254,7 +255,7 @@ export default function EditProfileScreen() {
             />
           </ThemedView>
           <ThemedView style={styles.inputField}>
-            <ThemedText type="default">House</ThemedText>
+            <ThemedText type="default">House <Dot /></ThemedText>
             <ThemedDropdown
               placeholder="Select house"
               items={houseOptions.map((h) => h.label)}
@@ -271,7 +272,7 @@ export default function EditProfileScreen() {
 
           <ThemedView style={styles.row}>
             <ThemedView style={{ width: "45%" }}>
-              <ThemedText type="default">City</ThemedText>
+              <ThemedText type="default">City <Dot /></ThemedText>
               <ThemedTextInput
                 placeholder="Enter city"
                 value={formData.city}
@@ -279,7 +280,7 @@ export default function EditProfileScreen() {
               />
             </ThemedView>
             <ThemedView style={{ width: "45%" }}>
-              <ThemedText type="default">State</ThemedText>
+              <ThemedText type="default">State <Dot /></ThemedText>
               <ThemedTextInput
                 placeholder="Enter state"
                 value={formData.state}
@@ -289,7 +290,7 @@ export default function EditProfileScreen() {
           </ThemedView>
 
           <ThemedView style={styles.inputField}>
-            <ThemedText type="default">Zip Code</ThemedText>
+            <ThemedText type="default">Zip Code <Dot /></ThemedText>
             <ThemedTextInput
               placeholder="Enter zip code"
               value={formData.zipCode}
@@ -298,7 +299,7 @@ export default function EditProfileScreen() {
           </ThemedView>
 
           <ThemedView style={styles.inputField}>
-            <ThemedText type="default">Phone</ThemedText>
+            <ThemedText type="default">Phone <Dot /></ThemedText>
             <ThemedTextInput
               placeholder="Enter phone"
               value={formData.phone}
@@ -314,8 +315,8 @@ export default function EditProfileScreen() {
               loading={loading}
             />
           </ThemedView>
-        </KeyboardAvoidingView>
-      </ScrollView>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </ThemedView>
   );
 }

@@ -77,7 +77,7 @@ export default function TabTwoScreen() {
               innerRadius={60}
               showGradient={false}
               strokeColor={primaryColor}
-              strokeWidth={10}
+              strokeWidth={5}
               legendTitle="Tasks Progress"
               centerLabelComponent={() => (
                 <View>
@@ -167,6 +167,8 @@ const styles = StyleSheet.create({
     borderBottomStartRadius: 20,
     paddingHorizontal: 15,
     marginBottom: 15,
+    paddingTop: 20,
+    paddingBottom: 20
   },
   row: {
     flexDirection: "row",

@@ -71,8 +71,8 @@ export default function TabThreeScreen() {
 
   const handleLogout = async () => {
   try {
-    await UserSessionUtils.logout(); // if this clears AsyncStorage or similar
-    await signout(); // dispatches Redux logout
+    await UserSessionUtils.logout(); 
+    await signout();
     navigation.replace("../auth");
   } catch (error) {
     console.error("Logout Error:", error);

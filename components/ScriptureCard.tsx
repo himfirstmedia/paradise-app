@@ -119,15 +119,14 @@ export function ScriptureCard({
   );
 }
 
-// Remove the ScriptureCardBoard component and its modal for creating posts
-
 const styles = StyleSheet.create({
   card: {
     minHeight: "20%",
-    height: 130,
+    maxHeight: 150,
     width: "100%",
     borderWidth: 1,
     borderRadius: 20,
+    paddingVertical: 10
   },
   innerCard: {
     paddingVertical: 10,

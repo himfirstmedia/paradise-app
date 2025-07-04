@@ -135,6 +135,7 @@ export default function PostScriptureScreen() {
         version: selectedVersion,
         verse: enteredVerse,
         scripture: enteredScripture,
+        createdAt: new Date().toISOString(),
       });
       Alert.alert("Success", "Scripture created successfully!");
       setSelectedBook("");
@@ -161,6 +162,7 @@ export default function PostScriptureScreen() {
         version: selectedVersion,
         verse: enteredVerse,
         scripture: enteredScripture,
+        updatedAt: new Date().toISOString(),
       });
       Alert.alert("Success", "Scripture updated successfully!");
       await reload();

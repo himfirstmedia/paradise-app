@@ -4,7 +4,7 @@ import { ThemedView } from "@/components/ThemedView";
 import { Button } from "@/components/ui/Button";
 import { useReduxTasks } from "@/hooks/useReduxTasks";
 import api from "@/utils/api";
-import { useReduxAuth } from "@/hooks/useReduxAuth"; // Add this import
+import { useReduxAuth } from "@/hooks/useReduxAuth"; 
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import { Alert, ScrollView, StyleSheet } from "react-native";
@@ -15,18 +15,13 @@ export default function CommentsScreen() {
   const [message, setMessage] = useState<string>("");
   const [submitting, setSubmit] = useState<boolean>(false);
 
-  // Get current user from Redux
   const { user } = useReduxAuth();
   const userId = user?.id || null;
 
-  // Get tasks
   const { tasks } = useReduxTasks();
-  
-  // Filter tasks for current user
-  const currentUserTasks = tasks.filter(task => 
-    task.userId === userId
-  );
-  
+
+  const currentUserTasks = tasks.filter((task) => task.userId === userId);
+
   const taskOptions = currentUserTasks.map((task) => ({
     label: task.name,
     value: task.id,
@@ -47,7 +42,7 @@ export default function CommentsScreen() {
       message,
       userId,
       type,
-      ...(type === "Comment" && selectedTaskId && { taskId: selectedTaskId })
+      ...(type === "Comment" && selectedTaskId && { taskId: selectedTaskId }),
     };
 
     try {
@@ -88,19 +83,23 @@ export default function CommentsScreen() {
         {type === "Comment" && (
           <ThemedDropdown
             placeholder="Select related task"
-            items={taskOptions.map(t => t.label)}
-            value={taskOptions.find(t => t.value === selectedTaskId)?.label || ""}
+            items={taskOptions.map((t) => t.label)}
+            value={
+              taskOptions.find((t) => t.value === selectedTaskId)?.label || ""
+            }
             onSelect={(label) => {
-              const task = taskOptions.find(t => t.label === label);
+              const task = taskOptions.find((t) => t.label === label);
               setSelectedTaskId(task?.value || null);
             }}
           />
         )}
 
         <ThemedTextArea
-          placeholder={type === "Suggestion" 
-            ? "Enter your suggestion" 
-            : "Enter your comment"}
+          placeholder={
+            type === "Suggestion"
+              ? "Enter your suggestion"
+              : "Enter your comment"
+          }
           value={message}
           onChangeText={setMessage}
         />
@@ -110,10 +109,7 @@ export default function CommentsScreen() {
           onPress={handleSubmit}
           loading={submitting}
           disabled={
-            !type ||
-            (type === "Comment" && !selectedTaskId) ||
-            !message ||
-            !userId
+            !message || !userId || (type === "Comment" && !selectedTaskId)
           }
         />
       </ScrollView>
@@ -124,20 +120,20 @@ export default function CommentsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
-    padding: 16,
   },
   innerContainer: {
     flex: 1,
     width: "100%",
+    padding: 16,
   },
   scrollContent: {
+    flexGrow: 1,
     alignItems: "center",
     width: "100%",
-    paddingBottom: 100, // Fixed value instead of percentage
+    paddingBottom: 120,
   },
   introText: {
     marginBottom: 20,
     textAlign: "center",
-  }
+  },
 });

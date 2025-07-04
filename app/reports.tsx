@@ -1,35 +1,75 @@
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
+import { useReduxHouse } from "@/hooks/useReduxHouse";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { useRouter } from "expo-router";
-import { Image, Pressable, StyleSheet, View } from "react-native";
+import { useEffect, useMemo, useState } from "react";
+import {
+  ActivityIndicator,
+  Image,
+  Pressable,
+  StyleSheet,
+  View,
+} from "react-native";
 
-type ActionButton = {
-  icon?: any;
-  label: string;
-  route: string;
-  type?: string;
-  house?: string;
-};
-
-const ACTION_BUTTONS: ActionButton[] = [
-  {
-    label: "LLW House",
-    route: "/report-details",
-    type: "resident",
-    house: "LLW House",
-  },
-  {
-    label: "CE House",
-    route: "/report-details",
-    type: "resident",
-    house: "CE House",
-  },
-];
+const normalizeHouseName = (name: string) =>
+  name ? name.trim().replace(/\s+/g, "_") : " ";
 
 export default function Reports() {
+  const primaryColor = useThemeColor({}, "selection");
   const bgColor = useThemeColor({}, "input");
   const navigation = useRouter();
+  const { houses, loading: housesLoading, getDisplayName } = useReduxHouse();
+  const [hasTimedOut, setHasTimedOut] = useState(false);
+
+  useEffect(() => {
+  const timeout = setTimeout(() => {
+    if (!houses || houses.length === 0) {
+      setHasTimedOut(true);
+    }
+  }, 500); // 5 seconds timeout
+
+  return () => clearTimeout(timeout); // cleanup on unmount
+}, [houses]);
+
+  const residentReports = useMemo(() => {
+    // Filter out administration houses if needed
+    return houses
+      .filter((house) => !house.name.includes("Administration"))
+      .map((house) => ({
+        label: getDisplayName(house.name),
+        route: "/report-details" as const,
+        params: {
+          type: "house",
+          house: normalizeHouseName(house.name),
+          houseId: house.id,
+        },
+      }));
+  }, [houses, getDisplayName]);
+
+  if (housesLoading && !hasTimedOut) {
+  return (
+    <ThemedView style={[styles.container, { alignItems: "center" }]}>
+      <ActivityIndicator
+        size="large"
+        color={primaryColor}
+        style={{ marginTop: "5%" }}
+      />
+    </ThemedView>
+  );
+}
+
+if (hasTimedOut && (!houses || houses.length === 0)) {
+  return (
+    <ThemedView style={[styles.container, { alignItems: "center" }]}>
+      <ThemedText type="default" style={{ marginTop: 10 }}>
+        Failed to load houses. Please try again later.
+      </ThemedText>
+    </ThemedView>
+  );
+}
+
+
 
   return (
     <ThemedView style={styles.container}>
@@ -38,18 +78,24 @@ export default function Reports() {
       </ThemedText>
 
       <View style={{ gap: 8, width: "100%" }}>
-        {ACTION_BUTTONS.map((btn, idx) => (
-          <ProfileActionButton
-            key={idx}
-            icon={btn.icon}
-            label={btn.label}
-            route={btn.route}
-            bgColor={bgColor}
-            navigation={navigation}
-            type={btn.type}
-            house={btn.house}
-          />
-        ))}
+        {residentReports.length === 0 ? (
+          <ThemedText type="default" style={{ marginTop: 10 }}>
+            There are no houses present to generate reports.
+          </ThemedText>
+        ) : (
+          <View style={{ gap: 8, width: "100%" }}>
+            {residentReports.map((btn, idx) => (
+              <ProfileActionButton
+                key={idx}
+                label={btn.label}
+                route={btn.route}
+                params={btn.params}
+                bgColor={bgColor}
+                navigation={navigation}
+              />
+            ))}
+          </View>
+        )}
       </View>
 
       <ThemedText type="title" style={[styles.title, { marginTop: "8%" }]}>
@@ -82,30 +128,24 @@ export default function Reports() {
 }
 
 type ProfileActionButtonProps = {
-  icon?: any;
   label: string;
-  route: string;
+  route: "/report-details";
+  params: Record<string, any>;
   bgColor?: string;
-  type?: string;
-  house?: string;
   navigation: ReturnType<typeof useRouter>;
 };
 
 function ProfileActionButton({
-  icon,
   label,
   route,
-  type,
-  house,
+  params,
   bgColor,
   navigation,
 }: ProfileActionButtonProps) {
   return (
     <Pressable
       style={[styles.row, styles.button, { backgroundColor: bgColor }]}
-      onPress={() =>
-        navigation.push({ pathname: route as any, params: { type, house } })
-      }
+      onPress={() => navigation.push({ pathname: route, params })}
     >
       <View style={{ flexDirection: "row", gap: 10 }}>
         <ThemedText type="default">{label}</ThemedText>

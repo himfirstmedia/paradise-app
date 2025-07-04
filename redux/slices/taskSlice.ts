@@ -8,7 +8,9 @@ export type ProgressType = "PENDING" | "COMPLETED" | "OVERDUE";
 export interface Task {
   id: number;
   name: string;
+  category: "PRIMARY" | "MAINTENANCE" | "SPECIAL";
   description: string;
+  status: "PENDING" |"REVIEWING" | "APPROVED";
   progress: string;
   type: "PENDING" | "COMPLETED" | "OVERDUE";
   userId?: number | null;
@@ -17,7 +19,7 @@ export interface Task {
 
 interface TaskState {
   tasks: Task[];
-  status: 'idle' | 'loading' | 'succeeded' | 'failed'; // Added status field
+  status: 'idle' | 'loading' | 'succeeded' | 'failed';
   error: string | null;
 }
 

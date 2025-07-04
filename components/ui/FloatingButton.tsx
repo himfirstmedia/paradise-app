@@ -7,6 +7,7 @@ import {
   View,
   ViewStyle,
   ImageSourcePropType,
+  StyleProp,
 } from "react-native";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { ThemedText } from "../ThemedText";
@@ -25,6 +26,7 @@ export type ThemedButtonProps = {
   icon?: ImageSourcePropType;
   onPress?: (data?: any) => void;
   childrenButtons?: FloatingChildButton[];
+  style?: StyleProp<ViewStyle>
 };
 
 export function FloatingButton({
@@ -34,6 +36,7 @@ export function FloatingButton({
   icon,
   onPress,
   childrenButtons = [],
+  style,
   ...rest
 }: ThemedButtonProps) {
   const bgColor = useThemeColor({ light: lightColor, dark: darkColor }, "button");
@@ -62,7 +65,7 @@ export function FloatingButton({
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, style]}>
       {childrenButtons.map((btn, idx) => {
             const opacity = animatedValues[idx];
             const translateY = animatedValues[idx].interpolate({

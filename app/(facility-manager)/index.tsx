@@ -14,9 +14,9 @@ import { useReduxTasks } from "@/hooks/useReduxTasks";
 
 function getGreeting() {
   const hour = new Date().getHours();
-  if (hour < 12) return "Good Morning,";
-  if (hour < 18) return "Good Afternoon,";
-  return "Good Evening,";
+  if (hour < 12) return "Good Morning, ";
+  if (hour < 18) return "Good Afternoon, ";
+  return "Good Evening, ";
 }
 
 export default function HomeScreen() {
@@ -50,11 +50,6 @@ export default function HomeScreen() {
                 style={{ fontWeight: "600", color: "#FFFFFF" }}
               >
                 {getGreeting()}
-              </ThemedText>
-              <ThemedText
-                type="subtitle"
-                style={{ fontWeight: "600", color: "#FFFFFF" }}
-              >
                 {userName}
               </ThemedText>
             </ThemedView>
@@ -62,14 +57,17 @@ export default function HomeScreen() {
           </ThemedView>
 
           <View style={{ marginTop: "8%", gap: 12 }}>
-            <ThemedText type="title" style={{ width: "100%", color: "#FFFFFF" }}>
-              Welcome To Paradise Management.
+            <ThemedText
+              type="title"
+              style={{ width: "100%", color: "#FFFFFF" }}
+            >
+              Welcome to Paradise App.
             </ThemedText>
           </View>
         </ThemedView>
 
         <ThemedView style={styles.subContainer}>
-          <View style={{ marginBottom: "5%", marginTop: "2%", height: 130 }}>
+          <View style={{ marginBottom: "5%", marginTop: "2%", height: 150 }}>
             {!scriptureLoading ? (
               latestScripture ? (
                 <ScriptureCard
@@ -99,19 +97,28 @@ export default function HomeScreen() {
                 color={primaryColor}
                 style={{ marginTop: "5%" }}
               />
-            ) : tasks.length === 0 ? (
-              <ThemedText
-                type="default"
-                style={{
-                  textAlign: "center",
-                  marginTop: 24,
-                  color: "#888",
-                }}
-              >
-                There are no tasks assigned yet.
-              </ThemedText>
             ) : (
-              <TaskCard tasks={tasks} />
+              (() => {
+                const isFacilityManager = user?.role === "FACILITY_MANAGER";
+                const visibleTasks = isFacilityManager
+                  ? tasks.filter((task) => task.category === "MAINTENANCE")
+                  : tasks;
+
+                return visibleTasks.length === 0 ? (
+                  <ThemedText
+                    type="default"
+                    style={{
+                      textAlign: "center",
+                      marginTop: 24,
+                      color: "#888",
+                    }}
+                  >
+                    There are no tasks to display.
+                  </ThemedText>
+                ) : (
+                  <TaskCard tasks={visibleTasks} />
+                );
+              })()
             )}
           </View>
         </ThemedView>
@@ -136,14 +143,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
   },
   headerCard: {
-    minHeight: 200,
+    minHeight: 160,
     width: "100%",
     borderBottomEndRadius: 20,
     borderBottomStartRadius: 20,
     paddingHorizontal: 15,
     marginBottom: "5%",
     paddingTop: 20,
-    paddingBottom: 20
+    paddingBottom: 20,
   },
   row: {
     flexDirection: "row",
