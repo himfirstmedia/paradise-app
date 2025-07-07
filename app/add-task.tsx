@@ -83,7 +83,7 @@ export default function AddTaskScreen() {
         endDate,
         description,
         progress: "PENDING",
-        status: "PENDING"
+        status: "PENDING",
       });
       Alert.alert("Success", "Task created successfully!");
       setTaskName("");
@@ -104,10 +104,8 @@ export default function AddTaskScreen() {
   };
 
   const Dot = () => {
-  return (
-    <ThemedText style={{ color: errorColor }}>*</ThemedText>
-  );
-};
+    return <ThemedText style={{ color: errorColor }}>*</ThemedText>;
+  };
 
   return (
     <ThemedView style={styles.container}>
@@ -118,7 +116,10 @@ export default function AddTaskScreen() {
       >
         <ScrollView
           style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[
+            styles.scrollContent,
+            Platform.OS === "web" && { minHeight: "100%" },
+          ]}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
@@ -127,7 +128,9 @@ export default function AddTaskScreen() {
           </ThemedText>
 
           <ThemedView style={styles.inputField}>
-            <ThemedText type="default">Task Name <Dot /></ThemedText>
+            <ThemedText type="default">
+              Task Name <Dot />
+            </ThemedText>
             <ThemedTextInput
               placeholder="Enter task name"
               value={taskName}
@@ -139,7 +142,9 @@ export default function AddTaskScreen() {
             />
           </ThemedView>
           <ThemedView style={styles.inputField}>
-            <ThemedText type="default">Task Category <Dot /></ThemedText>
+            <ThemedText type="default">
+              Task Category <Dot />
+            </ThemedText>
             <ThemedDropdown
               placeholder="Select Task Category"
               items={categoryOptions.map((opt) => opt.label)}
@@ -161,7 +166,9 @@ export default function AddTaskScreen() {
           <View style={styles.row}>
             <View style={{ width: "48%" }}>
               <ThemedView style={styles.inputField}>
-                <ThemedText type="default">Start Date <Dot /></ThemedText>
+                <ThemedText type="default">
+                  Start Date <Dot />
+                </ThemedText>
                 <ThemedDatePicker
                   value={startDate}
                   onChangeText={(date) => {
@@ -176,7 +183,9 @@ export default function AddTaskScreen() {
 
             <View style={{ width: "48%" }}>
               <ThemedView style={styles.inputField}>
-                <ThemedText type="default">End Date <Dot /></ThemedText>
+                <ThemedText type="default">
+                  End Date <Dot />
+                </ThemedText>
                 <ThemedDatePicker
                   value={endDate}
                   onChangeText={(date) => {
@@ -190,7 +199,9 @@ export default function AddTaskScreen() {
             </View>
           </View>
           <ThemedView style={styles.inputField}>
-            <ThemedText type="default">Description <Dot /></ThemedText>
+            <ThemedText type="default">
+              Description <Dot />
+            </ThemedText>
             <ThemedTextArea
               placeholder="Enter task description"
               value={description}
@@ -219,13 +230,14 @@ export default function AddTaskScreen() {
 
 const styles = StyleSheet.create({
   scrollView: {
-    flex: 1,
     width: "100%",
     paddingVertical: "5%",
     paddingHorizontal: 15,
+    ...(Platform.OS === "web" && { overflow: "scroll" }),
   },
   scrollContent: {
     flexGrow: 1,
+    paddingBottom: 50,
   },
   container: {
     flex: 1,
@@ -236,7 +248,7 @@ const styles = StyleSheet.create({
   },
   keyboardAvoid: {
     width: "100%",
-    flexGrow: 1,
+    flex: 1,
   },
   row: {
     flexDirection: "row",

@@ -80,15 +80,16 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     alignItems: "center",
     justifyContent: "center",
+    // borderWidth: 1
   },
   initialContainer: {
+    flexDirection: "column",
     alignItems: "center",
     justifyContent: "center",
+    height: "100%",
   },
   initial: {
     textAlign: "center",
-    height: "100%",
-    width: "100%",
     textAlignVertical: "center",
   },
 });

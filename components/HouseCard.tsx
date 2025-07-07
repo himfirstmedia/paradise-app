@@ -4,8 +4,6 @@ import {
   StyleSheet,
   Modal,
   Alert,
-  findNodeHandle,
-  UIManager,
   Dimensions,
   View,
 } from "react-native";
@@ -47,7 +45,7 @@ export function HouseCard({ houses, style }: HouseCardProps) {
   const bgColor = useThemeColor({}, "input");
   const textColor = useThemeColor({}, "text");
   const [expanded, setExpanded] = useState(false);
-  const {reload} = useReduxHouse();
+  const { reload } = useReduxHouse();
   const [popoverVisible, setPopoverVisible] = useState<number | null>(null);
   const [popoverPosition, setPopoverPosition] = useState<{
     top: number;
@@ -66,22 +64,40 @@ export function HouseCard({ houses, style }: HouseCardProps) {
 
   const showPopover = (houseId: number) => {
     const ref = optionBtnRefs.current[houseId];
-    if (ref) {
+    if (ref?.measure) {
+      // Native path (optional fallback if running on native)
       const screenWidth = Dimensions.get("window").width;
-      const nodeHandle = findNodeHandle(ref);
-      if (nodeHandle != null) {
-        UIManager.measure(nodeHandle, (x, y, width, height, pageX, pageY) => {
+      ref.measure(
+        (
+          x: number,
+          y: number,
+          width: number,
+          height: number,
+          pageX: number,
+          pageY: number
+        ) => {
           let left = pageX;
-          const verticalOffset = -45;
+          const verticalOffset = 10;
           if (left + POPOVER_WIDTH > screenWidth) {
             left = screenWidth - POPOVER_WIDTH - 20;
           }
           setPopoverPosition({ top: pageY + height + verticalOffset, left });
           setPopoverVisible(houseId);
-        });
-      } else {
-        setPopoverVisible(houseId);
+        }
+      );
+    } else if (ref?.getBoundingClientRect) {
+      // Web path
+      const rect = ref.getBoundingClientRect();
+      let left = rect.left;
+      const verticalOffset = -45;
+      if (left + POPOVER_WIDTH > window.innerWidth) {
+        left = window.innerWidth - POPOVER_WIDTH - 20;
       }
+      setPopoverPosition({
+        top: rect.top + rect.height + verticalOffset,
+        left,
+      });
+      setPopoverVisible(houseId);
     } else {
       setPopoverVisible(houseId);
     }
@@ -101,26 +117,25 @@ export function HouseCard({ houses, style }: HouseCardProps) {
   };
 
   const handleDelete = (house: House) => {
-  setPopoverVisible(null);
-  Alert.alert("Delete House", "Are you sure you want to delete this house?", [
-    { text: "Cancel", style: "cancel" },
-    {
-      text: "Delete",
-      style: "destructive",
-      onPress: async () => {
-        try {
-          await api.delete(`/houses/${house.id}`);
-          Alert.alert("Deleted", "House deleted successfully.");
-          await reload();
-        } catch (error) {
-          console.error("Delete failed:", error);
-          Alert.alert("Error", "Failed to delete the house.");
-        }
+    setPopoverVisible(null);
+    Alert.alert("Delete House", "Are you sure you want to delete this house?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await api.delete(`/houses/${house.id}`);
+            Alert.alert("Deleted", "House deleted successfully.");
+            await reload();
+          } catch (error) {
+            console.error("Delete failed:", error);
+            Alert.alert("Error", "Failed to delete the house.");
+          }
+        },
       },
-    },
-  ]);
-};
-
+    ]);
+  };
 
   const handleView = (house: House) => {
     setPopoverVisible(null);

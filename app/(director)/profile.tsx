@@ -1,6 +1,5 @@
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
-import { Avatar } from "@/components/ui/Avatar";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { UserSessionUtils } from "@/utils/UserSessionUtils";
 import { Image } from "expo-image";
@@ -8,6 +7,7 @@ import { useRouter } from "expo-router";
 import React from "react";
 import { Pressable, ScrollView, StyleSheet, View, Alert } from "react-native";
 import { useReduxAuth } from "@/hooks/useReduxAuth";
+import { UserAvatar } from "@/components/ui/UserAvatar";
 
 
 type ActionButton = {
@@ -114,7 +114,7 @@ export default function TabThreeScreen() {
             }}
           >
             <View style={{ marginBottom: "0%" }}>
-              <Avatar size={100} />
+              <UserAvatar size={100} />
             </View>
             <View style={{ flexDirection: "column", gap: 4 }}>
               <ThemedText type="title" style={{ color: "#FFFFFF" }}>

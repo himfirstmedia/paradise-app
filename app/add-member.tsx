@@ -135,13 +135,9 @@ export default function AddMemberScreen() {
     }
   };
 
-
   const Dot = () => {
-  return (
-    <ThemedText style={{ color: errorColor }}>*</ThemedText>
-  );
-};
-
+    return <ThemedText style={{ color: errorColor }}>*</ThemedText>;
+  };
 
   return (
     <>
@@ -153,7 +149,10 @@ export default function AddMemberScreen() {
         >
           <ScrollView
             style={styles.scrollView}
-            contentContainerStyle={styles.scrollContent}
+            contentContainerStyle={[
+              styles.scrollContent,
+              Platform.OS === "web" && { minHeight: "100%" },
+            ]}
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
           >
@@ -162,7 +161,9 @@ export default function AddMemberScreen() {
             </ThemedText>
 
             <ThemedView style={styles.inputField}>
-              <ThemedText type="default">Name <Dot /> </ThemedText>
+              <ThemedText type="default">
+                Name <Dot />{" "}
+              </ThemedText>
               <ThemedTextInput
                 placeholder="Enter full name"
                 value={name}
@@ -174,7 +175,9 @@ export default function AddMemberScreen() {
               />
             </ThemedView>
             <ThemedView style={styles.inputField}>
-              <ThemedText type="default">Email Address <Dot /></ThemedText>
+              <ThemedText type="default">
+                Email Address <Dot />
+              </ThemedText>
               <ThemedEmailInput
                 placeholder="Enter email address"
                 value={email}
@@ -187,7 +190,9 @@ export default function AddMemberScreen() {
             </ThemedView>
 
             <ThemedView style={styles.inputField}>
-              <ThemedText type="default">Phone <Dot /></ThemedText>
+              <ThemedText type="default">
+                Phone <Dot />
+              </ThemedText>
               <ThemedTextInput
                 placeholder="Enter phone number"
                 value={phone}
@@ -202,7 +207,9 @@ export default function AddMemberScreen() {
             <ThemedView style={styles.row}>
               <ThemedView style={{ width: "48%" }}>
                 <ThemedView style={styles.inputField}>
-                  <ThemedText type="default">Gender <Dot /></ThemedText>
+                  <ThemedText type="default">
+                    Gender <Dot />
+                  </ThemedText>
                   <ThemedDropdown
                     placeholder="Select gender"
                     items={["Male", "Female"]}
@@ -218,7 +225,9 @@ export default function AddMemberScreen() {
               </ThemedView>
               <ThemedView style={{ width: "48%" }}>
                 <ThemedView style={styles.inputField}>
-                  <ThemedText type="default">Role <Dot /></ThemedText>
+                  <ThemedText type="default">
+                    Role <Dot />
+                  </ThemedText>
                   <ThemedDropdown
                     placeholder="Select role"
                     items={roleOptions}
@@ -237,7 +246,9 @@ export default function AddMemberScreen() {
               selectedRole === "Facility Manager" ||
               selectedRole === "Resident Manager") && (
               <ThemedView style={styles.inputField}>
-                <ThemedText type="default">House <Dot /></ThemedText>
+                <ThemedText type="default">
+                  House <Dot />
+                </ThemedText>
                 {housesLoading ? (
                   <ThemedText>Loading houses...</ThemedText>
                 ) : housesError ? (
@@ -264,7 +275,9 @@ export default function AddMemberScreen() {
 
             {selectedRole === "Individual" && (
               <ThemedView style={styles.inputField}>
-                <ThemedText type="default">Leaving <Dot /></ThemedText>
+                <ThemedText type="default">
+                  Leaving <Dot />
+                </ThemedText>
                 <ThemedDatePicker
                   value={leavingDate}
                   onChangeText={(val) => {
@@ -280,7 +293,9 @@ export default function AddMemberScreen() {
             <ThemedView style={styles.row}>
               <ThemedView style={{ width: "48%" }}>
                 <ThemedView style={styles.inputField}>
-                  <ThemedText type="default">City <Dot /></ThemedText>
+                  <ThemedText type="default">
+                    City <Dot />
+                  </ThemedText>
                   <ThemedTextInput
                     placeholder="Enter city"
                     value={city}
@@ -294,7 +309,9 @@ export default function AddMemberScreen() {
               </ThemedView>
               <ThemedView style={{ width: "48%" }}>
                 <ThemedView style={styles.inputField}>
-                  <ThemedText type="default">State <Dot /></ThemedText>
+                  <ThemedText type="default">
+                    State <Dot />
+                  </ThemedText>
                   <ThemedTextInput
                     placeholder="Enter state"
                     value={state}
@@ -309,7 +326,9 @@ export default function AddMemberScreen() {
             </ThemedView>
 
             <ThemedView style={styles.inputField}>
-              <ThemedText type="default">Zip Code <Dot /></ThemedText>
+              <ThemedText type="default">
+                Zip Code <Dot />
+              </ThemedText>
               <ThemedTextInput
                 placeholder="Enter zip code"
                 value={zipCode}
@@ -338,13 +357,14 @@ export default function AddMemberScreen() {
 
 const styles = StyleSheet.create({
   scrollView: {
-    flex: 1,
     width: "100%",
     paddingVertical: "5%",
     paddingHorizontal: 15,
+    ...(Platform.OS === "web" && { overflow: "scroll" }),
   },
   scrollContent: {
     flexGrow: 1,
+    paddingBottom: 50,
   },
   container: {
     flex: 1,
@@ -354,7 +374,7 @@ const styles = StyleSheet.create({
   },
   keyboardAvoid: {
     width: "100%",
-    flexGrow: 1,
+    flex: 1,
   },
   row: {
     flexDirection: "row",

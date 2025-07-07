@@ -8,11 +8,9 @@ import React, { useRef, useState } from "react";
 import {
   Alert,
   Dimensions,
-  findNodeHandle,
   Modal,
   Pressable,
   StyleSheet,
-  UIManager,
   View,
   ViewStyle,
 } from "react-native";
@@ -129,28 +127,46 @@ export function ScriptureItemCard({ scriptures, style }: ScriptureCardProps) {
 
   const POPOVER_WIDTH = 180;
 
-  const showPopover = (verseId: number) => {
-    const ref = optionBtnRefs.current[verseId];
-    if (ref) {
-      const screenWidth = Dimensions.get("window").width;
-      const nodeHandle = findNodeHandle(ref);
-      if (nodeHandle != null) {
-        UIManager.measure(nodeHandle, (x, y, width, height, pageX, pageY) => {
-          let left = pageX;
-          const verticalOffset = -45; 
-          if (left + POPOVER_WIDTH > screenWidth) {
-            left = screenWidth - POPOVER_WIDTH - 20;
+   const showPopover = (houseId: number) => {
+      const ref = optionBtnRefs.current[houseId];
+      if (ref?.measure) {
+        // Native path (optional fallback if running on native)
+        const screenWidth = Dimensions.get("window").width;
+        ref.measure(
+          (
+            x: number,
+            y: number,
+            width: number,
+            height: number,
+            pageX: number,
+            pageY: number
+          ) => {
+            let left = pageX;
+            const verticalOffset = 10;
+            if (left + POPOVER_WIDTH > screenWidth) {
+              left = screenWidth - POPOVER_WIDTH - 20;
+            }
+            setPopoverPosition({ top: pageY + height + verticalOffset, left });
+            setPopoverVisible(houseId);
           }
-          setPopoverPosition({ top: pageY + height + verticalOffset, left });
-          setPopoverVisible(verseId);
+        );
+      } else if (ref?.getBoundingClientRect) {
+        // Web path
+        const rect = ref.getBoundingClientRect();
+        let left = rect.left;
+        const verticalOffset = -45;
+        if (left + POPOVER_WIDTH > window.innerWidth) {
+          left = window.innerWidth - POPOVER_WIDTH - 20;
+        }
+        setPopoverPosition({
+          top: rect.top + rect.height + verticalOffset,
+          left,
         });
+        setPopoverVisible(houseId);
       } else {
-        setPopoverVisible(verseId);
+        setPopoverVisible(houseId);
       }
-    } else {
-      setPopoverVisible(verseId);
-    }
-  };
+    };
 
   return (
     <>

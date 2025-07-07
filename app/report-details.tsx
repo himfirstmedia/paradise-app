@@ -12,13 +12,13 @@ import { useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Image,
+  Platform,
   ScrollView,
   StyleSheet,
   TouchableOpacity,
   View,
 } from "react-native";
 import { Task } from "@/redux/slices/taskSlice";
-
 
 // Normalization function matching the Reports screen
 function normalizeHouseName(name: string | null): string {
@@ -54,39 +54,51 @@ export default function ReportDetails() {
 
     // Fallback for direct access
     if (!houseParam && !typeParam && !houseIdParam) {
-      return { filteredMembers: [], reportTitle: "Invalid Report", taskStats: stats };
+      return {
+        filteredMembers: [],
+        reportTitle: "Invalid Report",
+        taskStats: stats,
+      };
     }
 
     // Filtering logic - prioritize house ID if available
     if (houseIdParam) {
       const id = parseInt(houseIdParam, 10);
       if (!isNaN(id)) {
-        title = `${houseNameParam || 'House'} Report`;
-        filtered = members.filter(member => member.house?.id === id);
+        title = `${houseNameParam || "House"} Report`;
+        filtered = members.filter((member) => member.house?.id === id);
       }
-    } 
-    else if (houseParam) {
+    } else if (houseParam) {
       const normalizedParam = normalizeHouseName(houseParam);
-      title = `${normalizedParam.replace(/_/g, ' ')} Report`;
-      filtered = members.filter(member => {
+      title = `${normalizedParam.replace(/_/g, " ")} Report`;
+      filtered = members.filter((member) => {
         const memberHouse = member.house?.name || "";
         return normalizeHouseName(memberHouse) === normalizedParam;
       });
-    }
-    else if (typeParam === "individuals") {
+    } else if (typeParam === "individuals") {
       title = "Individuals Report";
-      filtered = members.filter(member => !member.house);
+      filtered = members.filter((member) => !member.house);
     }
 
     // Calculate task stats
     filtered.forEach((member) => {
-      member.task?.forEach((task: Task) => {  // Added Task type annotation
-        if (task.progress && ["PENDING", "COMPLETED", "OVERDUE"].includes(task.progress)) {
+      member.task?.forEach((task: Task) => {
+        // Added Task type annotation
+        if (
+          task.progress &&
+          ["PENDING", "COMPLETED", "OVERDUE"].includes(task.progress)
+        ) {
           stats.totalTasks++;
           switch (task.progress) {
-            case "PENDING": stats.pending++; break;
-            case "COMPLETED": stats.completed++; break;
-            case "OVERDUE": stats.overdue++; break;
+            case "PENDING":
+              stats.pending++;
+              break;
+            case "COMPLETED":
+              stats.completed++;
+              break;
+            case "OVERDUE":
+              stats.overdue++;
+              break;
           }
         }
       });
@@ -196,7 +208,11 @@ export default function ReportDetails() {
   return (
     <ThemedView style={styles.container}>
       <ScrollView
-        contentContainerStyle={styles.scrollContent}
+        style={styles.scrollView}
+        contentContainerStyle={[
+          styles.scrollContent,
+          Platform.OS === "web" && { minHeight: "100%" },
+        ]}
         showsVerticalScrollIndicator={false}
       >
         <ThemedText type="title" style={styles.title}>
@@ -290,9 +306,15 @@ export default function ReportDetails() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
+  },
+  scrollView: {
+    width: "100%",
+    paddingVertical: "5%",
+    paddingHorizontal: 15,
+    ...(Platform.OS === "web" && { overflow: "scroll" }),
   },
   scrollContent: {
+    flexGrow: 1,
     paddingBottom: 120,
   },
   title: {

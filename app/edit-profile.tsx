@@ -203,9 +203,7 @@ export default function EditProfileScreen() {
   }));
 
   const Dot = () => {
-    return (
-      <ThemedText style={{ color: errorColor }}>*</ThemedText>
-    );
+    return <ThemedText style={{ color: errorColor }}>*</ThemedText>;
   };
 
   return (
@@ -216,10 +214,10 @@ export default function EditProfileScreen() {
         keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 0}
       >
         <ScrollView
-          contentContainerStyle={{
-            width: "100%",
-            paddingBottom: "20%",
-          }}
+          contentContainerStyle={[
+            styles.scrollContent,
+            Platform.OS === "web" && { minHeight: "100%" },
+          ]}
           showsVerticalScrollIndicator={false}
           style={styles.innerContainer}
         >
@@ -228,7 +226,9 @@ export default function EditProfileScreen() {
           </ThemedText>
 
           <ThemedView style={styles.inputField}>
-            <ThemedText type="default">Name <Dot /></ThemedText>
+            <ThemedText type="default">
+              Name <Dot />
+            </ThemedText>
             <ThemedTextInput
               placeholder="Enter your full name"
               value={formData.name}
@@ -237,7 +237,9 @@ export default function EditProfileScreen() {
           </ThemedView>
 
           <ThemedView style={styles.inputField}>
-            <ThemedText type="default">Email Address <Dot /></ThemedText>
+            <ThemedText type="default">
+              Email Address <Dot />
+            </ThemedText>
             <ThemedEmailInput
               placeholder="Enter your email address"
               value={formData.email}
@@ -246,7 +248,9 @@ export default function EditProfileScreen() {
           </ThemedView>
 
           <ThemedView style={styles.inputField}>
-            <ThemedText type="default">Gender <Dot /></ThemedText>
+            <ThemedText type="default">
+              Gender <Dot />
+            </ThemedText>
             <ThemedDropdown
               placeholder="Select your gender"
               items={["MALE", "FEMALE"]}
@@ -255,7 +259,9 @@ export default function EditProfileScreen() {
             />
           </ThemedView>
           <ThemedView style={styles.inputField}>
-            <ThemedText type="default">House <Dot /></ThemedText>
+            <ThemedText type="default">
+              House <Dot />
+            </ThemedText>
             <ThemedDropdown
               placeholder="Select house"
               items={houseOptions.map((h) => h.label)}
@@ -272,7 +278,9 @@ export default function EditProfileScreen() {
 
           <ThemedView style={styles.row}>
             <ThemedView style={{ width: "45%" }}>
-              <ThemedText type="default">City <Dot /></ThemedText>
+              <ThemedText type="default">
+                City <Dot />
+              </ThemedText>
               <ThemedTextInput
                 placeholder="Enter city"
                 value={formData.city}
@@ -280,7 +288,9 @@ export default function EditProfileScreen() {
               />
             </ThemedView>
             <ThemedView style={{ width: "45%" }}>
-              <ThemedText type="default">State <Dot /></ThemedText>
+              <ThemedText type="default">
+                State <Dot />
+              </ThemedText>
               <ThemedTextInput
                 placeholder="Enter state"
                 value={formData.state}
@@ -290,7 +300,9 @@ export default function EditProfileScreen() {
           </ThemedView>
 
           <ThemedView style={styles.inputField}>
-            <ThemedText type="default">Zip Code <Dot /></ThemedText>
+            <ThemedText type="default">
+              Zip Code <Dot />
+            </ThemedText>
             <ThemedTextInput
               placeholder="Enter zip code"
               value={formData.zipCode}
@@ -299,7 +311,9 @@ export default function EditProfileScreen() {
           </ThemedView>
 
           <ThemedView style={styles.inputField}>
-            <ThemedText type="default">Phone <Dot /></ThemedText>
+            <ThemedText type="default">
+              Phone <Dot />
+            </ThemedText>
             <ThemedTextInput
               placeholder="Enter phone"
               value={formData.phone}
@@ -324,15 +338,24 @@ export default function EditProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingVertical: 20,
+    
+  },
+  scrollView: {
+    width: "100%",
+    paddingVertical: "5%",
     paddingHorizontal: 15,
+    ...(Platform.OS === "web" && { overflow: "scroll" }),
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: 50,
   },
   inputField: {
     width: "100%",
   },
   keyboardAvoid: {
     width: "100%",
-    flexGrow: 1,
+    flex: 1,
   },
   row: {
     flexDirection: "row",
@@ -340,7 +363,9 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   innerContainer: {
-    flex: 1,
     width: "100%",
+    paddingVertical: 20,
+    paddingHorizontal: 15,
+    ...(Platform.OS === "web" && { overflow: "scroll" }),
   },
 });

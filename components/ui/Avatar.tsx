@@ -124,8 +124,8 @@ const styles = StyleSheet.create({
   initial: {
     // fontWeight: 400,
     textAlign: "center",
-    height: "100%",
-    width: "100%",
+    // height: "100%",
+    // width: "100%",
     textAlignVertical: "center",
   },
   overlay: {
