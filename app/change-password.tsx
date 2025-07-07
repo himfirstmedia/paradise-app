@@ -8,6 +8,7 @@ import {
   Platform,
   StyleSheet,
   Alert,
+  useWindowDimensions,
 } from "react-native";
 import api from "@/utils/api";
 import { useRouter } from "expo-router";
@@ -26,6 +27,10 @@ export default function ChangePasswordScreen() {
 
   const navigation = useRouter();
   const { user } = useReduxAuth(); 
+  const { width } = useWindowDimensions();
+      
+        const isLargeScreen = Platform.OS === "web" && width >= 1024;
+        const isMediumScreen = Platform.OS === "web" && width >= 768;
 
   const validate = () => {
     let valid = true;
@@ -95,9 +100,30 @@ const Dot = () => {
     );
   };
 
+  const responsiveStyles = StyleSheet.create({
+      headerContainer: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: isLargeScreen ? 40 : 20,
+      },
+      containerPadding: {
+        paddingHorizontal: isLargeScreen ? 150 : isMediumScreen ? 40 : 15,
+      },
+      scriptureSection: {
+        marginBottom: isLargeScreen ? 15 : 20,
+        marginTop: isLargeScreen ? 10 : 5,
+        maxHeight: isLargeScreen ? 200 : 100,
+      },
+      taskSection: {
+        marginTop: isLargeScreen ? 10 : 5,
+      },
+    });
+
   return (
     <>
-      <ThemedView style={styles.container}>
+          <ThemedView style={[styles.container, responsiveStyles.containerPadding]}>
+      
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : "height"}
           style={styles.keyboardAvoid}
@@ -105,7 +131,7 @@ const Dot = () => {
         >
           <ThemedText
             type="title"
-            style={{ marginBottom: "8%", marginTop: "5%" }}
+            style={{ marginBottom: 30, marginTop: 15 }}
           >
             Change Password
           </ThemedText>

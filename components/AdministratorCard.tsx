@@ -50,7 +50,7 @@ export function AdministratorCard({ members }: AdministratorCardProps) {
 
         return (
           <ThemedView style={styles.container} key={role}>
-            <ThemedView style={[styles.row, { marginBottom: "5%" }]}>
+            <ThemedView style={[styles.row, { marginBottom: 12 }]}>
               <ThemedText type="subtitle">{ADMIN_ROLE_LABELS[role]}</ThemedText>
               {showViewAll && (
                 <Pressable

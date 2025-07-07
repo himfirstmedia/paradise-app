@@ -142,7 +142,7 @@ const styles = StyleSheet.create({
     elevation: 5,
     shadowColor: "rgba(0, 0, 0, 0.03)",
     alignItems: "flex-start",
-    marginTop: "18%",
+    marginTop: 70,
     marginRight: 15,
   },
   button: {

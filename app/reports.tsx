@@ -7,8 +7,10 @@ import { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Image,
+  Platform,
   Pressable,
   StyleSheet,
+  useWindowDimensions,
   View,
 } from "react-native";
 
@@ -19,18 +21,23 @@ export default function Reports() {
   const primaryColor = useThemeColor({}, "selection");
   const bgColor = useThemeColor({}, "input");
   const navigation = useRouter();
+  const { width } = useWindowDimensions();
+
+  const isLargeScreen = Platform.OS === "web" && width >= 1024;
+  const isMediumScreen = Platform.OS === "web" && width >= 768;
+
   const { houses, loading: housesLoading, getDisplayName } = useReduxHouse();
   const [hasTimedOut, setHasTimedOut] = useState(false);
 
   useEffect(() => {
-  const timeout = setTimeout(() => {
-    if (!houses || houses.length === 0) {
-      setHasTimedOut(true);
-    }
-  }, 500); // 5 seconds timeout
+    const timeout = setTimeout(() => {
+      if (!houses || houses.length === 0) {
+        setHasTimedOut(true);
+      }
+    }, 500); // 5 seconds timeout
 
-  return () => clearTimeout(timeout); // cleanup on unmount
-}, [houses]);
+    return () => clearTimeout(timeout); // cleanup on unmount
+  }, [houses]);
 
   const residentReports = useMemo(() => {
     // Filter out administration houses if needed
@@ -49,31 +56,49 @@ export default function Reports() {
   }, [houses, getDisplayName]);
 
   if (housesLoading && !hasTimedOut) {
+    return (
+      <ThemedView style={[styles.container, { alignItems: "center" }]}>
+        <ActivityIndicator
+          size="large"
+          color={primaryColor}
+          style={{ marginTop: "5%" }}
+        />
+      </ThemedView>
+    );
+  }
+
+  if (hasTimedOut && (!houses || houses.length === 0)) {
+    return (
+      <ThemedView style={[styles.container, { alignItems: "center" }]}>
+        <ThemedText type="default" style={{ marginTop: 10 }}>
+          Failed to load houses. Please try again later.
+        </ThemedText>
+      </ThemedView>
+    );
+  }
+
+  const responsiveStyles = StyleSheet.create({
+    headerContainer: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: isLargeScreen ? 40 : 20,
+    },
+    containerPadding: {
+      paddingHorizontal: isLargeScreen ? 150 : isMediumScreen ? 40 : 15,
+    },
+    scriptureSection: {
+      marginBottom: isLargeScreen ? 15 : 20,
+      marginTop: isLargeScreen ? 10 : 5,
+      maxHeight: isLargeScreen ? 200 : 100,
+    },
+    taskSection: {
+      marginTop: isLargeScreen ? 10 : 5,
+    },
+  });
+
   return (
-    <ThemedView style={[styles.container, { alignItems: "center" }]}>
-      <ActivityIndicator
-        size="large"
-        color={primaryColor}
-        style={{ marginTop: "5%" }}
-      />
-    </ThemedView>
-  );
-}
-
-if (hasTimedOut && (!houses || houses.length === 0)) {
-  return (
-    <ThemedView style={[styles.container, { alignItems: "center" }]}>
-      <ThemedText type="default" style={{ marginTop: 10 }}>
-        Failed to load houses. Please try again later.
-      </ThemedText>
-    </ThemedView>
-  );
-}
-
-
-
-  return (
-    <ThemedView style={styles.container}>
+    <ThemedView style={[styles.container, responsiveStyles.containerPadding]}>
       <ThemedText type="title" style={styles.title}>
         Resident Reports
       </ThemedText>
@@ -99,7 +124,7 @@ if (hasTimedOut && (!houses || houses.length === 0)) {
         )}
       </View>
 
-      <ThemedText type="title" style={[styles.title, { marginTop: "8%" }]}>
+      <ThemedText type="title" style={[styles.title, { marginTop: 30 }]}>
         Individual Reports
       </ThemedText>
 

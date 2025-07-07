@@ -5,21 +5,51 @@ import { useReduxFeedback } from "@/hooks/useReduxFeedback";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { useFocusEffect } from "expo-router";
 import { useCallback } from "react";
-import { ActivityIndicator, StyleSheet } from "react-native";
+import {
+  ActivityIndicator,
+  Platform,
+  StyleSheet,
+  useWindowDimensions,
+} from "react-native";
 
 export default function CommentsManagerScreen() {
   const { feedbacks, loading, reload } = useReduxFeedback();
   const primaryColor = useThemeColor({}, "selection");
 
+  const { width } = useWindowDimensions();
+
+  const isLargeScreen = Platform.OS === "web" && width >= 1024;
+  const isMediumScreen = Platform.OS === "web" && width >= 768;
+
   useFocusEffect(
-  useCallback(() => {
-    reload();
-  }, [reload])
-);
+    useCallback(() => {
+      reload();
+    }, [reload])
+  );
+
+  const responsiveStyles = StyleSheet.create({
+    headerContainer: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: isLargeScreen ? 40 : 20,
+    },
+    containerPadding: {
+      paddingHorizontal: isLargeScreen ? 150 : isMediumScreen ? 40 : 15,
+    },
+    scriptureSection: {
+      marginBottom: isLargeScreen ? 15 : 20,
+      marginTop: isLargeScreen ? 10 : 5,
+      maxHeight: isLargeScreen ? 200 : 100,
+    },
+    taskSection: {
+      marginTop: isLargeScreen ? 10 : 5,
+    },
+  });
 
   return (
     <>
-      <ThemedView style={styles.container}>
+      <ThemedView style={[styles.container, responsiveStyles.containerPadding]}>
         {loading ? (
           <ActivityIndicator
             size="large"

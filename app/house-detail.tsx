@@ -6,7 +6,7 @@ import { useReduxHouse } from "@/hooks/useReduxHouse";
 import { useReduxMembers } from "@/hooks/useReduxMembers";
 import { useLocalSearchParams } from "expo-router";
 import React from "react";
-import { ScrollView, StyleSheet } from "react-native";
+import { ScrollView, StyleSheet, useWindowDimensions, Platform } from "react-native";
 
 // Helper to format house names
 function getFriendlyHouseName(name: string) {
@@ -25,6 +25,11 @@ export default function HouseDetailScreen() {
   const params = useLocalSearchParams();
   const { houses } = useReduxHouse();
   const { members } = useReduxMembers();
+
+  const { width } = useWindowDimensions();
+  
+    const isLargeScreen = Platform.OS === "web" && width >= 1024;
+    const isMediumScreen = Platform.OS === "web" && width >= 768;
 
   // Find the house by id (params.id comes as string or string[])
   const houseId = Array.isArray(params.id) ? params.id[0] : params.id;
@@ -51,8 +56,28 @@ export default function HouseDetailScreen() {
     );
   }
 
+  const responsiveStyles = StyleSheet.create({
+    headerContainer: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: isLargeScreen ? 40 : 20,
+    },
+    containerPadding: {
+      paddingHorizontal: isLargeScreen ? 150 : isMediumScreen ? 40 : 15,
+    },
+    scriptureSection: {
+      marginBottom: isLargeScreen ? 15 : 20,
+      marginTop: isLargeScreen ? 10 : 5,
+      maxHeight: isLargeScreen ? 200 : 100,
+    },
+    taskSection: {
+      marginTop: isLargeScreen ? 10 : 5,
+    },
+  });
+
   return (
-    <ThemedView style={styles.container}>
+    <ThemedView style={[styles.container, responsiveStyles.containerPadding]}>
       <ScrollView contentContainerStyle={{ paddingBottom: 30 }}>
         <ThemedText type="title" style={{ marginBottom: 10 }}>
           {getFriendlyHouseName(house.name)}

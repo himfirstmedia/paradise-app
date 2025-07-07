@@ -52,7 +52,7 @@ export function FeedbackCard({ feedbacks }: FeedbackCardProps) {
 
         return (
           <ThemedView style={styles.container} key={type}>
-            <ThemedView style={[styles.row, { marginBottom: "5%" }]}>
+            <ThemedView style={[styles.row, { marginBottom: 15 }]}>
               <ThemedText type="subtitle">
                 {type === "Comment" ? "Comments" : "Suggestions"}
               </ThemedText>

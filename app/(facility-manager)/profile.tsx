@@ -1,20 +1,27 @@
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
-import { Avatar } from "@/components/ui/Avatar";
+import { UserAvatar } from "@/components/ui/UserAvatar";
 import { useReduxAuth } from "@/hooks/useReduxAuth";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { UserSessionUtils } from "@/utils/UserSessionUtils";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import React from "react";
-import { Pressable, ScrollView, StyleSheet, View, Alert } from "react-native";
+import {
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  View,
+  Alert,
+  useWindowDimensions,
+  Platform,
+} from "react-native";
 
 type ActionButton = {
   icon: any;
   label: string;
   route: string;
 };
-
 
 const ACTION_BUTTONS: ActionButton[] = [
   {
@@ -45,16 +52,18 @@ const ACTION_BUTTONS: ActionButton[] = [
 ];
 
 export default function TabThreeScreen() {
-
   const primaryColor = useThemeColor({}, "selection");
   const bgColor = useThemeColor({}, "input");
   const navigation = useRouter();
-   const { user, signout } = useReduxAuth();
+  const { user, signout } = useReduxAuth();
+  const { width } = useWindowDimensions();
 
+  const isLargeScreen = Platform.OS === "web" && width >= 1024;
+  const isMediumScreen = Platform.OS === "web" && width >= 768;
 
-    const handleLogout = async () => {
+  const handleLogout = async () => {
     try {
-      await UserSessionUtils.logout(); 
+      await UserSessionUtils.logout();
       await signout();
       navigation.replace("../auth");
     } catch (error) {
@@ -62,6 +71,20 @@ export default function TabThreeScreen() {
       Alert.alert("Logout Failed", "An error occurred during logout.");
     }
   };
+
+  const responsiveStyles = StyleSheet.create({
+    profileRow: {
+      flexDirection: isLargeScreen ? "row" : "row",
+      justifyContent: "flex-start",
+      alignItems: isLargeScreen ? "center" : "flex-start",
+      marginVertical: 20,
+      paddingHorizontal: 10,
+      gap: isLargeScreen ? 50 : 30,
+    },
+    containerPadding: {
+      paddingHorizontal: isLargeScreen ? 150 : isMediumScreen ? 40 : 15,
+    },
+  });
 
   return (
     <ThemedView style={styles.container}>
@@ -74,30 +97,24 @@ export default function TabThreeScreen() {
         style={styles.innerContainer}
       >
         <ThemedView
-          style={[styles.headerCard, { backgroundColor: primaryColor }]}
+          style={[
+            styles.headerCard,
+            { backgroundColor: primaryColor },
+            responsiveStyles.containerPadding,
+          ]}
         >
           <View style={[styles.row]}>
-            <View>
-              <ThemedText
-                type="title"
-                style={{ width: "100%", color: "#FFFFFF" }}
-              >
-                Profile
-              </ThemedText>
-            </View>
+            <ThemedText
+              type="title"
+              style={{ width: "100%", color: "#FFFFFF" }}
+            >
+              Profile
+            </ThemedText>
           </View>
-          <View
-            style={{
-              justifyContent: "flex-start",
-              alignItems: "center",
-              marginVertical: "5%",
-              paddingHorizontal: 10,
-              flexDirection: "row",
-              gap: 30
-            }}
-          >
-            <View style={{ marginBottom: "0%" }}>
-              <Avatar size={100} />
+
+          <View style={responsiveStyles.profileRow}>
+            <View>
+              <UserAvatar size={100} />
             </View>
             <View style={{ flexDirection: "column", gap: 4 }}>
               <ThemedText type="title" style={{ color: "#FFFFFF" }}>
@@ -113,7 +130,9 @@ export default function TabThreeScreen() {
           </View>
         </ThemedView>
 
-        <ThemedView style={styles.subContainer}>
+        <ThemedView
+          style={[styles.subContainer, responsiveStyles.containerPadding]}
+        >
           <View style={{ gap: 8 }}>
             {ACTION_BUTTONS.map((btn, idx) => (
               <ProfileActionButton
@@ -131,7 +150,7 @@ export default function TabThreeScreen() {
                 route="../auth"
                 bgColor={bgColor}
                 navigation={navigation}
-                onPress={handleLogout} 
+                onPress={handleLogout}
               />
             </View>
           </View>
@@ -201,7 +220,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     marginBottom: 15,
     paddingTop: 20,
-    paddingBottom: 20
+    paddingBottom: 20,
   },
   row: {
     flexDirection: "row",

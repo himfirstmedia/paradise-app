@@ -7,20 +7,47 @@ import { useRouter } from "expo-router";
 import {
   ActivityIndicator,
   Image,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
+  useWindowDimensions,
 } from "react-native";
 
 export default function HouseManagerScreen() {
   const primaryColor = useThemeColor({}, "selection");
   const navigation = useRouter();
 
+  const { width } = useWindowDimensions();
+  
+    const isLargeScreen = Platform.OS === "web" && width >= 1024;
+    const isMediumScreen = Platform.OS === "web" && width >= 768;
+
   const { houses, loading } = useReduxHouse();
+
+  const responsiveStyles = StyleSheet.create({
+    headerContainer: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: isLargeScreen ? 40 : 20,
+    },
+    containerPadding: {
+      paddingHorizontal: isLargeScreen ? 150 : isMediumScreen ? 40 : 15,
+    },
+    scriptureSection: {
+      marginBottom: isLargeScreen ? 15 : 20,
+      marginTop: isLargeScreen ? 10 : 5,
+      maxHeight: isLargeScreen ? 200 : 100,
+    },
+    taskSection: {
+      marginTop: isLargeScreen ? 10 : 5,
+    },
+  });
 
   return (
     <>
-      <ThemedView style={styles.container}>
+      <ThemedView style={[styles.container, responsiveStyles.containerPadding]}>
         <ScrollView
           contentContainerStyle={{
             alignItems: "center",

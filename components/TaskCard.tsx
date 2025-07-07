@@ -118,7 +118,7 @@ const styles = StyleSheet.create({
   container: {
     minHeight: "10%",
     width: "100%",
-    marginBottom: "5%"
+    marginBottom: 12
   },
   row: {
     flexDirection: "row",

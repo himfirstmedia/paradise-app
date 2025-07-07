@@ -10,15 +10,22 @@ import { useMemo } from "react";
 import {
   ActivityIndicator,
   Image,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
+  useWindowDimensions,
 } from "react-native";
 
 export default function MembersScreen() {
   const navigation = useRouter();
   const primaryColor = useThemeColor({}, "selection");
   const bgColor = useThemeColor({}, "background");
+
+  const { width } = useWindowDimensions();
+  
+    const isLargeScreen = Platform.OS === "web" && width >= 1024;
+    const isMediumScreen = Platform.OS === "web" && width >= 768;
 
   const { members, loading } = useReduxMembers();
   const { user: currentUser } = useReduxAuth();
@@ -33,8 +40,28 @@ export default function MembersScreen() {
   const showAdminCard =
     currentUser?.role === "DIRECTOR" || currentUser?.role === "SUPER_ADMIN";
 
+    const responsiveStyles = StyleSheet.create({
+    headerContainer: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: isLargeScreen ? 40 : 20,
+    },
+    containerPadding: {
+      paddingHorizontal: isLargeScreen ? 150 : isMediumScreen ? 40 : 15,
+    },
+    scriptureSection: {
+      marginBottom: isLargeScreen ? 15 : 20,
+      marginTop: isLargeScreen ? 10 : 5,
+      maxHeight: isLargeScreen ? 200 : 100,
+    },
+    taskSection: {
+      marginTop: isLargeScreen ? 10 : 5,
+    },
+  });
+
   return (
-    <ThemedView style={[styles.container, { backgroundColor: bgColor }]}>
+    <ThemedView style={[styles.container, responsiveStyles.containerPadding, { backgroundColor: bgColor }]}>
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         style={styles.innerContainer}

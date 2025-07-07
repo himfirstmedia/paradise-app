@@ -1,5 +1,12 @@
 import React from "react";
-import { ActivityIndicator, ScrollView, StyleSheet, View } from "react-native";
+import {
+  ActivityIndicator,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  useWindowDimensions,
+  View,
+} from "react-native";
 
 import { ScriptureCard } from "@/components/ScriptureCard";
 import { TaskCard } from "@/components/TaskCard";
@@ -21,6 +28,10 @@ function getGreeting() {
 
 export default function HomeScreen() {
   const primaryColor = useThemeColor({}, "selection");
+  const { width } = useWindowDimensions();
+
+  const isLargeScreen = Platform.OS === "web" && width >= 1024;
+  const isMediumScreen = Platform.OS === "web" && width >= 768;
 
   const { user } = useReduxAuth();
   const userName = user?.name?.split(" ")[0] || "User";
@@ -29,6 +40,31 @@ export default function HomeScreen() {
   const { scriptures, loading: scriptureLoading } = useReduxScripture();
 
   const latestScripture = scriptures.length > 0 ? scriptures[0] : null;
+
+  const fontSizes = {
+    title: isLargeScreen ? 36 : isMediumScreen ? 28 : 22,
+    subtitle: isLargeScreen ? 22 : isMediumScreen ? 18 : 16,
+  };
+
+  const responsiveStyles = StyleSheet.create({
+    headerContainer: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: isLargeScreen ? 40 : 20,
+    },
+    containerPadding: {
+      paddingHorizontal: isLargeScreen ? 150 : isMediumScreen ? 40 : 15,
+    },
+    scriptureSection: {
+      marginBottom: isLargeScreen ? 15 : 20,
+      marginTop: isLargeScreen ? 10 : 5,
+      maxHeight: isLargeScreen ? 200 : 100,
+    },
+    taskSection: {
+      marginTop: isLargeScreen ? 10 : 5,
+    },
+  });
 
   return (
     <ThemedView style={styles.container}>
@@ -41,13 +77,21 @@ export default function HomeScreen() {
         style={styles.innerContainer}
       >
         <ThemedView
-          style={[styles.headerCard, { backgroundColor: primaryColor }]}
+          style={[
+            styles.headerCard,
+            { backgroundColor: primaryColor },
+            responsiveStyles.containerPadding,
+          ]}
         >
           <ThemedView style={[styles.row, { backgroundColor: primaryColor }]}>
             <ThemedView style={{ backgroundColor: primaryColor }}>
               <ThemedText
                 type="subtitle"
-                style={{ fontWeight: "600", color: "#FFFFFF" }}
+                style={{
+                  fontWeight: "600",
+                  color: "#FFFFFF",
+                  fontSize: fontSizes.subtitle,
+                }}
               >
                 {getGreeting()}
                 {userName}
@@ -56,18 +100,23 @@ export default function HomeScreen() {
             <Avatar />
           </ThemedView>
 
-          <View style={{ marginTop: "8%", gap: 12 }}>
+          <View style={{ marginTop: 10, gap: 12 }}>
             <ThemedText
               type="title"
-              style={{ width: "100%", color: "#FFFFFF" }}
+              style={{
+                width: "100%",
+                color: "#FFFFFF",
+                fontSize: fontSizes.title,
+              }}
             >
               Welcome to Paradise App.
             </ThemedText>
           </View>
         </ThemedView>
-
-        <ThemedView style={styles.subContainer}>
-          <View style={{ marginBottom: "5%", marginTop: "2%", height: 150 }}>
+        <ThemedView
+          style={[styles.subContainer, responsiveStyles.containerPadding]}
+        >
+          <View style={responsiveStyles.scriptureSection}>
             {!scriptureLoading ? (
               latestScripture ? (
                 <ScriptureCard
@@ -143,12 +192,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
   },
   headerCard: {
-    minHeight: 160,
     width: "100%",
     borderBottomEndRadius: 20,
     borderBottomStartRadius: 20,
     paddingHorizontal: 15,
-    marginBottom: "5%",
+    marginBottom: 15,
     paddingTop: 20,
     paddingBottom: 20,
   },

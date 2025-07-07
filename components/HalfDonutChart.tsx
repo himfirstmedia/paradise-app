@@ -27,7 +27,7 @@ interface HalfDonutChartProps {
   textStyle?: StyleProp<TextStyle>;
   centerLabelComponent?: () => React.ReactNode;
   showLegend?: boolean;
-  legendTitle?: string; // 🆕 New title prop
+  legendTitle?: string;
   legendContainerStyle?: StyleProp<ViewStyle>;
   legendTextStyle?: StyleProp<TextStyle>;
   legendTitleStyle?: StyleProp<TextStyle>;
@@ -141,10 +141,9 @@ if (dataSum < 1) {
 
 const styles = StyleSheet.create({
   container: {
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: "flex-start",
+    justifyContent: "flex-start",
     minHeight: 180,
-    width: "100%",
   },
   chartRow: {
     flexDirection: "row",
@@ -156,6 +155,7 @@ const styles = StyleSheet.create({
     position: "relative",
     alignItems: "center",
     justifyContent: "center",
+
   },
   centerLabel: {
     position: "absolute",

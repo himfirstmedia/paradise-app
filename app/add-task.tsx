@@ -19,6 +19,7 @@ import {
   Platform,
   ScrollView,
   StyleSheet,
+  useWindowDimensions,
   View,
 } from "react-native";
 
@@ -50,6 +51,11 @@ export default function AddTaskScreen() {
   const [description, setDescription] = useState("");
   const [loading, setLoading] = useState(false);
   const { reload } = useReduxTasks();
+
+  const { width } = useWindowDimensions();
+
+  const isLargeScreen = Platform.OS === "web" && width >= 1024;
+  const isMediumScreen = Platform.OS === "web" && width >= 768;
 
   const { user } = useReduxAuth();
 
@@ -107,8 +113,28 @@ export default function AddTaskScreen() {
     return <ThemedText style={{ color: errorColor }}>*</ThemedText>;
   };
 
+  const responsiveStyles = StyleSheet.create({
+    headerContainer: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: isLargeScreen ? 40 : 20,
+    },
+    containerPadding: {
+      paddingHorizontal: isLargeScreen ? 150 : isMediumScreen ? 40 : 15,
+    },
+    scriptureSection: {
+      marginBottom: isLargeScreen ? 15 : 20,
+      marginTop: isLargeScreen ? 10 : 5,
+      maxHeight: isLargeScreen ? 200 : 100,
+    },
+    taskSection: {
+      marginTop: isLargeScreen ? 10 : 5,
+    },
+  });
+
   return (
-    <ThemedView style={styles.container}>
+    <ThemedView style={[styles.container, responsiveStyles.containerPadding]}>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.keyboardAvoid}
@@ -123,7 +149,7 @@ export default function AddTaskScreen() {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          <ThemedText type="title" style={{ marginBottom: "10%" }}>
+          <ThemedText type="title" style={{ marginBottom: 15 }}>
             Add New Task
           </ThemedText>
 

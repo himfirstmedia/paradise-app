@@ -19,6 +19,7 @@ import {
   Platform,
   ScrollView,
   StyleSheet,
+  useWindowDimensions,
 } from "react-native";
 import { useThemeColor } from "@/hooks/useThemeColor";
 
@@ -61,6 +62,11 @@ export default function AddMemberScreen() {
     error: housesError,
   } = useReduxHouse();
   const navigation = useRouter();
+
+  const { width } = useWindowDimensions();
+  
+    const isLargeScreen = Platform.OS === "web" && width >= 1024;
+    const isMediumScreen = Platform.OS === "web" && width >= 768;
 
   const currentUserRole = user?.role;
 
@@ -139,9 +145,29 @@ export default function AddMemberScreen() {
     return <ThemedText style={{ color: errorColor }}>*</ThemedText>;
   };
 
+  const responsiveStyles = StyleSheet.create({
+      headerContainer: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: isLargeScreen ? 40 : 20,
+      },
+      containerPadding: {
+        paddingHorizontal: isLargeScreen ? 150 : isMediumScreen ? 40 : 15,
+      },
+      scriptureSection: {
+        marginBottom: isLargeScreen ? 15 : 20,
+        marginTop: isLargeScreen ? 10 : 5,
+        maxHeight: isLargeScreen ? 200 : 100,
+      },
+      taskSection: {
+        marginTop: isLargeScreen ? 10 : 5,
+      },
+    });
+
   return (
     <>
-      <ThemedView style={styles.container}>
+      <ThemedView style={[styles.container, responsiveStyles.containerPadding]}>
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : "height"}
           style={styles.keyboardAvoid}
@@ -156,7 +182,7 @@ export default function AddMemberScreen() {
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
           >
-            <ThemedText type="title" style={{ marginBottom: "5%" }}>
+            <ThemedText type="title" style={{ marginBottom: 15 }}>
               New Member
             </ThemedText>
 

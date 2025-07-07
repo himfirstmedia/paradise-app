@@ -20,10 +20,15 @@ import {
   Platform,
   ScrollView,
   StyleSheet,
+  useWindowDimensions,
 } from "react-native";
 
 export default function AssignTaskScreen() {
-  const primaryColor = useThemeColor({}, "selection")
+  const primaryColor = useThemeColor({}, "selection");
+  const { width } = useWindowDimensions();
+
+  const isLargeScreen = Platform.OS === "web" && width >= 1024;
+  const isMediumScreen = Platform.OS === "web" && width >= 768;
   const params = useLocalSearchParams();
   const preselectedMember =
     typeof params.memberName === "string" ? params.memberName : "";
@@ -81,8 +86,28 @@ export default function AssignTaskScreen() {
     }
   };
 
+  const responsiveStyles = StyleSheet.create({
+    headerContainer: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: isLargeScreen ? 40 : 20,
+    },
+    containerPadding: {
+      paddingHorizontal: isLargeScreen ? 150 : isMediumScreen ? 40 : 15,
+    },
+    scriptureSection: {
+      marginBottom: isLargeScreen ? 15 : 20,
+      marginTop: isLargeScreen ? 10 : 5,
+      maxHeight: isLargeScreen ? 200 : 100,
+    },
+    taskSection: {
+      marginTop: isLargeScreen ? 10 : 5,
+    },
+  });
+
   return (
-    <ThemedView style={styles.container}>
+    <ThemedView style={[styles.container, responsiveStyles.containerPadding]}>
       <ScrollView
         contentContainerStyle={{
           alignItems: "center",
@@ -99,7 +124,7 @@ export default function AssignTaskScreen() {
         >
           <ThemedText
             type="title"
-            style={{ marginBottom: "8%", marginTop: "5%" }}
+            style={{ marginBottom: 30, marginTop: 15 }}
           >
             Assign Task
           </ThemedText>
@@ -128,7 +153,7 @@ export default function AssignTaskScreen() {
                   }
                   value={selectedTask}
                   onValueChange={setSelectedTask}
-                  items={visibleTasks.map(task => task.name)}
+                  items={visibleTasks.map((task) => task.name)}
                   // disabled={visibleTasks.length === 0}
                 />
                 {visibleTasks.length === 0 && (

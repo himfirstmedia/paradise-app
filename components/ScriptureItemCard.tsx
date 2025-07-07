@@ -179,7 +179,7 @@ export function ScriptureItemCard({ scriptures, style }: ScriptureCardProps) {
 
         return (
           <ThemedView style={[styles.container, style]} key={group.key}>
-            <ThemedView style={[styles.row, { marginBottom: "3%" }]}>
+            <ThemedView style={[styles.row, { marginBottom: 15 }]}>
               <ThemedText type="subtitle">{group.label}</ThemedText>
               {showViewAll && (
                 <Pressable

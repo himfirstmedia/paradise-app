@@ -9,7 +9,14 @@ import { useThemeColor } from "@/hooks/useThemeColor";
 import { useFocusEffect } from "expo-router";
 
 import React, { useCallback, useMemo } from "react";
-import { ActivityIndicator, ScrollView, StyleSheet, View } from "react-native";
+import {
+  ActivityIndicator,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  useWindowDimensions,
+  View,
+} from "react-native";
 
 const houses = [
   { label: "LLW House", enum: "LILLIE_LOUISE_WOERMER_HOUSE" },
@@ -22,6 +29,11 @@ export default function TeamsScreen() {
   const pending = useThemeColor({}, "pending");
   const overdue = useThemeColor({}, "overdue");
   const { user } = useReduxAuth();
+  const { width } = useWindowDimensions();
+
+  const isLargeScreen = Platform.OS === "web" && width >= 1024;
+  const isMediumScreen = Platform.OS === "web" && width >= 768;
+
   const isFacilityManager = user?.role === "FACILITY_MANAGER";
 
   const { members, loading, reload } = useReduxMembers();
@@ -109,6 +121,36 @@ export default function TeamsScreen() {
     );
   }, [members]);
 
+  const responsiveStyles = StyleSheet.create({
+    headerContainer: {
+      flexDirection: isLargeScreen ? "row" : "row",
+      alignItems: isLargeScreen ? "center" : "flex-start",
+      justifyContent: "space-between",
+      gap: isLargeScreen ? 40 : 20,
+    },
+    chartsWrapper: {
+      flexDirection: isLargeScreen ? "row" : "column",
+      justifyContent: "flex-start",
+      alignItems: "center",
+      gap: isLargeScreen ? 50 : 0,
+      marginTop: isLargeScreen ? 20 : 5,
+      minHeight: isLargeScreen ? "80%" : "40%",
+    },
+    containerPadding: {
+      paddingHorizontal: isLargeScreen ? 150 : isMediumScreen ? 40 : 15,
+    },
+    ctaButton: {
+      right: isLargeScreen ? "2.5%" : "5%",
+      bottom: isLargeScreen ? "10%" : "10%",
+    },
+  });
+
+  const chartSizes = {
+    height: isLargeScreen ? 320 : isMediumScreen ? 220 : 160,
+    radius: isLargeScreen ? 150 : isMediumScreen ? 80 : 80,
+    innerRadius: isLargeScreen ? 100 : isMediumScreen ? 40 : 50,
+  };
+
   return (
     <>
       <ThemedView style={styles.container}>
@@ -121,9 +163,19 @@ export default function TeamsScreen() {
           style={styles.innerContainer}
         >
           <ThemedView
-            style={[styles.headerCard, { backgroundColor: primaryColor }]}
+            style={[
+              styles.headerCard,
+              { backgroundColor: primaryColor },
+              responsiveStyles.containerPadding,
+            ]}
           >
-            <ThemedView style={[styles.row, { backgroundColor: primaryColor }]}>
+            <ThemedView
+              style={[
+                styles.row,
+                responsiveStyles.headerContainer,
+                { backgroundColor: primaryColor },
+              ]}
+            >
               <View>
                 <ThemedText
                   type="title"
@@ -136,7 +188,11 @@ export default function TeamsScreen() {
             </ThemedView>
 
             <ThemedView
-              style={[styles.column, { backgroundColor: primaryColor }]}
+              style={[
+                styles.column,
+                responsiveStyles.chartsWrapper,
+                { backgroundColor: primaryColor },
+              ]}
             >
               {houses.map((house) => {
                 const stats = getHouseStats(house.enum);
@@ -152,9 +208,9 @@ export default function TeamsScreen() {
                       { value: stats.pending, color: pending, text: "Pending" },
                       { value: stats.overdue, color: overdue, text: "Overdue" },
                     ]}
-                    height={80}
-                    radius={80}
-                    innerRadius={50}
+                    height={chartSizes.height}
+                    radius={chartSizes.radius}
+                    innerRadius={chartSizes.innerRadius}
                     showGradient={false}
                     strokeColor={primaryColor}
                     strokeWidth={5}
@@ -184,7 +240,9 @@ export default function TeamsScreen() {
             </ThemedView>
           </ThemedView>
 
-          <ThemedView style={styles.subContainer}>
+          <ThemedView
+            style={[styles.subContainer, responsiveStyles.containerPadding]}
+          >
             {loading ? (
               <ActivityIndicator
                 size="large"

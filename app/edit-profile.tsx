@@ -16,6 +16,7 @@ import {
   Platform,
   ScrollView,
   StyleSheet,
+  useWindowDimensions,
 } from "react-native";
 import { useReduxHouse } from "@/hooks/useReduxHouse";
 import { useReduxMembers } from "@/hooks/useReduxMembers";
@@ -42,6 +43,10 @@ interface UserFormData {
 export default function EditProfileScreen() {
   const errorColor = useThemeColor({}, "overdue");
   const navigation = useRouter();
+  const { width } = useWindowDimensions();
+
+  const isLargeScreen = Platform.OS === "web" && width >= 1024;
+  const isMediumScreen = Platform.OS === "web" && width >= 768;
   const params = useLocalSearchParams();
   const { user: currentUser, updateCurrentUser } = useReduxAuth();
 
@@ -206,8 +211,28 @@ export default function EditProfileScreen() {
     return <ThemedText style={{ color: errorColor }}>*</ThemedText>;
   };
 
+  const responsiveStyles = StyleSheet.create({
+    headerContainer: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: isLargeScreen ? 40 : 20,
+    },
+    containerPadding: {
+      paddingHorizontal: isLargeScreen ? 150 : isMediumScreen ? 40 : 15,
+    },
+    scriptureSection: {
+      marginBottom: isLargeScreen ? 15 : 20,
+      marginTop: isLargeScreen ? 10 : 5,
+      maxHeight: isLargeScreen ? 200 : 100,
+    },
+    taskSection: {
+      marginTop: isLargeScreen ? 10 : 5,
+    },
+  });
+
   return (
-    <ThemedView style={styles.container}>
+    <ThemedView style={[styles.container, responsiveStyles.containerPadding]}>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.keyboardAvoid}
@@ -338,7 +363,6 @@ export default function EditProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    
   },
   scrollView: {
     width: "100%",

@@ -6,6 +6,7 @@ import {
   View,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   Pressable,
+  useWindowDimensions,
 } from "react-native";
 
 import { Alert } from "@/components/Alert";
@@ -39,8 +40,13 @@ export default function LoginScreen() {
   const [password, setPassword] = useState("");
   const [checked, setChecked] = useState(true);
   const { signin, loading } = useReduxAuth();
+  const { width } = useWindowDimensions();
+  
+  const isLargeScreen = Platform.OS === "web" && width >= 1024;
+  const isMediumScreen = Platform.OS === "web" && width >= 768;
+  
   const { isAuthenticated, user } = useAppSelector((state) => state.auth);
-
+  
   useEffect(() => {
     if (alertMessage) {
       const timeout = setTimeout(() => setAlertMessage(""), 6000);
@@ -94,9 +100,29 @@ export default function LoginScreen() {
     }
   };
 
+  const responsiveStyles = StyleSheet.create({
+      headerContainer: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: isLargeScreen ? 40 : 20,
+      },
+      containerPadding: {
+        paddingHorizontal: isLargeScreen ? 300 : isMediumScreen ? 150 : 15,
+      },
+      scriptureSection: {
+        marginBottom: isLargeScreen ? 15 : 20,
+        marginTop: isLargeScreen ? 10 : 5,
+        maxHeight: isLargeScreen ? 200 : 100,
+      },
+      taskSection: {
+        marginTop: isLargeScreen ? 10 : 5,
+      },
+    });
+
   return (
     <>
-      <ThemedView style={styles.container}>
+      <ThemedView style={[styles.container, responsiveStyles.containerPadding]}>
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : "height"}
           style={styles.keyboardAvoid}

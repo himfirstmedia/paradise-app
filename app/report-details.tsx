@@ -16,6 +16,7 @@ import {
   ScrollView,
   StyleSheet,
   TouchableOpacity,
+  useWindowDimensions,
   View,
 } from "react-native";
 import { Task } from "@/redux/slices/taskSlice";
@@ -36,6 +37,11 @@ export default function ReportDetails() {
   const completedColor = useThemeColor({}, "completed");
   const pendingColor = useThemeColor({}, "pending");
   const overdueColor = useThemeColor({}, "overdue");
+
+  const { width } = useWindowDimensions();
+
+  const isLargeScreen = Platform.OS === "web" && width >= 1024;
+  const isMediumScreen = Platform.OS === "web" && width >= 768;
 
   const { loading, members } = useReduxMembers();
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
@@ -205,8 +211,34 @@ export default function ReportDetails() {
     }
   };
 
+  const responsiveStyles = StyleSheet.create({
+    headerContainer: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: isLargeScreen ? 40 : 20,
+    },
+    containerPadding: {
+      paddingHorizontal: isLargeScreen ? 150 : isMediumScreen ? 40 : 15,
+    },
+    scriptureSection: {
+      marginBottom: isLargeScreen ? 15 : 20,
+      marginTop: isLargeScreen ? 10 : 5,
+      maxHeight: isLargeScreen ? 200 : 100,
+    },
+    taskSection: {
+      marginTop: isLargeScreen ? 10 : 5,
+    },
+  });
+
+  const chartSizes = {
+    height: isLargeScreen ? 320 : isMediumScreen ? 220 : 160,
+    radius: isLargeScreen ? 150 : isMediumScreen ? 80 : 80,
+    innerRadius: isLargeScreen ? 100 : isMediumScreen ? 40 : 50,
+  };
+
   return (
-    <ThemedView style={styles.container}>
+    <ThemedView style={[styles.container, responsiveStyles.containerPadding]}>
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={[
@@ -255,9 +287,9 @@ export default function ReportDetails() {
                 text: "Overdue",
               },
             ]}
-            height={220}
-            radius={90}
-            innerRadius={60}
+            height={chartSizes.height}
+            radius={chartSizes.radius}
+            innerRadius={chartSizes.innerRadius}
             showGradient={false}
             strokeColor={primaryColor}
             strokeWidth={5}

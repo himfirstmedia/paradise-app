@@ -149,7 +149,7 @@ export function HouseCard({ houses, style }: HouseCardProps) {
 
   return (
     <ThemedView style={[styles.container, style]}>
-      <ThemedView style={[styles.row, { marginBottom: "4%" }]}>
+      <ThemedView style={[styles.row, { marginBottom: 15 }]}>
         <ThemedText type="subtitle">
           {houses.length === 1 ? "Current House" : "Current Houses"}
         </ThemedText>
