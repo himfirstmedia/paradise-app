@@ -61,7 +61,7 @@ export default {
     },
     extra: {
       router: {},
-      BASE_URL: process.env.BASE_URL,
+      BASE_URL: process.env.BASE_URL || process.env.EXPO_PUBLIC_BASE_URL,
       eas: {
         projectId: "1c4bcd8c-d599-43cc-8cae-decc1a455423",
       },
