@@ -89,7 +89,7 @@ export function FloatingButton({
               >
                 {/* Render label if present */}
                 {btn.label && (
-                  <ThemedText style={[styles.childLabel, {backgroundColor: bgColor}]}>{btn.label}</ThemedText>
+                  <ThemedText style={[styles.childLabel]}>{btn.label}</ThemedText>
                 )}
                 <Pressable
                   style={[
@@ -149,15 +149,13 @@ const typeStyles: Record<string, ViewStyle> = {
 const styles = StyleSheet.create({
   container: {
     position: "absolute",
-    bottom: 24,
-    right: 15,
+    bottom: "5%",
+    right: "5%",
     alignItems: "flex-end",
     justifyContent: "flex-end",
     flexDirection: "column",
     width: "100%",
-    gap: 25,
-    borderRadius: 50,
-    // borderWidth: 1,
+    gap: 20,
   },
   childrenContainer: {
     flexDirection: "column",
@@ -169,13 +167,14 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   childLabel: {
-    marginRight: 12,
+    marginRight: 6,
     fontSize: 16,
-    color: "#FFF",
     paddingVertical: 4,
     paddingHorizontal: 10,
     borderRadius: 8,
     overflow: "hidden",
+    width: 130,
+    textAlign: "right"
   },
   button: {
     width: 60,
@@ -194,7 +193,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     borderRadius: 24,
-    
   },
   icon: {
     height: 28,

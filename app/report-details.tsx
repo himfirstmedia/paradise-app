@@ -17,14 +17,21 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { Task } from "@/redux/slices/taskSlice";
 
+
+// Normalization function matching the Reports screen
+function normalizeHouseName(name: string | null): string {
+  if (!name) return "INDIVIDUAL";
+  return name.trim().replace(/\s+/g, "_").toUpperCase();
+}
 
 function getHouseDisplayName(houseValue: string | null): string {
   return houseValue?.trim() || "Individual";
 }
 
 export default function ReportDetails() {
-  const { type, house } = useLocalSearchParams();
+  const { type, house, houseId, houseName } = useLocalSearchParams();
   const primaryColor = useThemeColor({}, "selection");
   const completedColor = useThemeColor({}, "completed");
   const pendingColor = useThemeColor({}, "pending");
@@ -33,50 +40,60 @@ export default function ReportDetails() {
   const { loading, members } = useReduxMembers();
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
 
+  // Handle array parameters
   const houseParam = Array.isArray(house) ? house[0] : house;
   const typeParam = Array.isArray(type) ? type[0] : type;
+  const houseIdParam = Array.isArray(houseId) ? houseId[0] : houseId;
+  const houseNameParam = Array.isArray(houseName) ? houseName[0] : houseName;
 
   // Memoized filtered members and report data
   const { filteredMembers, reportTitle, taskStats } = useMemo(() => {
-    let filtered = members;
+    let filtered: any[] = [];
     let title = "Report";
     let stats = { pending: 0, completed: 0, overdue: 0, totalTasks: 0 };
 
-    if (houseParam) {
-      const displayName = getHouseDisplayName(houseParam);
-      title = `${displayName} Report`;
-
-      filtered = members.filter((member) => {
-        const memberHouse = member.house?.name || "";
-        return getHouseDisplayName(memberHouse) === displayName;
-      });
-    } else if (typeParam === "individuals") {
-      title = "Individuals Report";
-      filtered = members.filter((member) => !member.house);
+    // Fallback for direct access
+    if (!houseParam && !typeParam && !houseIdParam) {
+      return { filteredMembers: [], reportTitle: "Invalid Report", taskStats: stats };
     }
 
-    // Calculate task statistics
+    // Filtering logic - prioritize house ID if available
+    if (houseIdParam) {
+      const id = parseInt(houseIdParam, 10);
+      if (!isNaN(id)) {
+        title = `${houseNameParam || 'House'} Report`;
+        filtered = members.filter(member => member.house?.id === id);
+      }
+    } 
+    else if (houseParam) {
+      const normalizedParam = normalizeHouseName(houseParam);
+      title = `${normalizedParam.replace(/_/g, ' ')} Report`;
+      filtered = members.filter(member => {
+        const memberHouse = member.house?.name || "";
+        return normalizeHouseName(memberHouse) === normalizedParam;
+      });
+    }
+    else if (typeParam === "individuals") {
+      title = "Individuals Report";
+      filtered = members.filter(member => !member.house);
+    }
+
+    // Calculate task stats
     filtered.forEach((member) => {
-      member.task?.forEach((task) => {
-        if (["PENDING", "COMPLETED", "OVERDUE"].includes(task.progress || "")) {
+      member.task?.forEach((task: Task) => {  // Added Task type annotation
+        if (task.progress && ["PENDING", "COMPLETED", "OVERDUE"].includes(task.progress)) {
           stats.totalTasks++;
           switch (task.progress) {
-            case "PENDING":
-              stats.pending++;
-              break;
-            case "COMPLETED":
-              stats.completed++;
-              break;
-            case "OVERDUE":
-              stats.overdue++;
-              break;
+            case "PENDING": stats.pending++; break;
+            case "COMPLETED": stats.completed++; break;
+            case "OVERDUE": stats.overdue++; break;
           }
         }
       });
     });
 
     return { filteredMembers: filtered, reportTitle: title, taskStats: stats };
-  }, [members, houseParam, typeParam]);
+  }, [members, houseParam, typeParam, houseIdParam, houseNameParam]);
 
   const completionPercent = useMemo(() => {
     return taskStats.totalTasks > 0
@@ -133,7 +150,7 @@ export default function ReportDetails() {
                   <tbody>
                     ${member.task
                       .map(
-                        (task) => `
+                        (task: Task) => `
                       <tr>
                         <td>${task.name || "N/A"}</td>
                         <td>${task.description || ""}</td>
@@ -260,7 +277,7 @@ export default function ReportDetails() {
             <ActivityIndicator color="#fff" />
           ) : (
             <Image
-              source={require("@/assets/icons/download.png")}
+              source={require("@/assets/icons/share-normal.png")}
               style={styles.icon}
             />
           )}
@@ -332,8 +349,8 @@ const styles = StyleSheet.create({
     shadowRadius: 3.84,
   },
   icon: {
-    width: 40,
-    height: 40,
+    width: 35,
+    height: 35,
     tintColor: "#fff",
   },
   floatingContainer: {

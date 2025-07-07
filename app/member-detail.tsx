@@ -239,7 +239,7 @@ export default function MemberDetailScreen() {
 
       <FloatingButton
         type="icon-rounded"
-        style={styles.floatingBtn}
+
         childrenButtons={[
           ...(showEditDelete
             ? [
@@ -320,15 +320,5 @@ const styles = StyleSheet.create({
   icon: {
     height: 30,
     width: 30,
-  },
-  floatingBtn: {
-    position: "absolute",
-    bottom: "10%",
-    right: "5%",
-    height: 50,
-    width: 50,
-    borderRadius: 60,
-    justifyContent: "center",
-    alignItems: "center",
   },
 });

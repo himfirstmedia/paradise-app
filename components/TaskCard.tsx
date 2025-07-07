@@ -30,7 +30,6 @@ export function TaskCard({ onPress, tasks }: TaskCardProps) {
     OVERDUE: "Overdue Tasks",
   };
 
-  // Only call redux if props.tasks isn't given
   const { tasks: reduxTasks, loading, error } = useReduxTasks();
   const tasksToUse = tasks ?? reduxTasks;
   const showLoading = tasks ? false : loading;
@@ -119,6 +118,7 @@ const styles = StyleSheet.create({
   container: {
     minHeight: "10%",
     width: "100%",
+    marginBottom: "5%"
   },
   row: {
     flexDirection: "row",

@@ -43,6 +43,7 @@ export default function Reports() {
           type: "house",
           house: normalizeHouseName(house.name),
           houseId: house.id,
+          houseName: house.name,
         },
       }));
   }, [houses, getDisplayName]);
