@@ -205,6 +205,7 @@ export default function PostScriptureScreen() {
                   value={selectedBook}
                   onSelect={setSelectedBook}
                   numColumns={3}
+                  multiSelect={false}
                 />
 
                 <ThemedText>Version</ThemedText>
@@ -214,6 +215,7 @@ export default function PostScriptureScreen() {
                   value={selectedVersion}
                   onSelect={setSelectedVersion}
                   numColumns={3}
+                  multiSelect={false}
                 />
                 <ThemedText>Verse</ThemedText>
                 <ThemedTextInput
@@ -226,6 +228,7 @@ export default function PostScriptureScreen() {
                   placeholder="Enter bible scripture"
                   value={enteredScripture}
                   onChangeText={setEnteredScripture}
+                  height={200}
                 />
                 <Button
                   title={isUpdate ? "Update Post" : "Post Scripture"}

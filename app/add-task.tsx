@@ -1,4 +1,5 @@
 import {
+  ThemedCheckbox,
   ThemedDatePicker,
   ThemedDropdown,
   ThemedTextArea,
@@ -8,6 +9,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { Button } from "@/components/ui/Button";
 import { useReduxAuth } from "@/hooks/useReduxAuth";
+import { useReduxChores } from "@/hooks/useReduxChores";
 import { useReduxTasks } from "@/hooks/useReduxTasks";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import api from "@/utils/api";
@@ -25,20 +27,25 @@ import {
 
 type CategoryOption = {
   label: string;
-  value: "PRIMARY" | "MAINTENANCE" | "SPECIAL";
+  value: "HOUSEHOLD" | "MAINTENANCE" | "SUPPORT";
 };
 
 const CATEGORY_OPTIONS: Record<string, CategoryOption[]> = {
-  DIRECTOR: [
-    { label: "Primary Task", value: "PRIMARY" },
-    { label: "Maintenance Task", value: "MAINTENANCE" },
-    { label: "Special Task", value: "SPECIAL" },
+  // DIRECTOR: [
+  //   { label: "Maintenance", value: "MAINTENANCE" },
+  //   { label: "Household", value: "HOUSEHOLD" },
+  //   { label: "Support", value: "SUPPORT" },
+  // ],
+  // RESIDENT_MANAGER: [
+  //   { label: "Maintenance", value: "MAINTENANCE" },
+  //   { label: "Household", value: "HOUSEHOLD" },
+  //   { label: "Support", value: "SUPPORT" },
+  // ],
+  FACILITY_MANAGER: [
+    { label: "Household", value: "HOUSEHOLD" },
+    { label: "Maintenance", value: "MAINTENANCE" },
+    { label: "Support", value: "SUPPORT" },
   ],
-  RESIDENT_MANAGER: [
-    { label: "Primary Task", value: "PRIMARY" },
-    { label: "Maintenance Task", value: "MAINTENANCE" },
-  ],
-  FACILITY_MANAGER: [{ label: "Maintenance Task", value: "MAINTENANCE" }],
 };
 
 export default function AddTaskScreen() {
@@ -46,11 +53,13 @@ export default function AddTaskScreen() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [taskName, setTaskName] = useState("");
   const [taskCategory, setCategory] = useState("");
+  const [taskChore, setChore] = useState("");
   const [startDate, setStartDate] = useState<string | undefined>();
   const [endDate, setEndDate] = useState<string | undefined>();
   const [description, setDescription] = useState("");
   const [loading, setLoading] = useState(false);
-  const { reload } = useReduxTasks();
+  const [primary, setPrimary] = useState(false);
+  const { reload: taskReload } = useReduxTasks();
 
   const { width } = useWindowDimensions();
 
@@ -58,9 +67,18 @@ export default function AddTaskScreen() {
   const isMediumScreen = Platform.OS === "web" && width >= 768;
 
   const { user } = useReduxAuth();
+  const { chores, reload: choreReload } = useReduxChores();
 
   const categoryOptions: CategoryOption[] =
     CATEGORY_OPTIONS[user?.role as keyof typeof CATEGORY_OPTIONS] || [];
+
+  const primaryChoreOptions = chores
+    .filter((chore) => chore.houseId === user?.houseId)
+    .map((chore) => ({
+      label: chore.name,
+      value: chore.id.toString(),
+    }));
+
 
   const navigation = useRouter();
 
@@ -72,6 +90,9 @@ export default function AddTaskScreen() {
     if (!endDate) newErrors.endDate = "End date is required.";
     if (!description) newErrors.description = "Description is required.";
     if (!taskCategory) newErrors.category = "Category is required.";
+    if (primary && !taskChore) {
+      newErrors.chore = "Primary chore is required.";
+    }
 
     setErrors(newErrors);
 
@@ -85,6 +106,7 @@ export default function AddTaskScreen() {
       await api.post("/tasks", {
         name: taskName,
         category: taskCategory,
+        choreId: taskChore,
         startDate,
         endDate,
         description,
@@ -96,8 +118,10 @@ export default function AddTaskScreen() {
       setStartDate(undefined);
       setEndDate(undefined);
       setDescription("");
+      setChore("");
       setErrors({});
-      await reload();
+      await taskReload();
+      await choreReload();
       navigation.back();
     } catch (error: any) {
       Alert.alert(
@@ -121,7 +145,7 @@ export default function AddTaskScreen() {
       gap: isLargeScreen ? 40 : 20,
     },
     containerPadding: {
-      paddingHorizontal: isLargeScreen ? 150 : isMediumScreen ? 40 : 15,
+      paddingHorizontal: isLargeScreen ? 150 : isMediumScreen ? 40 : 5,
     },
     scriptureSection: {
       marginBottom: isLargeScreen ? 15 : 20,
@@ -137,7 +161,7 @@ export default function AddTaskScreen() {
     <ThemedView style={[styles.container, responsiveStyles.containerPadding]}>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={styles.keyboardAvoid}
+        style={[styles.keyboardAvoid, {flex: 1}]}
         keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 0}
       >
         <ScrollView
@@ -167,6 +191,7 @@ export default function AddTaskScreen() {
               errorMessage={errors.taskName}
             />
           </ThemedView>
+
           <ThemedView style={styles.inputField}>
             <ThemedText type="default">
               Task Category <Dot />
@@ -230,6 +255,7 @@ export default function AddTaskScreen() {
             </ThemedText>
             <ThemedTextArea
               placeholder="Enter task description"
+              height={200}
               value={description}
               onChangeText={(text) => {
                 setDescription(text);
@@ -239,6 +265,41 @@ export default function AddTaskScreen() {
               errorMessage={errors.description}
             />
           </ThemedView>
+
+          <ThemedView style={[styles.inputField, { marginBottom: 15 }]}>
+            <ThemedCheckbox
+              label="Select if task is under a Primary Chore."
+              checked={primary}
+              onChange={setPrimary}
+            />
+          </ThemedView>
+
+          {primary && (
+            <ThemedView style={styles.inputField}>
+              <ThemedText type="default">
+                Primary Chore <Dot />
+              </ThemedText>
+              <ThemedDropdown
+                placeholder="Select Primary Chore"
+                items={primaryChoreOptions.map((opt) => opt.label)}
+                value={
+                  primaryChoreOptions.find((opt) => opt.value === taskChore)
+                    ?.label || ""
+                }
+                onSelect={(label) => {
+                  const selected = primaryChoreOptions.find(
+                    (opt) => opt.label === label
+                  );
+                  setChore(selected?.value || "");
+                  if (errors.category)
+                    setErrors((e) => ({ ...e, category: "" }));
+                }}
+                errorMessage={errors.category}
+                multiSelect={false}
+                numColumns={1}
+              />
+            </ThemedView>
+          )}
 
           <ThemedView style={{ marginTop: "5%", width: "100%" }}>
             <Button

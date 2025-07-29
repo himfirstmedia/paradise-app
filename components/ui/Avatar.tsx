@@ -122,7 +122,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   initial: {
-    // fontWeight: 400,
     textAlign: "center",
     // height: "100%",
     // width: "100%",

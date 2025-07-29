@@ -1,10 +1,11 @@
 import { TaskCard } from "@/components/TaskCard";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
+import { useReduxAuth } from "@/hooks/useReduxAuth";
 import { useReduxTasks } from "@/hooks/useReduxTasks";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { useFocusEffect, useRouter } from "expo-router";
-import { useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Image,
@@ -20,6 +21,13 @@ export default function TaskManagerScreen() {
   const primaryColor = useThemeColor({}, "selection");
   const { tasks, loading, reload } = useReduxTasks();
   const navigation = useRouter();
+  const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
+
+  const { user } = useReduxAuth();
+
+  useEffect(() => {
+    setCurrentUserRole(user?.role ?? null);
+  }, [user]);
 
   const { width } = useWindowDimensions();
 
@@ -53,6 +61,8 @@ export default function TaskManagerScreen() {
       marginTop: isLargeScreen ? 10 : 5,
     },
   });
+
+  const showAddTask = currentUserRole !== "FACILITY_MANAGER";
 
   return (
     <ThemedView
@@ -91,14 +101,21 @@ export default function TaskManagerScreen() {
           <TaskCard tasks={safeTasks} />
         </ScrollView>
       )}
-      <Pressable
-        style={[styles.taskCTAbtn, { backgroundColor: primaryColor }]}
-        onPress={() => {
-          navigation.push("/add-task");
-        }}
-      >
-        <Image source={require("@/assets/icons/add.png")} style={styles.icon} />
-      </Pressable>
+      {showAddTask ? (
+        <></>
+      ) : (
+        <Pressable
+          style={[styles.taskCTAbtn, { backgroundColor: primaryColor }]}
+          onPress={() => {
+            navigation.push("/add-task");
+          }}
+        >
+          <Image
+            source={require("@/assets/icons/add.png")}
+            style={styles.icon}
+          />
+        </Pressable>
+      )}
     </ThemedView>
   );
 }

@@ -121,7 +121,7 @@ export function FloatingButton({
         <Image
           source={
             expanded
-              ? require("@/assets/icons/briefcase.png")
+              ? icon || require("@/assets/icons/briefcase.png")
               : icon || require("@/assets/icons/briefcase.png")
           }
           style={[styles.icon, { height: 32, width: 32 }]}
@@ -173,7 +173,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     borderRadius: 8,
     overflow: "hidden",
-    width: 130,
+    width: 160,
     textAlign: "right"
   },
   button: {

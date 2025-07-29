@@ -1,0 +1,236 @@
+import {
+  ThemedDropdown,
+  ThemedTextArea,
+  ThemedTextInput,
+} from "@/components/ThemedInput";
+import { ThemedText } from "@/components/ThemedText";
+import { ThemedView } from "@/components/ThemedView";
+import { Button } from "@/components/ui/Button";
+import { useReduxAuth } from "@/hooks/useReduxAuth";
+import { useReduxChores } from "@/hooks/useReduxChores";
+import { useReduxHouse } from "@/hooks/useReduxHouse";
+import { useThemeColor } from "@/hooks/useThemeColor";
+import api from "@/utils/api";
+import { useRouter } from "expo-router";
+import React, { useState } from "react";
+import {
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  useWindowDimensions,
+} from "react-native";
+
+type HouseOption = {
+  label: string;
+  value: string;
+};
+
+export default function AddChoreScreen() {
+  const errorColor = useThemeColor({}, "overdue");
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [choreName, setChoreName] = useState("");
+  const [house, setHouse] = useState("");
+  const [description, setDescription] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const { houses, reload: houseReload } = useReduxHouse();
+  const { reload: choreReload } = useReduxChores();
+  const { user } = useReduxAuth();
+
+  const { width } = useWindowDimensions();
+  const isLargeScreen = Platform.OS === "web" && width >= 1024;
+  const isMediumScreen = Platform.OS === "web" && width >= 768;
+
+  const navigation = useRouter();
+
+  const allowedRoles = ["DIRECTOR", "SUPER_ADMIN"];
+
+  const filteredHouseOptions: HouseOption[] = allowedRoles.includes(
+    user?.role ?? ""
+  )
+    ? (houses?.map((h) => ({
+        label: h.abbreviation,
+        value: h.id.toString(),
+      })) ?? [])
+    : (houses
+        ?.filter((h) => h.id === user?.houseId) // Filter to current user's house
+        .map((h) => ({
+          label: h.abbreviation,
+          value: h.id.toString(),
+        })) ?? []);
+
+  const handleChoreCreation = async () => {
+    const newErrors: Record<string, string> = {};
+
+    if (!choreName) newErrors.choreName = "Primary chore name is required.";
+    if (!house) newErrors.house = "House is required.";
+    if (!description) newErrors.description = "Chore Description is required.";
+
+    setErrors(newErrors);
+
+    setLoading(true);
+    try {
+      await api.post("/chores", {
+        name: choreName,
+        house,
+        description,
+      });
+      Alert.alert("Success", "Primary chore created successfully!");
+      setChoreName("");
+      setHouse("");
+      setDescription("");
+      setErrors({});
+      await choreReload();
+      await houseReload();
+      navigation.back();
+    } catch {
+      Alert.alert("Error", "Failed to create primary chore.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const Dot = () => {
+    return <ThemedText style={{ color: errorColor }}>*</ThemedText>;
+  };
+
+  const responsiveStyles = StyleSheet.create({
+    headerContainer: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: isLargeScreen ? 40 : 20,
+    },
+    containerPadding: {
+      paddingHorizontal: isLargeScreen ? 150 : isMediumScreen ? 40 : 5,
+    },
+    scriptureSection: {
+      marginBottom: isLargeScreen ? 15 : 20,
+      marginTop: isLargeScreen ? 10 : 5,
+      maxHeight: isLargeScreen ? 200 : 100,
+    },
+    taskSection: {
+      marginTop: isLargeScreen ? 10 : 5,
+    },
+  });
+
+  return (
+    <ThemedView style={[styles.container, responsiveStyles.containerPadding]}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={styles.keyboardAvoid}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 0}
+      >
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={[
+            styles.scrollContent,
+            Platform.OS === "web" && { minHeight: "100%" },
+          ]}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          <ThemedText type="title" style={{ marginBottom: 15 }}>
+            Add Primary Chore
+          </ThemedText>
+
+          <ThemedView style={styles.inputField}>
+            <ThemedText type="default">
+              Primary Chore Name <Dot />
+            </ThemedText>
+            <ThemedTextInput
+              placeholder="Enter primary chore name"
+              value={choreName}
+              onChangeText={(text) => {
+                setChoreName(text);
+                if (errors.choreName)
+                  setErrors((e) => ({ ...e, choreName: "" }));
+              }}
+              errorMessage={errors.choreName}
+            />
+          </ThemedView>
+
+          <ThemedView style={styles.inputField}>
+            <ThemedText type="default">
+              House <Dot />
+            </ThemedText>
+            <ThemedDropdown
+              placeholder="Select House"
+              items={filteredHouseOptions.map((opt) => opt.label)}
+              value={
+                filteredHouseOptions.find((opt) => opt.value === house)
+                  ?.label || ""
+              }
+              onSelect={(label) => {
+                const selected = filteredHouseOptions.find(
+                  (opt) => opt.label === label
+                );
+                setHouse(selected?.value || "");
+                if (errors.house) setErrors((e) => ({ ...e, house: "" }));
+              }}
+              errorMessage={errors.house}
+              multiSelect={false}
+            />
+          </ThemedView>
+
+          <ThemedView style={styles.inputField}>
+            <ThemedText type="default">
+              Description <Dot />
+            </ThemedText>
+            <ThemedTextArea
+              placeholder="Enter chore description"
+              height={200}
+              value={description}
+              onChangeText={(text) => {
+                setDescription(text);
+                if (errors.description)
+                  setErrors((e) => ({ ...e, description: "" }));
+              }}
+              errorMessage={errors.description}
+            />
+          </ThemedView>
+
+          <ThemedView style={{ marginTop: "5%", width: "100%" }}>
+            <Button
+              type="default"
+              title="Add Chore"
+              onPress={handleChoreCreation}
+              loading={loading}
+            />
+          </ThemedView>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </ThemedView>
+  );
+}
+
+const styles = StyleSheet.create({
+  scrollView: {
+    width: "100%",
+    paddingVertical: "5%",
+    paddingHorizontal: 15,
+    ...(Platform.OS === "web" && { overflow: "scroll" }),
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: 50,
+  },
+  container: {
+    flex: 1,
+  },
+  inputField: {
+    width: "100%",
+    gap: 2,
+  },
+  keyboardAvoid: {
+    width: "100%",
+    flex: 1,
+  },
+  row: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+});

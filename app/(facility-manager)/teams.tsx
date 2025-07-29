@@ -6,9 +6,8 @@ import { Avatar } from "@/components/ui/Avatar";
 import { useReduxAuth } from "@/hooks/useReduxAuth";
 import { useReduxMembers } from "@/hooks/useReduxMembers";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { useFocusEffect } from "expo-router";
 
-import React, { useCallback, useMemo } from "react";
+import React, { useEffect, useMemo } from "react";
 import {
   ActivityIndicator,
   Platform,
@@ -38,11 +37,15 @@ export default function TeamsScreen() {
 
   const { members, loading, reload } = useReduxMembers();
 
-  useFocusEffect(
-    useCallback(() => {
-      reload();
-    }, [reload])
-  );
+  useEffect(() => {
+    if (members.length === 0 && !loading) {
+      const timeout = setTimeout(() => {
+        reload();
+      }, 3000);
+
+      return () => clearTimeout(timeout);
+    }
+  }, [members, loading, reload]);
 
   const houseReduxTaskstats = useMemo(() => {
     const stats: Record<

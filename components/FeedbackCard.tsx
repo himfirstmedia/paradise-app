@@ -4,10 +4,19 @@ import { useReduxTasks } from "@/hooks/useReduxTasks";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { Image } from "expo-image";
 import React, { useState } from "react";
-import { Modal, Pressable, ScrollView, StyleSheet, View } from "react-native";
+import {
+  Alert,
+  Modal,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  View,
+} from "react-native";
 import { ThemedText } from "./ThemedText";
 import { ThemedView } from "./ThemedView";
-
+import { Button } from "./ui/Button";
+import api from "@/utils/api";
 
 interface FeedbackCardProps {
   feedbacks: Feedback[];
@@ -23,9 +32,9 @@ export function FeedbackCard({ feedbacks }: FeedbackCardProps) {
   );
   const [modalVisible, setModalVisible] = useState(false);
   const { members } = useReduxMembers();
-  const { tasks } = useReduxTasks();
+  const { tasks, reload } = useReduxTasks();
 
-
+  const isIOS = Platform.OS === "ios";
 
   const getUserName = (userId: number) =>
     members.find((m) => m.id === userId)?.name ?? `User #${userId}`;
@@ -39,6 +48,39 @@ export function FeedbackCard({ feedbacks }: FeedbackCardProps) {
     if (fb.type === "Comment") groupedFeedbacks.Comment.push(fb);
     else if (fb.type === "Suggestion") groupedFeedbacks.Suggestion.push(fb);
   });
+
+  const IOSStyles = StyleSheet.create({
+    verticalPadding: {
+      paddingVertical: isIOS ? 100 : 40,
+    },
+  });
+
+  const handleDelete = () => {
+  if (!selectedFeedback) return;
+
+  Alert.alert("Delete Feedback", "Are you sure you want to delete this Feedback?", [
+    { text: "Cancel", style: "cancel" },
+    {
+      text: "Delete",
+      style: "destructive",
+      onPress: async () => {
+        try {
+          await api.delete(`/feedback/${selectedFeedback.id}`);
+          await reload();
+          Alert.alert("Deleted", "Feedback deleted successfully.");
+          setModalVisible(false);
+          setSelectedFeedback(null);
+        } catch (error: any) {
+          Alert.alert(
+            "Error",
+            error?.response?.data?.message || "Failed to delete feedback."
+          );
+        }
+      },
+    },
+  ]);
+};
+
 
   return (
     <>
@@ -127,7 +169,7 @@ export function FeedbackCard({ feedbacks }: FeedbackCardProps) {
         onRequestClose={() => setModalVisible(false)}
       >
         <View style={styles.modalOverlay}>
-          <ThemedView style={styles.modalContent}>
+          <ThemedView style={[styles.modalContent, IOSStyles.verticalPadding]}>
             <Pressable
               style={[
                 styles.closeButton,
@@ -170,7 +212,12 @@ export function FeedbackCard({ feedbacks }: FeedbackCardProps) {
                             >
                               Commenting On:
                             </ThemedText>
-                            <View style={[styles.row, { gap: 8, justifyContent: "flex-start" }]}>
+                            <View
+                              style={[
+                                styles.row,
+                                { gap: 8, justifyContent: "flex-start" },
+                              ]}
+                            >
                               <View
                                 style={[
                                   styles.dot,
@@ -199,6 +246,14 @@ export function FeedbackCard({ feedbacks }: FeedbackCardProps) {
                 </>
               )}
             </ScrollView>
+            <View style={styles.rowCentered}>
+            <Button
+              type="icon-rounded"
+              icon={require("@/assets/icons/delete.png")}
+              onPress={handleDelete}
+              iconStyle={styles.icon}
+            />
+            </View>
           </ThemedView>
         </View>
       </Modal>
@@ -270,4 +325,14 @@ const styles = StyleSheet.create({
     width: 6,
     borderRadius: 999,
   },
+  icon: {
+    height: 35,
+    width: 35,
+    tintColor: "#FFFFFF",
+  },
+  rowCentered: {
+    height: 60,
+    width: "100%",
+    alignItems: "center"
+  }
 });

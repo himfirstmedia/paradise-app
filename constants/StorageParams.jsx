@@ -7,7 +7,9 @@ export default {
   COUNTRY: "@country",
   CACHED_USERS: "@cached_users",
   CACHED_TASKS: "@cached_tasks",
+  CACHED_CHORES: "@cached_chores",
   CACHED_FEEDBACKS: "@cached_feedbacks",
   CACHED_SCRIPTURES: "@cached_scriptures",
-  CACHED_HOUSES: "@cached_houses"
+  CACHED_HOUSES: "@cached_houses",
+  CACHED_CHATS: "@cached_chats"
 };

@@ -19,6 +19,11 @@ export interface User {
   joinedDate: string;
   leavingDate?: string;
   task: any[];
+  currentChore?: {
+    id: number;
+    name: string;
+  }
+  currentChoreId?: number;
 }
 
 interface AuthState {

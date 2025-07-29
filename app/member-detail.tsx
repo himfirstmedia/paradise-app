@@ -1,6 +1,4 @@
 import { Alert } from "@/components/Alert";
-import { TaskCard } from "@/components/TaskCard";
-import type { ProgressType } from "@/redux/slices/taskSlice";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { FloatingButton } from "@/components/ui/FloatingButton";
@@ -9,12 +7,23 @@ import { useReduxTasks } from "@/hooks/useReduxTasks";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
-import { ScrollView, StyleSheet, View } from "react-native";
+import {
+  ActivityIndicator,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  useWindowDimensions,
+  View,
+} from "react-native";
 import { useReduxHouse } from "@/hooks/useReduxHouse";
 import { useReduxMembers } from "@/hooks/useReduxMembers";
 import { AlertDialog } from "@/components/ui/AlertDialog";
 import api from "@/utils/api";
 import { useReduxAuth } from "@/hooks/useReduxAuth";
+import { StatusSummaryCard } from "@/components/StatusSummaryCard";
+import { ChoreCard } from "@/components/ChoreCard";
+import { useTaskSummary } from "@/hooks/useTaskSummary";
+import { useReduxChores } from "@/hooks/useReduxChores";
 
 function getFriendlyHouseName(house?: string | null) {
   if (!house) return "";
@@ -30,8 +39,14 @@ function getFriendlyHouseName(house?: string | null) {
 }
 
 export default function MemberDetailScreen() {
+  const primaryColor = useThemeColor({}, "selection");
   const params = useLocalSearchParams();
   const userId = Array.isArray(params.id) ? params.id[0] : params.id;
+
+  const { width } = useWindowDimensions();
+
+  const isLargeScreen = Platform.OS === "web" && width >= 1024;
+  const isMediumScreen = Platform.OS === "web" && width >= 768;
 
   const bgColor = useThemeColor({}, "background");
   const navigation = useRouter();
@@ -39,10 +54,20 @@ export default function MemberDetailScreen() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
 
-  const { tasks, reload: reloadTasks } = useReduxTasks();
+  const { tasks, reload: reloadTasks, loading: tasksLoading } = useReduxTasks();
+  const { summary, summaryLoading } = useTaskSummary();
   const { houses } = useReduxHouse();
   const { members, reload } = useReduxMembers();
   const { user } = useReduxAuth();
+  const { chores } = useReduxChores();
+
+  const userTasks = tasks.filter((task) => task.userId === Number(userId));
+
+  const taskWithChore = userTasks.find((task) => task.choreId != null);
+
+  const primaryChore = chores.find(
+    (chore) => chore.id === taskWithChore?.choreId
+  );
 
   useEffect(() => {
     setCurrentUserRole(user?.role ?? null);
@@ -73,28 +98,8 @@ export default function MemberDetailScreen() {
     );
   }
 
-  const {
-    id,
-    name,
-    houseId,
-    role,
-    phone,
-    email,
-    joinedDate,
-    leavingDate,
-    city,
-    state,
-    zipCode,
-    gender,
-  } = member;
-
-  // Fixed: Convert task.userId to string for consistent comparison
-  const assignedTasks = tasks.filter(
-    (task) =>
-      task.userId !== null &&
-      task.userId !== undefined &&
-      String(task.userId) === userId
-  );
+  const { id, name, houseId, role, phone, email, joinedDate, leavingDate } =
+    member;
 
   // Fixed: Handle all types of house IDs consistently
   const getHouseNameById = (id: number | string | null) => {
@@ -133,24 +138,28 @@ export default function MemberDetailScreen() {
     }
   };
 
-  const assignmentsWithOnPress = assignedTasks.map((assignment) => ({
-    ...assignment,
-    description: assignment.description ?? "",
-    progress: assignment.progress as ProgressType,
-    onPress: () =>
-      navigation.navigate({
-        pathname: "/task-detail",
-        params: {
-          name: assignment.name,
-          description: assignment.description,
-          progress: assignment.progress,
-          instruction: assignment.instruction,
-        },
-      }),
-  }));
+  const responsiveStyles = StyleSheet.create({
+    headerContainer: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: isLargeScreen ? 40 : 20,
+    },
+    containerPadding: {
+      paddingHorizontal: isLargeScreen ? 150 : isMediumScreen ? 40 : 20,
+    },
+    scriptureSection: {
+      marginBottom: isLargeScreen ? 15 : 20,
+      marginTop: isLargeScreen ? 10 : 5,
+      maxHeight: isLargeScreen ? 200 : 100,
+    },
+    taskSection: {
+      marginTop: isLargeScreen ? 10 : 5,
+    },
+  });
 
   return (
-    <ThemedView style={styles.container}>
+    <ThemedView style={[styles.container, responsiveStyles.containerPadding]}>
       <ScrollView
         contentContainerStyle={{
           alignItems: "flex-start",
@@ -161,7 +170,7 @@ export default function MemberDetailScreen() {
         style={[styles.innerContainer, { backgroundColor: bgColor }]}
         showsVerticalScrollIndicator={false}
       >
-        <View style={[styles.row, { marginBottom: "5%" }]}>
+        <View style={[styles.row, { marginBottom: 30 }]}>
           <UserAvatar
             size={100}
             user={{ name: Array.isArray(name) ? name[0] : name, image: "" }}
@@ -186,25 +195,7 @@ export default function MemberDetailScreen() {
           <ThemedText type="defaultSemiBold">Member Type:</ThemedText>
           <ThemedText type="default">{role}</ThemedText>
         </View>
-        <View style={styles.row}>
-          <ThemedText type="defaultSemiBold">Gender:</ThemedText>
-          <ThemedText type="default">{gender}</ThemedText>
-        </View>
-        <View style={styles.row}>
-          <ThemedText type="defaultSemiBold">Zip Code:</ThemedText>
-          <ThemedText type="default">{zipCode}</ThemedText>
-        </View>
 
-        <View style={[styles.row, { gap: 20 }]}>
-          <View style={styles.row}>
-            <ThemedText type="defaultSemiBold">City:</ThemedText>
-            <ThemedText type="default">{city}</ThemedText>
-          </View>
-          <View style={styles.row}>
-            <ThemedText type="defaultSemiBold">State:</ThemedText>
-            <ThemedText type="default">{state}</ThemedText>
-          </View>
-        </View>
         {role === "INDIVIDUAL" && (
           <>
             <View style={styles.row}>
@@ -226,20 +217,55 @@ export default function MemberDetailScreen() {
           </>
         )}
 
-        {assignmentsWithOnPress.length === 0 ? (
-          <ThemedText type="default" style={{ marginTop: "5%" }}>
-            No assignments found.
-          </ThemedText>
-        ) : (
-          <View style={{ marginTop: "5%", width: "100%" }}>
-            <TaskCard tasks={assignmentsWithOnPress} />
-          </View>
-        )}
+        <View style={{ marginTop: 20, width: "100%" }}>
+          {tasksLoading ? (
+            <ActivityIndicator
+              size="large"
+              color={primaryColor}
+              style={{ marginTop: "5%" }}
+            />
+          ) : tasks.length === 0 ? (
+            <ThemedText
+              type="default"
+              style={{
+                textAlign: "center",
+                marginTop: 24,
+                color: "#888",
+              }}
+            >
+              You have no tasks assigned yet.
+            </ThemedText>
+          ) : (
+            <>
+              {primaryChore && <ChoreCard chore={primaryChore} />}
+
+              {summaryLoading ? (
+                <ActivityIndicator
+                  size="large"
+                  color={primaryColor}
+                  style={{ marginTop: "5%" }}
+                />
+              ) : !summary ? (
+                <StatusSummaryCard
+                  summary={{
+                    previousBalance: "0 hrs",
+                    weekStatus: "0/0 hrs",
+                    monthStatus: "0/0 hrs",
+                    currentPeriod: "0/0 hrs",
+                    currentBalance: "0 hrs",
+                    daysRemaining: "0",
+                  }}
+                />
+              ) : (
+                <StatusSummaryCard summary={summary} />
+              )}
+            </>
+          )}
+        </View>
       </ScrollView>
 
       <FloatingButton
         type="icon-rounded"
-
         childrenButtons={[
           ...(showEditDelete
             ? [
@@ -248,7 +274,6 @@ export default function MemberDetailScreen() {
                   icon: require("@/assets/icons/delete.png"),
                   onPress: () => setShowDeleteDialog(true),
                 },
-                // FloatingButton changes
                 {
                   label: "Edit Profile",
                   icon: require("@/assets/icons/edit-info.png"),
@@ -274,7 +299,6 @@ export default function MemberDetailScreen() {
         ]}
       />
 
-      {/* Alert Dialog for delete confirmation */}
       <AlertDialog
         visible={showDeleteDialog}
         title="Delete Member"
@@ -314,7 +338,7 @@ const styles = StyleSheet.create({
   },
   innerContainer: {
     flexGrow: 1,
-    paddingVertical: "8%",
+    paddingVertical: 30,
     width: "100%",
   },
   icon: {

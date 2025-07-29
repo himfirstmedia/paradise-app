@@ -10,6 +10,7 @@ import {
   ImageSourcePropType,
   StyleProp,
   TextStyle,
+  ImageStyle,
 } from "react-native";
 import { useThemeColor } from "@/hooks/useThemeColor";
 
@@ -17,10 +18,11 @@ type ButtonProps = {
   title?: string;
   onPress: (event: GestureResponderEvent) => void;
   loading?: boolean;
-  type?: "default" | "icon-rounded";
+  type?: "default" | "icon-rounded" | "icon-default";
   disabled?: boolean;
   icon?: ImageSourcePropType;
   style?: StyleProp<ViewStyle>;
+  iconStyle?: StyleProp<ImageStyle>;
   textStyle?: StyleProp<TextStyle>;
 };
 
@@ -31,10 +33,12 @@ export const Button: React.FC<ButtonProps> = ({
   disabled = false,
   type = "default",
   icon,
+  iconStyle,
   style,
 }) => {
   const bgColor = useThemeColor({}, "selection");
   const isIconRounded = type === "icon-rounded";
+  const isIconDefault = type === "icon-default";
 
   return (
     <TouchableOpacity
@@ -42,15 +46,18 @@ export const Button: React.FC<ButtonProps> = ({
       style={[
         styles.button,
         isIconRounded ? styles.rounded : styles.default,
+        isIconDefault ? styles.iconDefault : styles.default,
         { backgroundColor: disabled || loading ? bgColor : bgColor },
-        style
+        style,
       ]}
       disabled={disabled || loading}
     >
       {loading ? (
         <ActivityIndicator color="#fff" />
       ) : isIconRounded && icon ? (
-        <Image source={icon} style={styles.iconImage} />
+        <Image source={icon} style={[styles.iconImage, iconStyle]} />
+      ) : isIconDefault && icon ? (
+        <Image source={icon} style={[styles.iconImage, iconStyle]} />
       ) : (
         <Text style={styles.text}>{title}</Text>
       )}
@@ -69,6 +76,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     width: "100%",
   },
+  iconDefault: {
+    width: 50,
+    height: 50,
+    borderRadius: 8,
+  },
   rounded: {
     width: 60,
     height: 60,
@@ -82,7 +94,7 @@ const styles = StyleSheet.create({
   iconImage: {
     width: 28,
     height: 28,
-    tintColor: "#FFF", // Optional, remove if you want original icon colors
+    tintColor: "#FFF",
     resizeMode: "contain",
   },
 });

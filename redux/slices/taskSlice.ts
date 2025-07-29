@@ -15,19 +15,47 @@ export interface Task {
   type: "PENDING" | "COMPLETED" | "OVERDUE";
   userId?: number | null;
   instruction?: string;
+  image?: string;
+  choreId?: number;
+  chore?: {
+    id: number;
+    name: string;
+  }
+  user?:{
+    houseId: number;
+  }
 }
+
+interface TaskSummary {
+  weekStatus: string;
+  monthStatus: string;
+  periodStatus: string;
+  previousBalance: string;
+  currentBalance: string;
+  daysRemaining: number;
+  currentPeriod: string;
+  nextDeadline: string;
+  expectedMinutesToDate: number;
+  netMinutes: number;
+}
+
+
 
 interface TaskState {
   tasks: Task[];
-  status: 'idle' | 'loading' | 'succeeded' | 'failed';
+  tasksStatus: 'idle' | 'loading' | 'succeeded' | 'failed';
+  summary?: TaskSummary;
+  summaryStatus: 'idle' | 'loading' | 'succeeded' | 'failed';
   error: string | null;
 }
 
 const initialState: TaskState = {
   tasks: [],
-  status: 'idle', // Initial status
+  tasksStatus: 'idle',
+  summaryStatus: 'idle',
   error: null,
 };
+
 
 export const loadTasks = createAsyncThunk(
   'task/loadTasks',
@@ -50,6 +78,24 @@ export const loadTasks = createAsyncThunk(
   }
 );
 
+export const loadTaskSummary = createAsyncThunk(
+  'task/loadTaskSummary',
+  async (userId: number | undefined, { rejectWithValue }) => {
+    try {
+      // console.log("📡 Fetching task summary for userId=", userId);
+      const res = await api.get(`/tasks/summary?userId=${userId}`);
+      console.log("✅ Task summary response:", res.data);
+      return res.data;
+    } catch (error) {
+      console.error("❌ Error loading task summary:", error);
+      return rejectWithValue('Failed to load task summary.');
+    }
+  }
+);
+
+
+
+
 const taskSlice = createSlice({
   name: 'task',
   initialState,
@@ -57,16 +103,27 @@ const taskSlice = createSlice({
   extraReducers: (builder) => {
     builder
       .addCase(loadTasks.pending, (state) => {
-        state.status = 'loading';
+        state.tasksStatus = 'loading';
         state.error = null;
       })
       .addCase(loadTasks.fulfilled, (state, action) => {
-        state.status = 'succeeded';
+        state.tasksStatus = 'succeeded';
         state.tasks = action.payload;
       })
       .addCase(loadTasks.rejected, (state, action) => {
-        state.status = 'failed';
+        state.tasksStatus = 'failed';
         state.error = action.payload as string;
+      })
+      .addCase(loadTaskSummary.pending, (state) => {
+      state.summaryStatus = 'loading';
+    })
+    .addCase(loadTaskSummary.fulfilled, (state, action) => {
+      state.summaryStatus = 'succeeded';
+      state.summary = action.payload;
+    })
+    .addCase(loadTaskSummary.rejected, (state, action) => {
+        state.summaryStatus = 'failed';
+        state.error = action.payload as string || 'Failed to load task summary';
       });
   },
 });

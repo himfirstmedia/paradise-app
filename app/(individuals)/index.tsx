@@ -61,7 +61,7 @@ export default function HomeScreen() {
     scriptureSection: {
       marginBottom: isLargeScreen ? 15 : 20,
       marginTop: isLargeScreen ? 10 : 5,
-      maxHeight: isLargeScreen ? 200 : 100,
+      maxHeight: isLargeScreen ? 200 : 140,
     },
     taskSection: {
       marginTop: isLargeScreen ? 10 : 5,
@@ -186,7 +186,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
   },
   headerCard: {
-    minHeight: 160,
     width: "100%",
     borderBottomEndRadius: 20,
     borderBottomStartRadius: 20,

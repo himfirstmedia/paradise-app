@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import {
   ActivityIndicator,
   Image,
@@ -169,7 +170,7 @@ export default function TabTwoScreen() {
           </ThemedView>
         </ScrollView>
 
-        <Pressable
+        {/* <Pressable
           style={[styles.taskCTAbtn, { backgroundColor: primaryColor }, responsiveStyles.ctaButton]}
           onPress={() => {
             navigation.push("/add-task");
@@ -179,7 +180,7 @@ export default function TabTwoScreen() {
             source={require("@/assets/icons/add.png")}
             style={styles.icon}
           />
-        </Pressable>
+        </Pressable> */}
       </ThemedView>
     </>
   );
@@ -204,14 +205,13 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   headerCard: {
-    // height: 280,
     width: "100%",
     borderBottomEndRadius: 20,
     borderBottomStartRadius: 20,
     paddingHorizontal: 15,
     marginBottom: 15,
     paddingTop: 20,
-    paddingBottom: 20,
+    paddingBottom: 30,
   },
   row: {
     flexDirection: "row",

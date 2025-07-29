@@ -21,10 +21,14 @@ export function useReduxHouse() {
   }, [dispatch]);
 
   useEffect(() => {
-    if (houses.length === 0 && !loading) {
-      reload();
+    if (!loading && houses.length === 0) {
+      const timeout = setTimeout(() => {
+        reload();
+      }, 3000);
+
+      return () => clearTimeout(timeout);
     }
-  }, [houses, loading, reload]);
+  }, [loading, houses.length, reload]);
 
 
   const houseMap = useMemo(() => {

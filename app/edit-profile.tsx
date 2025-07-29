@@ -219,7 +219,7 @@ export default function EditProfileScreen() {
       gap: isLargeScreen ? 40 : 20,
     },
     containerPadding: {
-      paddingHorizontal: isLargeScreen ? 150 : isMediumScreen ? 40 : 15,
+      paddingHorizontal: isLargeScreen ? 150 : isMediumScreen ? 40 : 5,
     },
     scriptureSection: {
       marginBottom: isLargeScreen ? 15 : 20,

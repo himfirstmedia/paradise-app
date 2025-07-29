@@ -1,4 +1,3 @@
-
 import {
   DarkTheme,
   DefaultTheme,
@@ -56,7 +55,7 @@ export default function AppLayout() {
     >
       <StatusBar
         barStyle={colorScheme === "dark" ? "light-content" : "dark-content"}
-        backgroundColor={Colors[colorScheme].selection}
+        backgroundColor={Colors[colorScheme].selection} 
       />
       <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
         <Stack>
@@ -88,6 +87,10 @@ export default function AppLayout() {
             options={{ header: () => <SimpleHeader title="Create Task" /> }}
           />
           <Stack.Screen
+            name="add-chore"
+            options={{ header: () => <SimpleHeader title="Create Chore" /> }}
+          />
+          <Stack.Screen
             name="assign-task"
             options={{ header: () => <SimpleHeader title="Assign Task" /> }}
           />
@@ -98,6 +101,9 @@ export default function AppLayout() {
           <Stack.Screen
             name="member-detail"
             options={{ header: () => <SimpleHeader title="Member Profile" /> }}
+          /><Stack.Screen
+            name="chore-detail"
+            options={{ header: () => <SimpleHeader title="Primary Chore Details" /> }}
           />
           <Stack.Screen
             name="change-password"
@@ -120,6 +126,10 @@ export default function AppLayout() {
             options={{ header: () => <SimpleHeader title="Manage Tasks" /> }}
           />
           <Stack.Screen
+            name="chore-manager"
+            options={{ header: () => <SimpleHeader title="Manage Chores" /> }}
+          />
+          <Stack.Screen
             name="comments"
             options={{
               header: () => <SimpleHeader title="Comments & Suggestions" />,
@@ -127,7 +137,9 @@ export default function AppLayout() {
           />
           <Stack.Screen
             name="comments-manager"
-            options={{ header: () => <SimpleHeader title="Comments & Suggestions" /> }}
+            options={{
+              header: () => <SimpleHeader title="Comments & Suggestions" />,
+            }}
           />
           <Stack.Screen
             name="scriptures-manager"
@@ -141,7 +153,9 @@ export default function AppLayout() {
           />
           <Stack.Screen
             name="add-house"
-            options={{ header: () => <SimpleHeader title="Create New House" /> }}
+            options={{
+              header: () => <SimpleHeader title="Create New House" />,
+            }}
           />
           <Stack.Screen
             name="edit-house"
@@ -154,6 +168,22 @@ export default function AppLayout() {
           <Stack.Screen
             name="house-detail"
             options={{ header: () => <SimpleHeader title="House Detail" /> }}
+          />
+          <Stack.Screen
+            name="chore-tasks"
+            options={{ header: () => <SimpleHeader title="Chore Tasks" /> }}
+          />
+          <Stack.Screen
+            name="conversations"
+            options={{ header: () => <SimpleHeader title="Message" /> }}
+          />
+           <Stack.Screen
+            name="new-message"
+            options={{ header: () => <SimpleHeader title="New Message" /> }}
+          />
+          <Stack.Screen
+            name="chat-room"
+            options={{ headerShown: false }}
           />
         </Stack>
       </ThemeProvider>

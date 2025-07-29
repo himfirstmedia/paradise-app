@@ -1,9 +1,7 @@
 import React from "react";
 import {
   ActivityIndicator,
-  Image,
   Platform,
-  Pressable,
   ScrollView,
   StyleSheet,
   useWindowDimensions,
@@ -20,6 +18,7 @@ import { useRouter } from "expo-router";
 
 import { useReduxTasks } from "@/hooks/useReduxTasks";
 import { useReduxAuth } from "@/hooks/useReduxAuth";
+import { FloatingButton } from "@/components/ui/FloatingButton";
 
 export default function TabTwoScreen() {
   const primaryColor = useThemeColor({}, "selection");
@@ -161,12 +160,7 @@ export default function TabTwoScreen() {
                 />
               ) : (
                 (() => {
-                  const isFacilityManager = user?.role === "FACILITY_MANAGER";
-                  const visibleTasks = isFacilityManager
-                    ? tasks.filter((task) => task.category === "MAINTENANCE")
-                    : tasks;
-
-                  return visibleTasks.length === 0 ? (
+                  return tasks.length === 0 ? (
                     <ThemedText
                       type="default"
                       style={{
@@ -178,7 +172,7 @@ export default function TabTwoScreen() {
                       There are no tasks to display.
                     </ThemedText>
                   ) : (
-                    <TaskCard tasks={visibleTasks} />
+                    <TaskCard tasks={tasks} />
                   );
                 })()
               )}
@@ -186,17 +180,21 @@ export default function TabTwoScreen() {
           </ThemedView>
         </ScrollView>
 
-        <Pressable
-          style={[styles.taskCTAbtn, { backgroundColor: primaryColor }, responsiveStyles.ctaButton]}
-          onPress={() => {
-            navigation.push("/add-task");
-          }}
-        >
-          <Image
-            source={require("@/assets/icons/add.png")}
-            style={styles.icon}
-          />
-        </Pressable>
+        <FloatingButton
+          type="icon-rounded"
+          icon={require("@/assets/icons/add.png")}
+          style={{ bottom: "10%" }}
+          childrenButtons={[
+            {
+              label: "Create new Task",
+              icon: require("@/assets/icons/task.png"),
+              onPress: () =>
+                navigation.push({
+                  pathname: "/add-task",
+                }),
+            },
+          ]}
+        />
       </ThemedView>
     </>
   );
@@ -227,7 +225,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     marginBottom: 15,
     paddingTop: 20,
-    paddingBottom: 20,
+    paddingBottom: 30,
   },
   row: {
     flexDirection: "row",

@@ -9,7 +9,6 @@ import {
 } from "react-native";
 
 import { ScriptureCard } from "@/components/ScriptureCard";
-import { TaskCard } from "@/components/TaskCard";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { Avatar } from "@/components/ui/Avatar";
@@ -18,6 +17,12 @@ import { useThemeColor } from "@/hooks/useThemeColor";
 import { useReduxAuth } from "@/hooks/useReduxAuth";
 import { useReduxScripture } from "@/hooks/useReduxScripture";
 import { useReduxTasks } from "@/hooks/useReduxTasks";
+import { StatusSummaryCard } from "@/components/StatusSummaryCard";
+import { useRouter } from "expo-router";
+import { Button } from "@/components/ui/Button";
+import { useTaskSummary } from "@/hooks/useTaskSummary";
+import { ChoreCard } from "@/components/ChoreCard";
+import { useReduxChores } from "@/hooks/useReduxChores";
 
 function getGreeting() {
   const hour = new Date().getHours();
@@ -27,6 +32,7 @@ function getGreeting() {
 }
 
 export default function HomeScreen() {
+  const navigation = useRouter();
   const primaryColor = useThemeColor({}, "selection");
   const { width } = useWindowDimensions();
 
@@ -39,12 +45,25 @@ export default function HomeScreen() {
   const { tasks, loading: tasksLoading } = useReduxTasks({
     onlyCurrentUser: true,
   });
+  const { chores } = useReduxChores({ onlyCurrentUser: true });
+  const { summary, summaryLoading } = useTaskSummary();
   const { scriptures, loading: scriptureLoading } = useReduxScripture();
 
   const latestScripture = scriptures.length > 0 ? scriptures[0] : null;
 
+  console.log("Status Summary Details: ", summary);
+
+  const getFormattedDate = () => {
+    const now = new Date();
+    return now.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  };
+
   const fontSizes = {
-    title: isLargeScreen ? 36 : isMediumScreen ? 28 : 22,
+    title: isLargeScreen ? 36 : isMediumScreen ? 28 : 24,
     subtitle: isLargeScreen ? 22 : isMediumScreen ? 18 : 16,
   };
 
@@ -61,7 +80,7 @@ export default function HomeScreen() {
     scriptureSection: {
       marginBottom: isLargeScreen ? 15 : 20,
       marginTop: isLargeScreen ? 10 : 5,
-      maxHeight: isLargeScreen ? 200 : 100,
+      maxHeight: isLargeScreen ? 200 : 140,
     },
     taskSection: {
       marginTop: isLargeScreen ? 10 : 5,
@@ -95,11 +114,31 @@ export default function HomeScreen() {
                   fontSize: fontSizes.subtitle,
                 }}
               >
-                {getGreeting()}
-                {userName}
+                {getFormattedDate()}
               </ThemedText>
             </ThemedView>
-            <Avatar />
+            <ThemedView
+              style={[
+                {
+                  backgroundColor: primaryColor,
+                  justifyContent: "flex-end",
+                  alignItems: "center",
+                  flexDirection: "row",
+                  width: 100,
+                },
+              ]}
+            >
+              <Button
+                type="icon-rounded"
+                icon={require("@/assets/icons/chat.png")}
+                iconStyle={{ height: 30, width: 30 }}
+                onPress={() => {
+                  navigation.push("/conversations");
+                }}
+                style={{ width: 50, marginRight: 10 }}
+              />
+              <Avatar />
+            </ThemedView>
           </ThemedView>
 
           <View style={{ marginTop: 10, gap: 12 }}>
@@ -111,7 +150,8 @@ export default function HomeScreen() {
                 fontSize: fontSizes.title,
               }}
             >
-              Welcome to Paradise App.
+              {getGreeting()}
+              {userName}
             </ThemedText>
           </View>
         </ThemedView>
@@ -161,7 +201,19 @@ export default function HomeScreen() {
                 You have no tasks assigned yet.
               </ThemedText>
             ) : (
-              <TaskCard tasks={tasks} />
+              <>
+                <ChoreCard chore={chores[0]} />
+
+                {summaryLoading || !summary ? (
+                  <ActivityIndicator
+                    size="large"
+                    color={primaryColor}
+                    style={{ marginTop: "5%" }}
+                  />
+                ) : (
+                  <StatusSummaryCard summary={summary} />
+                )}
+              </>
             )}
           </View>
         </ThemedView>

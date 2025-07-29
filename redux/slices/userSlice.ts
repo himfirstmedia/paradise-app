@@ -2,6 +2,7 @@ import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from '@/utils/api';
 import StorageParams from '@/constants/StorageParams';
+import { Task } from '@/types/task';
 
 export interface User {
   id: number;
@@ -18,7 +19,12 @@ export interface User {
   image?: string;
   joinedDate: string;
   leavingDate?: string;
-  task: any[];
+  task: Task[];
+  currentChoreId?: number;
+  currentChore?: {
+    id: number;
+    name: string;
+  }
 }
 
 interface UserState {

@@ -25,7 +25,7 @@ export function SimpleHeader({ title }: SimpleHeaderProps) {
               style={styles.backIcon}
             />
           </Pressable>
-          <ThemedText style={styles.title}>{title}</ThemedText>
+          <ThemedText type="subtitle" style={styles.title}>{title}</ThemedText>
         </View>
       </ThemedView>
     </ThemedView>
@@ -36,7 +36,7 @@ const styles = StyleSheet.create({
   headerContainer: {
     paddingVertical: 5,
     paddingHorizontal: 15,
-    paddingTop: 20,
+    paddingTop: 40,
     height: 100,
     flexDirection: "row",
     alignItems: "center",

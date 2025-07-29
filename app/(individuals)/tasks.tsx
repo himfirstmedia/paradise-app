@@ -17,7 +17,6 @@ import { Avatar } from "@/components/ui/Avatar";
 import { useReduxTasks } from "@/hooks/useReduxTasks";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { useRouter } from "expo-router";
-import { Task } from "@/redux/slices/taskSlice";
 
 export default function TabTwoScreen() {
   const primaryColor = useThemeColor({}, "selection");
@@ -39,7 +38,7 @@ export default function TabTwoScreen() {
     completed = 0,
     overdue = 0,
     totalTasks = 0;
-  tasks.forEach((task: Task) => {
+  tasks.forEach((task) => {
     totalTasks++;
     if (task.progress === "PENDING") pending++;
     else if (task.progress === "COMPLETED") completed++;
@@ -103,55 +102,45 @@ export default function TabTwoScreen() {
                   type="title"
                   style={{ width: "100%", color: "#FFFFFF" }}
                 >
-                  My Tasks
+                  Tasks
                 </ThemedText>
               </View>
 
               <Avatar />
             </ThemedView>
 
-            <ThemedView
-              style={[
-                styles.chartContainer,
-                { backgroundColor: "transparent" },
+            <HalfDonutChart
+              data={[
+                { value: completed, color: completedColor, text: "Completed" },
+                { value: pending, color: pendingColor, text: "Pending" },
+                { value: overdue, color: overdueColor, text: "Overdue" },
               ]}
-            >
-              <HalfDonutChart
-                data={[
-                  {
-                    value: completed,
-                    color: completedColor,
-                    text: "Completed",
-                  },
-                  { value: pending, color: pendingColor, text: "Pending" },
-                  { value: overdue, color: overdueColor, text: "Overdue" },
-                ]}
-                height={chartSizes.height}
-                radius={chartSizes.radius}
-                innerRadius={chartSizes.innerRadius}
-                showGradient={false}
-                strokeColor={primaryColor}
-                strokeWidth={5}
-                legendTitle="Tasks Progress"
-                centerLabelComponent={() => (
-                  <View>
-                    <ThemedText
-                      type="title"
-                      style={{
-                        fontWeight: "bold",
-                        textAlign: "center",
-                        color: "#FFFFFF",
-                      }}
-                    >
-                      {totalTasks === 0 ? "0%" : `${completionPercent}%`}
-                    </ThemedText>
-                  </View>
-                )}
-                legendContainerStyle={{ marginTop: 10 }}
-                legendTitleStyle={{ color: "#fff", fontSize: 22 }}
-                legendTextStyle={{ color: "#fff", fontSize: 14 }}
-              />
-            </ThemedView>
+              height={chartSizes.height}
+              radius={chartSizes.radius}
+              innerRadius={chartSizes.innerRadius}
+              showGradient={false}
+              strokeColor={primaryColor}
+              strokeWidth={5}
+              legendTitle="Tasks Progress"
+              centerLabelComponent={() => (
+                <View>
+                  <ThemedText
+                    type="title"
+                    style={{
+                      // fontSize: 22,
+                      fontWeight: "bold",
+                      textAlign: "center",
+                      color: "#FFFFFF",
+                    }}
+                  >
+                    {totalTasks === 0 ? "0%" : `${completionPercent}%`}
+                  </ThemedText>
+                </View>
+              )}
+              legendContainerStyle={{ marginTop: 10 }}
+              legendTitleStyle={{ color: "#fff", fontSize: 22 }}
+              legendTextStyle={{ color: "#fff", fontSize: 14 }}
+            />
           </ThemedView>
 
           <ThemedView
@@ -209,7 +198,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     marginBottom: 15,
     paddingTop: 20,
-    paddingBottom: 20,
+    paddingBottom: 30,
   },
   row: {
     flexDirection: "row",

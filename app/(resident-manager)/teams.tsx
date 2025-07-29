@@ -5,8 +5,8 @@ import { ThemedView } from "@/components/ThemedView";
 import { Avatar } from "@/components/ui/Avatar";
 import { useReduxMembers } from "@/hooks/useReduxMembers";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { useFocusEffect, useRouter } from "expo-router";
-import React, { useCallback, useMemo } from "react";
+import { useRouter } from "expo-router";
+import React, { useEffect, useMemo } from "react";
 import {
   ActivityIndicator,
   Image,
@@ -35,11 +35,15 @@ export default function TeamsScreen() {
   const isLargeScreen = Platform.OS === "web" && width >= 1024;
   const isMediumScreen = Platform.OS === "web" && width >= 768;
 
-  useFocusEffect(
-    useCallback(() => {
-      reload();
-    }, [reload])
-  );
+  useEffect(() => {
+    if (members.length === 0 && !loading) {
+      const timeout = setTimeout(() => {
+        reload();
+      }, 3000);
+
+      return () => clearTimeout(timeout);
+    }
+  }, [members, loading, reload]);
 
   const houseReduxTaskstats = useMemo(() => {
     const stats: Record<

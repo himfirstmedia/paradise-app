@@ -18,8 +18,12 @@ export function useReduxMembers() {
   }, [dispatch]);
 
   useEffect(() => {
-    if (members.length === 0 && !loading) {
-      reload();
+    if (loading && members.length === 0 ) {
+      const timeout = setTimeout(() => {
+        reload();
+      }, 1000);
+
+      return () => clearTimeout(timeout);
     }
   }, [members, loading, reload]);
 

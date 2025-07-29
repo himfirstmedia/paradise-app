@@ -45,7 +45,7 @@ export default function AssignTaskScreen() {
   const isFacilityManager = user?.role === "FACILITY_MANAGER";
 
   const visibleTasks = isFacilityManager
-    ? tasks.filter((task) => task.category === "MAINTENANCE")
+    ? tasks.filter((task) => task.progress === "PENDING")
     : tasks;
 
   const handleTaskAssignment = async () => {
@@ -57,6 +57,8 @@ export default function AssignTaskScreen() {
     try {
       const member = members.find((m) => m.name === selectedMember);
       if (!member) throw new Error("Selected member not found.");
+
+      
 
       const task = tasks.find((t) => t.name === selectedTask);
       if (!task) throw new Error("Selected task not found.");
@@ -122,10 +124,7 @@ export default function AssignTaskScreen() {
           style={styles.keyboardAvoid}
           keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 0}
         >
-          <ThemedText
-            type="title"
-            style={{ marginBottom: 30, marginTop: 15 }}
-          >
+          <ThemedText type="title" style={{ marginBottom: 30, marginTop: 15 }}>
             Assign Task
           </ThemedText>
 
@@ -152,24 +151,11 @@ export default function AssignTaskScreen() {
                       : "Select Task"
                   }
                   value={selectedTask}
-                  onValueChange={setSelectedTask}
+                  onSelect={setSelectedTask}
                   items={visibleTasks.map((task) => task.name)}
+                  multiSelect={false}
                   // disabled={visibleTasks.length === 0}
                 />
-                {visibleTasks.length === 0 && (
-                  <ThemedText
-                    type="defaultSemiBold"
-                    style={{
-                      textAlign: "center",
-                      marginTop: 24,
-                      color: "#888",
-                    }}
-                  >
-                    {isFacilityManager
-                      ? "No maintenance tasks available"
-                      : "No tasks available"}
-                  </ThemedText>
-                )}
               </>
             )}
           </ThemedView>
@@ -180,6 +166,7 @@ export default function AssignTaskScreen() {
               placeholder="Enter special instructions(optional)"
               value={instruction}
               onChangeText={setInstruction}
+              height={200}
             />
           </ThemedView>
 
@@ -208,7 +195,6 @@ const styles = StyleSheet.create({
   },
   inputField: {
     width: "100%",
-    marginBottom: 15,
   },
   keyboardAvoid: {
     flex: 1,

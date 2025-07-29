@@ -9,8 +9,10 @@ import {
   Alert,
   Dimensions,
   Modal,
+  Platform,
   Pressable,
   StyleSheet,
+  useWindowDimensions,
   View,
   ViewStyle,
 } from "react-native";
@@ -24,18 +26,17 @@ interface ScriptureCardProps {
 
 function filterScriptures(scriptures: Scripture[]) {
   const isToday = (dateString: string | undefined) => {
-  if (!dateString) return false;
+    if (!dateString) return false;
 
-  const date = new Date(dateString); // UTC ISO timestamp → local time
-  const now = new Date(); // local time
+    const date = new Date(dateString); // UTC ISO timestamp → local time
+    const now = new Date(); // local time
 
-  return (
-    date.getFullYear() === now.getFullYear() &&
-    date.getMonth() === now.getMonth() &&
-    date.getDate() === now.getDate()
-  );
-};
-
+    return (
+      date.getFullYear() === now.getFullYear() &&
+      date.getMonth() === now.getMonth() &&
+      date.getDate() === now.getDate()
+    );
+  };
 
   const todaysVerses = scriptures.filter((s) => isToday(s.createdAt));
   const previousVerses = scriptures.filter((s) => !isToday(s.createdAt));
@@ -54,6 +55,10 @@ export function ScriptureItemCard({ scriptures, style }: ScriptureCardProps) {
   }>({ top: 0, left: 0 });
   const navigation = useRouter();
   const optionBtnRefs = useRef<Record<number, any>>({});
+
+  const { width } = useWindowDimensions();
+
+  const isWeb = Platform.OS === "web" && width >= 1024;
 
   const { reload } = useReduxScripture();
 
@@ -127,46 +132,46 @@ export function ScriptureItemCard({ scriptures, style }: ScriptureCardProps) {
 
   const POPOVER_WIDTH = 180;
 
-   const showPopover = (houseId: number) => {
-      const ref = optionBtnRefs.current[houseId];
-      if (ref?.measure) {
-        // Native path (optional fallback if running on native)
-        const screenWidth = Dimensions.get("window").width;
-        ref.measure(
-          (
-            x: number,
-            y: number,
-            width: number,
-            height: number,
-            pageX: number,
-            pageY: number
-          ) => {
-            let left = pageX;
-            const verticalOffset = 10;
-            if (left + POPOVER_WIDTH > screenWidth) {
-              left = screenWidth - POPOVER_WIDTH - 20;
-            }
-            setPopoverPosition({ top: pageY + height + verticalOffset, left });
-            setPopoverVisible(houseId);
+  const showPopover = (houseId: number) => {
+    const ref = optionBtnRefs.current[houseId];
+    if (ref?.measure) {
+      // Native path (optional fallback if running on native)
+      const screenWidth = Dimensions.get("window").width;
+      ref.measure(
+        (
+          x: number,
+          y: number,
+          width: number,
+          height: number,
+          pageX: number,
+          pageY: number
+        ) => {
+          let left = pageX;
+          const verticalOffset = isWeb ? 10 : -40;
+          if (left + POPOVER_WIDTH > screenWidth) {
+            left = screenWidth - POPOVER_WIDTH - 20;
           }
-        );
-      } else if (ref?.getBoundingClientRect) {
-        // Web path
-        const rect = ref.getBoundingClientRect();
-        let left = rect.left;
-        const verticalOffset = -45;
-        if (left + POPOVER_WIDTH > window.innerWidth) {
-          left = window.innerWidth - POPOVER_WIDTH - 20;
+          setPopoverPosition({ top: pageY + height + verticalOffset, left });
+          setPopoverVisible(houseId);
         }
-        setPopoverPosition({
-          top: rect.top + rect.height + verticalOffset,
-          left,
-        });
-        setPopoverVisible(houseId);
-      } else {
-        setPopoverVisible(houseId);
+      );
+    } else if (ref?.getBoundingClientRect) {
+      // Web path
+      const rect = ref.getBoundingClientRect();
+      let left = rect.left;
+      const verticalOffset = -45;
+      if (left + POPOVER_WIDTH > window.innerWidth) {
+        left = window.innerWidth - POPOVER_WIDTH - 20;
       }
-    };
+      setPopoverPosition({
+        top: rect.top + rect.height + verticalOffset,
+        left,
+      });
+      setPopoverVisible(houseId);
+    } else {
+      setPopoverVisible(houseId);
+    }
+  };
 
   return (
     <>
@@ -253,7 +258,7 @@ export function ScriptureItemCard({ scriptures, style }: ScriptureCardProps) {
                             position: "absolute",
                             top: popoverPosition.top,
                             left: popoverPosition.left,
-                            shadowColor: "#222"
+                            shadowColor: "#222",
                           },
                         ]}
                       >
@@ -300,7 +305,7 @@ const styles = StyleSheet.create({
   },
   row: {
     flexDirection: "row",
-    alignItems: "flex-start", 
+    alignItems: "flex-start",
     justifyContent: "space-between",
     width: "100%",
   },
@@ -348,7 +353,7 @@ const styles = StyleSheet.create({
   },
   popoverButton: {
     // borderWidth: 1,
-    marginVertical: 5
+    marginVertical: 5,
   },
   optionBtn: {
     position: "absolute",

@@ -6,8 +6,9 @@ import { ThemedView } from "@/components/ThemedView";
 import { Avatar } from "@/components/ui/Avatar";
 import { useReduxMembers } from "@/hooks/useReduxMembers";
 import { useThemeColor } from "@/hooks/useThemeColor";
+import { Task } from "@/types/task";
 import { useFocusEffect, useRouter } from "expo-router";
-import React, { useCallback, useMemo } from "react";
+import React, { useCallback, useEffect, useMemo } from "react";
 import {
   ActivityIndicator,
   Image,
@@ -41,6 +42,16 @@ export default function TeamsScreen() {
       reload();
     }, [reload])
   );
+
+  useEffect(()=>{
+if (members.length === 0 && !loading) {
+      const timeout = setTimeout(() => {
+        reload();
+      }, 3000);
+
+      return () => clearTimeout(timeout);
+    }
+  }, [members, loading, reload])
 
   const houseReduxTaskstats = useMemo(() => {
     const stats: Record<
@@ -78,7 +89,7 @@ export default function TeamsScreen() {
       const houseStat = stats[houseEnum];
 
       // Process each task for this member
-      member.task?.forEach((task) => {
+      member.task?.forEach((task: Task) => {
         // Only count tasks with valid progress states
         if (["PENDING", "COMPLETED", "OVERDUE"].includes(task.progress || "")) {
           switch (task.progress) {

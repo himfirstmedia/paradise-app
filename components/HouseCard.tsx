@@ -6,6 +6,8 @@ import {
   Alert,
   Dimensions,
   View,
+  Platform,
+  useWindowDimensions,
 } from "react-native";
 import { ThemedText } from "./ThemedText";
 import { ThemedView } from "./ThemedView";
@@ -21,6 +23,13 @@ export interface House {
   abbreviation: string;
   capacity: number;
   users: { id: number }[];
+  workPeriod?: {
+    id: number;
+    name: string;
+    startDate: string;
+    endDate: string;
+    carryOverEnabled: boolean;
+  };
 }
 
 interface HouseCardProps {
@@ -54,6 +63,10 @@ export function HouseCard({ houses, style }: HouseCardProps) {
   const navigation = useRouter();
   const optionBtnRefs = useRef<Record<number, any>>({});
 
+  const { width } = useWindowDimensions();
+
+  const isWeb = Platform.OS === "web" && width >= 1024;
+
   if (!houses || houses.length === 0) return null;
 
   const showViewAll = houses.length > 4;
@@ -65,7 +78,6 @@ export function HouseCard({ houses, style }: HouseCardProps) {
   const showPopover = (houseId: number) => {
     const ref = optionBtnRefs.current[houseId];
     if (ref?.measure) {
-      // Native path (optional fallback if running on native)
       const screenWidth = Dimensions.get("window").width;
       ref.measure(
         (
@@ -77,7 +89,7 @@ export function HouseCard({ houses, style }: HouseCardProps) {
           pageY: number
         ) => {
           let left = pageX;
-          const verticalOffset = 10;
+          const verticalOffset = isWeb ? 10 : -40;
           if (left + POPOVER_WIDTH > screenWidth) {
             left = screenWidth - POPOVER_WIDTH - 20;
           }
@@ -108,10 +120,12 @@ export function HouseCard({ houses, style }: HouseCardProps) {
     navigation.push({
       pathname: "/edit-house",
       params: {
-        id: house.id,
+        id: house.id.toString(),
         name: house.name,
         abbreviation: house.abbreviation,
-        capacity: house.capacity,
+        capacity: house.capacity.toString(),
+        workPeriodStart: house.workPeriod?.startDate,
+        workPeriodEnd: house.workPeriod?.endDate,
       },
     });
   };
@@ -167,7 +181,7 @@ export function HouseCard({ houses, style }: HouseCardProps) {
             key={house.id}
             style={[styles.row, styles.button, { backgroundColor: bgColor }]}
           >
-            <View>
+            <Pressable onPress={() => handleView(house)}>
               <ThemedText type="subtitle">
                 {getFriendlyHouseName(house.name)}
               </ThemedText>
@@ -177,7 +191,7 @@ export function HouseCard({ houses, style }: HouseCardProps) {
               <ThemedText type="defaultSemiBold" style={{ fontSize: 14 }}>
                 {house.users.length} / {house.capacity} Occupied
               </ThemedText>
-            </View>
+            </Pressable>
             <Pressable
               ref={(ref) => {
                 optionBtnRefs.current[house.id] = ref;
@@ -211,12 +225,12 @@ export function HouseCard({ houses, style }: HouseCardProps) {
                     },
                   ]}
                 >
-                  <Pressable
+                  {/* <Pressable
                     style={styles.popoverButton}
                     onPress={() => handleView(house)}
                   >
                     <ThemedText type="default">View</ThemedText>
-                  </Pressable>
+                  </Pressable> */}
                   <Pressable
                     style={styles.popoverButton}
                     onPress={() => handleEdit(house)}
@@ -235,6 +249,49 @@ export function HouseCard({ houses, style }: HouseCardProps) {
               </Pressable>
             </Modal>
           </ThemedView>
+        ))}
+      </ThemedView>
+    </ThemedView>
+  );
+}
+
+export function HouseSelectCard({ houses, style }: HouseCardProps) {
+  const bgColor = useThemeColor({}, "input");
+  const navigation = useRouter();
+
+  if (!houses || houses.length === 0) return null;
+
+  const handleView = (houseId: number) => {
+    navigation.push({
+      pathname: "/house-detail",
+      params: { id: houseId },
+    });
+  };
+
+  return (
+    <ThemedView style={[styles.container, style]}>
+      <ThemedText type="subtitle" style={{ marginBottom: 10 }}>
+        Current Houses
+      </ThemedText>
+      <ThemedView style={styles.houseButtons}>
+        {houses.map((house) => (
+          <Pressable
+            key={house.id}
+            style={[styles.button, { backgroundColor: bgColor }]}
+            onPress={() => handleView(house.id)}
+          >
+            <View>
+              <ThemedText type="subtitle">
+                {getFriendlyHouseName(house.name)}
+              </ThemedText>
+              <ThemedText type="defaultSemiBold" style={{ color: "#888" }}>
+                ({house.abbreviation})
+              </ThemedText>
+              <ThemedText type="defaultSemiBold" style={{ fontSize: 14 }}>
+                {house.users.length} / {house.capacity} Occupied
+              </ThemedText>
+            </View>
+          </Pressable>
         ))}
       </ThemedView>
     </ThemedView>

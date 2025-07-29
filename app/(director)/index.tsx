@@ -9,7 +9,6 @@ import {
 } from "react-native";
 
 import { ScriptureCard } from "@/components/ScriptureCard";
-import { TaskCard } from "@/components/TaskCard";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { Avatar } from "@/components/ui/Avatar";
@@ -17,8 +16,9 @@ import { useThemeColor } from "@/hooks/useThemeColor";
 
 import { useReduxAuth } from "@/hooks/useReduxAuth";
 import { useReduxScripture } from "@/hooks/useReduxScripture";
-import { useReduxTasks } from "@/hooks/useReduxTasks";
 import { useRouter } from "expo-router";
+import { useReduxHouse } from "@/hooks/useReduxHouse";
+import { HouseSelectCard } from "@/components/HouseCard";
 
 function getGreeting() {
   const hour = new Date().getHours();
@@ -38,7 +38,8 @@ export default function HomeScreen() {
   const { user, isAuthenticated } = useReduxAuth();
   const userName = user?.name?.split(" ")[0] || "User";
 
-  const { tasks, loading: tasksLoading } = useReduxTasks();
+  const { houses, loading } = useReduxHouse();
+
   const { scriptures, loading: scriptureLoading } = useReduxScripture();
 
   const latestScripture = scriptures.length > 0 ? scriptures[0] : null;
@@ -49,7 +50,7 @@ export default function HomeScreen() {
     }
   }, [isAuthenticated, router]);
 
-  // 🔠 Responsive font sizes
+  
   const fontSizes = {
     title: isLargeScreen ? 36 : isMediumScreen ? 28 : 22,
     subtitle: isLargeScreen ? 22 : isMediumScreen ? 18 : 16,
@@ -68,7 +69,7 @@ export default function HomeScreen() {
     scriptureSection: {
       marginBottom: isLargeScreen ? 15 : 20,
       marginTop: isLargeScreen ? 10 : 5,
-      maxHeight: isLargeScreen ? 200 : 100,
+      maxHeight: isLargeScreen ? 200 : 140,
     },
     taskSection: {
       marginTop: isLargeScreen ? 10 : 5,
@@ -150,13 +151,13 @@ export default function HomeScreen() {
           </View>
 
           <View style={responsiveStyles.taskSection}>
-            {tasksLoading ? (
+            {loading ? (
               <ActivityIndicator
                 size="large"
                 color={primaryColor}
                 style={{ marginTop: "5%" }}
               />
-            ) : tasks.length === 0 ? (
+            ) : houses.length === 0 ? (
               <ThemedText
                 type="default"
                 style={{
@@ -165,10 +166,11 @@ export default function HomeScreen() {
                   color: "#888",
                 }}
               >
-                There are no tasks assigned yet.
+                There are no houses added yet.
               </ThemedText>
             ) : (
-              <TaskCard tasks={tasks} />
+              
+              <HouseSelectCard houses={houses} />
             )}
           </View>
         </ThemedView>

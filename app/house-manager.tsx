@@ -4,6 +4,7 @@ import { ThemedView } from "@/components/ThemedView";
 import { useReduxHouse } from "@/hooks/useReduxHouse";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { useRouter } from "expo-router";
+import { useEffect } from "react";
 import {
   ActivityIndicator,
   Image,
@@ -19,11 +20,23 @@ export default function HouseManagerScreen() {
   const navigation = useRouter();
 
   const { width } = useWindowDimensions();
-  
-    const isLargeScreen = Platform.OS === "web" && width >= 1024;
-    const isMediumScreen = Platform.OS === "web" && width >= 768;
 
-  const { houses, loading } = useReduxHouse();
+  const isLargeScreen = Platform.OS === "web" && width >= 1024;
+  const isMediumScreen = Platform.OS === "web" && width >= 768;
+
+  const { houses, loading, reload } = useReduxHouse();
+
+  useEffect(() => {
+    if (loading && houses.length === 0) {
+      const timeout = setTimeout(() => {
+        reload();
+      }, 1000);
+
+      return () => clearTimeout(timeout);
+    }
+  }, [loading, houses.length, reload]);
+
+  console.log("Houses Info: ->", houses);
 
   const responsiveStyles = StyleSheet.create({
     headerContainer: {

@@ -23,24 +23,23 @@ export default function MembersScreen() {
   const bgColor = useThemeColor({}, "background");
 
   const { width } = useWindowDimensions();
-  
-    const isLargeScreen = Platform.OS === "web" && width >= 1024;
-    const isMediumScreen = Platform.OS === "web" && width >= 768;
+
+  const isLargeScreen = Platform.OS === "web" && width >= 1024;
+  const isMediumScreen = Platform.OS === "web" && width >= 768;
 
   const { members, loading } = useReduxMembers();
   const { user: currentUser } = useReduxAuth();
 
   const nonAdminMembers = useMemo(() => {
     return members.filter(
-      (member) =>
-        member.role !== "SUPER_ADMIN" && member.role !== "DIRECTOR"
+      (member) => member.role !== "SUPER_ADMIN" && member.role !== "DIRECTOR"
     );
   }, [members]);
 
   const showAdminCard =
     currentUser?.role === "DIRECTOR" || currentUser?.role === "SUPER_ADMIN";
 
-    const responsiveStyles = StyleSheet.create({
+  const responsiveStyles = StyleSheet.create({
     headerContainer: {
       flexDirection: "row",
       alignItems: "center",
@@ -48,7 +47,7 @@ export default function MembersScreen() {
       gap: isLargeScreen ? 40 : 20,
     },
     containerPadding: {
-      paddingHorizontal: isLargeScreen ? 150 : isMediumScreen ? 40 : 15,
+      paddingHorizontal: isLargeScreen ? 150 : isMediumScreen ? 40 : 5,
     },
     scriptureSection: {
       marginBottom: isLargeScreen ? 15 : 20,
@@ -61,7 +60,13 @@ export default function MembersScreen() {
   });
 
   return (
-    <ThemedView style={[styles.container, responsiveStyles.containerPadding, { backgroundColor: bgColor }]}>
+    <ThemedView
+      style={[
+        styles.container,
+        responsiveStyles.containerPadding,
+        { backgroundColor: bgColor },
+      ]}
+    >
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         style={styles.innerContainer}
@@ -96,10 +101,7 @@ export default function MembersScreen() {
         style={[styles.floatingBtn, { backgroundColor: primaryColor }]}
         onPress={() => navigation.push("/add-member")}
       >
-        <Image
-          source={require("@/assets/icons/add.png")}
-          style={styles.icon}
-        />
+        <Image source={require("@/assets/icons/add.png")} style={styles.icon} />
       </Pressable>
     </ThemedView>
   );

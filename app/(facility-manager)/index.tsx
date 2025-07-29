@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import {
   ActivityIndicator,
   Platform,
@@ -9,7 +9,6 @@ import {
 } from "react-native";
 
 import { ScriptureCard } from "@/components/ScriptureCard";
-import { TaskCard } from "@/components/TaskCard";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { Avatar } from "@/components/ui/Avatar";
@@ -17,7 +16,10 @@ import { useThemeColor } from "@/hooks/useThemeColor";
 
 import { useReduxAuth } from "@/hooks/useReduxAuth";
 import { useReduxScripture } from "@/hooks/useReduxScripture";
-import { useReduxTasks } from "@/hooks/useReduxTasks";
+import { useRouter } from "expo-router";
+import { useReduxHouse } from "@/hooks/useReduxHouse";
+import { HouseSelectCard } from "@/components/HouseCard";
+import { Button } from "@/components/ui/Button";
 
 function getGreeting() {
   const hour = new Date().getHours();
@@ -27,19 +29,27 @@ function getGreeting() {
 }
 
 export default function HomeScreen() {
+  const router = useRouter();
   const primaryColor = useThemeColor({}, "selection");
   const { width } = useWindowDimensions();
 
   const isLargeScreen = Platform.OS === "web" && width >= 1024;
   const isMediumScreen = Platform.OS === "web" && width >= 768;
 
-  const { user } = useReduxAuth();
+  const { user, isAuthenticated } = useReduxAuth();
   const userName = user?.name?.split(" ")[0] || "User";
 
-  const { tasks, loading: tasksLoading } = useReduxTasks();
+  const { houses, loading } = useReduxHouse();
+
   const { scriptures, loading: scriptureLoading } = useReduxScripture();
 
   const latestScripture = scriptures.length > 0 ? scriptures[0] : null;
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      router.replace("/auth/login");
+    }
+  }, [isAuthenticated, router]);
 
   const fontSizes = {
     title: isLargeScreen ? 36 : isMediumScreen ? 28 : 22,
@@ -59,7 +69,7 @@ export default function HomeScreen() {
     scriptureSection: {
       marginBottom: isLargeScreen ? 15 : 20,
       marginTop: isLargeScreen ? 10 : 5,
-      maxHeight: isLargeScreen ? 200 : 100,
+      maxHeight: isLargeScreen ? 200 : 140,
     },
     taskSection: {
       marginTop: isLargeScreen ? 10 : 5,
@@ -97,7 +107,15 @@ export default function HomeScreen() {
                 {userName}
               </ThemedText>
             </ThemedView>
+            <View style={[styles.row, {gap: 10}]}>
+              <Button
+                type="icon-rounded"
+                icon={require("@/assets/icons/chat.png")}
+                onPress={() => router.push("/conversations")}
+                style={{width: 50}}
+              />
             <Avatar />
+            </View>
           </ThemedView>
 
           <View style={{ marginTop: 10, gap: 12 }}>
@@ -113,6 +131,7 @@ export default function HomeScreen() {
             </ThemedText>
           </View>
         </ThemedView>
+
         <ThemedView
           style={[styles.subContainer, responsiveStyles.containerPadding]}
         >
@@ -139,35 +158,26 @@ export default function HomeScreen() {
             ) : null}
           </View>
 
-          <View style={{ marginTop: "1%" }}>
-            {tasksLoading ? (
+          <View style={responsiveStyles.taskSection}>
+            {loading ? (
               <ActivityIndicator
                 size="large"
                 color={primaryColor}
                 style={{ marginTop: "5%" }}
               />
+            ) : houses.length === 0 ? (
+              <ThemedText
+                type="default"
+                style={{
+                  textAlign: "center",
+                  marginTop: 24,
+                  color: "#888",
+                }}
+              >
+                There are no houses added yet.
+              </ThemedText>
             ) : (
-              (() => {
-                const isFacilityManager = user?.role === "FACILITY_MANAGER";
-                const visibleTasks = isFacilityManager
-                  ? tasks.filter((task) => task.category === "MAINTENANCE")
-                  : tasks;
-
-                return visibleTasks.length === 0 ? (
-                  <ThemedText
-                    type="default"
-                    style={{
-                      textAlign: "center",
-                      marginTop: 24,
-                      color: "#888",
-                    }}
-                  >
-                    There are no tasks to display.
-                  </ThemedText>
-                ) : (
-                  <TaskCard tasks={visibleTasks} />
-                );
-              })()
+              <HouseSelectCard houses={houses} />
             )}
           </View>
         </ThemedView>

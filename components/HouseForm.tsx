@@ -1,9 +1,13 @@
-// components/HouseForm.tsx
-import { ThemedTextInput } from "@/components/ThemedInput";
+import { ThemedDatePicker, ThemedTextInput } from "@/components/ThemedInput";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { Button } from "@/components/ui/Button";
-import { KeyboardAvoidingView, Platform, StyleSheet, useWindowDimensions } from "react-native";
+import {
+  KeyboardAvoidingView,
+  Platform,
+  StyleSheet,
+  useWindowDimensions,
+} from "react-native";
 import { useState } from "react";
 import { useThemeColor } from "@/hooks/useThemeColor";
 
@@ -11,8 +15,9 @@ export interface HouseFormValues {
   houseName: string;
   abbreviation: string;
   capacity: string;
+  workPeriodStart?: string;
+  workPeriodEnd?: string;
 }
-
 
 export interface HouseFormProps {
   mode: "add" | "edit";
@@ -20,6 +25,8 @@ export interface HouseFormProps {
     houseName: string;
     abbreviation: string;
     capacity: string;
+    workPeriodStart?: string;
+    workPeriodEnd?: string;
   };
   onSubmit: (values: HouseFormValues) => void;
   loading: boolean;
@@ -35,16 +42,20 @@ export function HouseForm({
   const [houseName, setHouseName] = useState(initialValues.houseName);
   const [abbreviation, setAbbreviation] = useState(initialValues.abbreviation);
   const [capacity, setCapacity] = useState(initialValues.capacity);
+  const [startDate, setStartDate] = useState<string | undefined>(
+    initialValues.workPeriodStart
+  );
+  const [endDate, setEndDate] = useState<string | undefined>(
+    initialValues.workPeriodEnd
+  );
 
   const { width } = useWindowDimensions();
-  
-    const isLargeScreen = Platform.OS === "web" && width >= 1024;
-    const isMediumScreen = Platform.OS === "web" && width >= 768;
+
+  const isLargeScreen = Platform.OS === "web" && width >= 1024;
+  const isMediumScreen = Platform.OS === "web" && width >= 768;
 
   const Dot = () => {
-    return (
-      <ThemedText style={{ color: errorColor }}>*</ThemedText>
-    );
+    return <ThemedText style={{ color: errorColor }}>*</ThemedText>;
   };
 
   const responsiveStyles = StyleSheet.create({
@@ -78,8 +89,11 @@ export function HouseForm({
           {mode === "add" ? "Create House" : "Update House"}
         </ThemedText>
 
+        {/* House Name */}
         <ThemedView style={styles.inputField}>
-          <ThemedText type="default">House Full Name <Dot /></ThemedText>
+          <ThemedText type="default">
+            House Full Name <Dot />
+          </ThemedText>
           <ThemedTextInput
             placeholder="Enter house full name"
             value={houseName}
@@ -88,29 +102,78 @@ export function HouseForm({
           />
         </ThemedView>
 
-        <ThemedView style={styles.inputField}>
-          <ThemedText type="default">Short Name <Dot /></ThemedText>
-          <ThemedTextInput
-            placeholder="Enter house short name"
-            value={abbreviation}
-            onChangeText={setAbbreviation}
-            maxLength={10}
-          />
+        <ThemedView style={styles.row}>
+          {/* Short Name */}
+          <ThemedView style={[styles.inputField, { width: "48%" }]}>
+            <ThemedText type="default">
+              Short Name <Dot />
+            </ThemedText>
+            <ThemedTextInput
+              placeholder="Enter house short name"
+              value={abbreviation}
+              onChangeText={setAbbreviation}
+              maxLength={10}
+            />
+          </ThemedView>
+
+          {/* Capacity */}
+          <ThemedView style={[styles.inputField, { width: "48%" }]}>
+            <ThemedText type="default">
+              Capacity <Dot />
+            </ThemedText>
+            <ThemedTextInput
+              placeholder="Enter house capacity"
+              value={capacity}
+              onChangeText={setCapacity}
+              keyboardType="numeric"
+            />
+          </ThemedView>
         </ThemedView>
 
-        <ThemedView style={styles.inputField}>
-          <ThemedText type="default">Capacity <Dot /></ThemedText>
-          <ThemedTextInput
-            placeholder="Enter house capacity"
-            value={capacity}
-            onChangeText={setCapacity}
-            keyboardType="numeric"
-          />
+        <ThemedText type="title" style={{ marginBottom: 10 }}>
+          Work Period
+        </ThemedText>
+
+        <ThemedView style={styles.row}>
+          {/* Work Period Start */}
+          <ThemedView style={[styles.inputField, { width: "48%" }]}>
+            <ThemedText type="default">
+              Period Start <Dot />
+            </ThemedText>
+            <ThemedDatePicker
+              value={startDate}
+              onChangeText={setStartDate}
+              placeholder="Select start date"
+            />
+          </ThemedView>
+
+          {/* Work Period End */}
+          <ThemedView style={[styles.inputField, { width: "48%" }]}>
+            <ThemedText type="default">
+              Period End <Dot />
+            </ThemedText>
+            <ThemedDatePicker
+              value={endDate}
+              onChangeText={setEndDate}
+              placeholder="Select end date"
+            />
+          </ThemedView>
         </ThemedView>
 
         <Button
           title={mode === "add" ? "Create House" : "Update House"}
-          onPress={() => onSubmit({ houseName, abbreviation, capacity })}
+          onPress={() => {
+            onSubmit({
+              houseName,
+              abbreviation,
+              capacity,
+              workPeriodStart: startDate,
+              workPeriodEnd: endDate,
+            });
+            // console.log(
+            //   `🏠 House Info -> Name: ${houseName}, Abbreviation: ${abbreviation}, Capacity: ${capacity}, Work Period Start: ${startDate}, Work Period End: ${endDate}`
+            // );
+          }}
           loading={loading}
         />
       </KeyboardAvoidingView>
@@ -131,5 +194,10 @@ const styles = StyleSheet.create({
   keyboardAvoid: {
     width: "100%",
     flexGrow: 1,
+  },
+  row: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
 });

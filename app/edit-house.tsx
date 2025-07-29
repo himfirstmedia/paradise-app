@@ -1,4 +1,3 @@
-
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Alert } from "react-native";
 import { HouseForm, HouseFormValues } from "@/components/HouseForm";
@@ -16,7 +15,6 @@ export default function EditHouseScreen() {
   const handleSubmit = async (values: HouseFormValues) => {
     if (!houseId) return;
 
-    
     const name = values.houseName.trim();
     const abbrev = values.abbreviation.trim();
     const capacityStr = values.capacity.trim();
@@ -31,13 +29,19 @@ export default function EditHouseScreen() {
       return;
     }
 
-
     try {
-      await api.put(`/houses/${houseId}`, {
+      const payload = {
         name,
         abbreviation: abbrev,
         capacity: capacityNum,
-      });
+        workPeriodStart: values.workPeriodStart ?? null,
+        workPeriodEnd: values.workPeriodEnd ?? null,
+      };
+
+      console.log("🚀 Sending to backend:", payload);
+
+      await api.put(`/houses/${houseId}`, payload);
+
       Alert.alert("Success", "House updated successfully!");
       await reload();
       router.back();
@@ -54,6 +58,8 @@ export default function EditHouseScreen() {
         houseName: getStringParam(params.name),
         abbreviation: getStringParam(params.abbreviation),
         capacity: getStringParam(params.capacity),
+        workPeriodStart: getStringParam(params.workPeriodStart),
+        workPeriodEnd: getStringParam(params.workPeriodEnd),
       }}
       loading={loading}
       onSubmit={handleSubmit}

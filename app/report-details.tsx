@@ -21,7 +21,7 @@ import {
 } from "react-native";
 import { Task } from "@/redux/slices/taskSlice";
 
-// Normalization function matching the Reports screen
+
 function normalizeHouseName(name: string | null): string {
   if (!name) return "INDIVIDUAL";
   return name.trim().replace(/\s+/g, "_").toUpperCase();
@@ -67,7 +67,7 @@ export default function ReportDetails() {
       };
     }
 
-    // Filtering logic - prioritize house ID if available
+
     if (houseIdParam) {
       const id = parseInt(houseIdParam, 10);
       if (!isNaN(id)) {
@@ -89,7 +89,6 @@ export default function ReportDetails() {
     // Calculate task stats
     filtered.forEach((member) => {
       member.task?.forEach((task: Task) => {
-        // Added Task type annotation
         if (
           task.progress &&
           ["PENDING", "COMPLETED", "OVERDUE"].includes(task.progress)
@@ -342,7 +341,6 @@ const styles = StyleSheet.create({
   scrollView: {
     width: "100%",
     paddingVertical: "5%",
-    paddingHorizontal: 15,
     ...(Platform.OS === "web" && { overflow: "scroll" }),
   },
   scrollContent: {
@@ -357,7 +355,7 @@ const styles = StyleSheet.create({
   },
   statsContainer: {
     marginBottom: 16,
-    paddingHorizontal: 16,
+    paddingHorizontal: 10,
   },
   statRow: {
     flexDirection: "row",

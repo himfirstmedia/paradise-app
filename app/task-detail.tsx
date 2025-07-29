@@ -6,15 +6,20 @@ import { useReduxTasks } from "@/hooks/useReduxTasks";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import api from "@/utils/api";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { useEffect, useRef, useState } from "react";
 import {
+  ActivityIndicator,
   Alert,
   Image,
-  Pressable,
+  Modal,
   ScrollView,
   StyleSheet,
-  ActivityIndicator,
   View,
 } from "react-native";
+import { Camera, CameraView } from "expo-camera";
+
+import * as MediaLibrary from "expo-media-library";
+// import * as FileSystem from "expo-file-system";
 
 const TASK_STATUS = {
   PENDING: "PENDING",
@@ -24,6 +29,12 @@ const TASK_STATUS = {
 } as const;
 
 export default function TaskDetailScreen() {
+  const [capturedImage, setCapturedImage] = useState<string | null>(null);
+  const [cameraVisible, setCameraVisible] = useState(false);
+  const [facing, setFacing] = useState<"front" | "back">("back");
+  const cameraRef = useRef<any>(null); 
+  const [cameraReady, setCameraReady] = useState(false);
+
   const bgColor = useThemeColor({}, "background");
   const primaryColor = useThemeColor({}, "selection");
   const router = useRouter();
@@ -33,6 +44,39 @@ export default function TaskDetailScreen() {
 
   const { user } = useReduxAuth();
   const role = user?.role;
+
+  useEffect(() => {
+    (async () => {
+      const { status } = await Camera.requestCameraPermissionsAsync();
+      if (status !== "granted") {
+        Alert.alert(
+          "Permission denied",
+          "You need to grant camera permissions to take pictures."
+        );
+      }
+    })();
+  }, []);
+
+  const takePicture = async () => {
+    if (cameraRef.current && cameraReady) {
+      try {
+        const photo = await cameraRef.current.takePictureAsync();
+
+        await MediaLibrary.saveToLibraryAsync(photo.uri);
+
+        setCapturedImage(photo.uri);
+
+        setCameraVisible(false);
+      } catch (error) {
+        Alert.alert("Error", "Failed to capture image");
+        console.error(error);
+      }
+    }
+  };
+
+  function toggleCameraFacing() {
+    setFacing((current) => (current === "back" ? "front" : "back"));
+  }
 
   const canDeleteTask = task && role !== "RESIDENT" && role !== "INDIVIDUAL";
 
@@ -59,35 +103,53 @@ export default function TaskDetailScreen() {
     ]);
   };
 
-  const handleComplete = async () => {
-    Alert.alert(
-      "Completed Task",
-      "Please ensure the task has been completed as per instructions given.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Confirm",
-          onPress: async () => {
-            try {
-              await api.put(`/tasks/${id}`, { status: TASK_STATUS.REVIEWING });
-              await reload();
-              Alert.alert(
-                "Task Submitted",
-                "Task marked as completed and is under review."
-              );
-              router.back();
-            } catch (error: any) {
-              Alert.alert(
-                "Error",
-                error?.response?.data?.message ||
-                  "Failed to update task status."
-              );
-            }
-          },
-        },
-      ]
-    );
-  };
+  // const handleComplete = async () => {
+  //   Alert.alert(
+  //     "Submit Task",
+  //     "Please ensure the task has been completed as per instructions given.",
+  //     [
+  //       { text: "Cancel", style: "cancel" },
+  //       {
+  //         text: "Confirm",
+  //         onPress: async () => {
+  //           try {
+  //             const formData = new FormData();
+
+  //             if (capturedImage) {
+  //               const fileInfo = await FileSystem.getInfoAsync(capturedImage);
+  //               formData.append("image", {
+  //                 uri: fileInfo.uri,
+  //                 name: "task-image.jpg",
+  //                 type: "image/jpeg",
+  //               } as any);
+  //             }
+
+  //             formData.append("status", "REVIEWING");
+
+  //             await api.put(`/tasks/${id}`, formData, {
+  //               headers: {
+  //                 "Content-Type": "multipart/form-data",
+  //               },
+  //             });
+
+  //             await reload();
+  //             Alert.alert(
+  //               "Task Submitted",
+  //               "Task marked as completed and is under review."
+  //             );
+  //             router.back();
+  //           } catch (error: any) {
+  //             Alert.alert(
+  //               "Error",
+  //               error?.response?.data?.message ||
+  //                 "Failed to update task status."
+  //             );
+  //           }
+  //         },
+  //       },
+  //     ]
+  //   );
+  // };
 
   const handleApprove = async () => {
     Alert.alert("Approve Task", "Are you sure you want to approve this task?", [
@@ -115,36 +177,32 @@ export default function TaskDetailScreen() {
   };
 
   const handleReject = async () => {
-    Alert.alert(
-      "Reject Task",
-      "Are you sure you want to reject this task? The assignee will be asked to fix it.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Reject",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await api.put(`/tasks/${id}`, {
-                status: TASK_STATUS.PENDING,
-                progress: "PENDING",
-              });
-              await reload();
-              Alert.alert(
-                "Task Rejected",
-                "Task has been sent back for corrections."
-              );
-              router.back();
-            } catch (error: any) {
-              Alert.alert(
-                "Error",
-                error?.response?.data?.message || "Failed to reject task."
-              );
-            }
-          },
+    Alert.alert("Reject Task", "The resident will be asked to redo the task.", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Reject",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await api.put(`/tasks/${id}`, {
+              status: TASK_STATUS.PENDING,
+              progress: "PENDING",
+            });
+            await reload();
+            Alert.alert(
+              "Task Rejected",
+              "Task has been sent back for corrections."
+            );
+            router.back();
+          } catch (error: any) {
+            Alert.alert(
+              "Error",
+              error?.response?.data?.message || "Failed to reject task."
+            );
+          }
         },
-      ]
-    );
+      },
+    ]);
   };
 
   if (loading || !task) {
@@ -162,87 +220,183 @@ export default function TaskDetailScreen() {
   }
 
   return (
-    <ThemedView style={styles.container}>
-      <ScrollView
-        contentContainerStyle={{ width: "100%", paddingBottom: "30%" }}
-        style={[styles.innerContainer, { backgroundColor: bgColor }]}
-      >
-        <ThemedText type="title" style={{ marginBottom: "4%" }}>
-          {task.name}
-        </ThemedText>
+    <>
+      <ThemedView style={styles.container}>
+        <ScrollView
+          contentContainerStyle={{ width: "100%", paddingBottom: "30%" }}
+          style={[styles.innerContainer, { backgroundColor: bgColor }]}
+        >
+          <ThemedText type="title" style={{ marginBottom: "4%" }}>
+            {task.name}
+          </ThemedText>
 
-        {typeof task.description === "string" &&
-          task.description.trim().toLowerCase() !== "null" &&
-          task.description.trim().toLowerCase() !== "undefined" &&
-          task.description.trim() !== "" && (
-            <ThemedView style={styles.column}>
-              <ThemedText type="subtitle">Task Description</ThemedText>
-              <ThemedText type="default">{task.description}</ThemedText>
+          {typeof task.description === "string" &&
+            task.description.trim().toLowerCase() !== "null" &&
+            task.description.trim().toLowerCase() !== "undefined" &&
+            task.description.trim() !== "" && (
+              <ThemedView style={styles.column}>
+                <ThemedText type="subtitle">Task Description</ThemedText>
+                <ThemedText type="default">{task.description}</ThemedText>
+              </ThemedView>
+            )}
+
+          {typeof task.instruction === "string" &&
+            task.instruction.trim().toLowerCase() !== "null" &&
+            task.instruction.trim().toLowerCase() !== "undefined" &&
+            task.instruction.trim() !== "" && (
+              <ThemedView style={styles.column}>
+                <ThemedText type="subtitle">Special Instruction</ThemedText>
+                <ThemedText type="default">{task.instruction}</ThemedText>
+              </ThemedView>
+            )}
+
+          {task.image && (
+            <ThemedView style={styles.ImageContainer}>
+              <ThemedText type="subtitle" style={{ marginBottom: 10 }}>
+                Image Attachment
+              </ThemedText>
+              <Image
+                source={{
+                  uri:
+                    process.env.EXPO_PUBLIC_BASE_URL?.replace("/api/v1", "") +
+                    task.image,
+                }}
+                style={{ width: "100%", height: 200, borderRadius: 20 }}
+                resizeMode="cover"
+              />
             </ThemedView>
           )}
 
-        {typeof task.instruction === "string" &&
-          task.instruction.trim().toLowerCase() !== "null" &&
-          task.instruction.trim().toLowerCase() !== "undefined" &&
-          task.instruction.trim() !== "" && (
-            <ThemedView style={styles.column}>
-              <ThemedText type="subtitle">Special Instruction</ThemedText>
-              <ThemedText type="default">{task.instruction}</ThemedText>
+          {capturedImage && (
+            <ThemedView style={styles.ImageContainer}>
+              <ThemedText type="subtitle" style={{ marginBottom: 10 }}>
+                Image Attachment
+              </ThemedText>
+              <Image
+                source={{ uri: capturedImage }}
+                style={{ width: "100%", height: 200, borderRadius: 20 }}
+                resizeMode="cover"
+              />
             </ThemedView>
           )}
-      </ScrollView>
+        </ScrollView>
 
-      <ThemedView style={styles.taskCTAContainer}>
-        {task?.status === TASK_STATUS.PENDING &&
-          (role === "FACILITY_MANAGER" ||
-            role === "RESIDENT_MANAGER" ||
-            role === "RESIDENT" ||
-            role === "INDIVIDUAL") && (
-            <View style={styles.ctaButtonWrapper}>
+        <ThemedView style={styles.taskCTAContainer}>
+          {/* FACILITY_MANAGER - Delete button for non-REVIEWING tasks */}
+          {role === "FACILITY_MANAGER" &&
+            task?.status !== TASK_STATUS.REVIEWING && (
+              <View style={styles.ctaButtonWrapper}>
+                <View
+                  style={[styles.ctaRowCentered, { justifyContent: "center" }]}
+                >
+                  <Button
+                    type="icon-rounded"
+                    icon={require("@/assets/icons/delete.png")}
+                    onPress={handleDelete}
+                    iconStyle={styles.icon}
+                  />
+                </View>
+              </View>
+            )}
+
+          {/* Submit button for PENDING tasks (non-FACILITY_MANAGER) */}
+          {/* {task?.status === TASK_STATUS.PENDING &&
+            role !== "FACILITY_MANAGER" &&
+            (role === "RESIDENT_MANAGER" ||
+              role === "RESIDENT" ||
+              role === "INDIVIDUAL") && (
+              <View style={styles.ctaButtonWrapper}>
+                <View style={styles.ctaRowCentered}>
+                  <Button
+                    type="default"
+                    title="Submit Task"
+                    style={{ flex: 1 }}
+                    onPress={handleComplete}
+                  />
+                  <Button
+                    type="icon-rounded"
+                    icon={require("@/assets/icons/camera.png")}
+                    onPress={() => setCameraVisible(true)}
+                  />
+                </View>
+              </View>
+            )} */}
+
+          {/* Review buttons for REVIEWING tasks */}
+          {task?.status === TASK_STATUS.REVIEWING &&
+            (role === "DIRECTOR" ||
+              role === "RESIDENT_MANAGER" ||
+              role === "FACILITY_MANAGER") && (
+              <View style={styles.ctaButtonWrapper}>
+                <View style={styles.ctaRowCentered}>
+                  <Button
+                    type="icon-rounded"
+                    icon={require("@/assets/icons/dismiss.png")}
+                    onPress={handleReject}
+                  />
+
+                  <Button
+                    type="default"
+                    title="Approve Task"
+                    style={{ flex: 1 }}
+                    onPress={handleApprove}
+                  />
+                  {canDeleteTask && (
+                    <Button
+                      type="icon-rounded"
+                      icon={require("@/assets/icons/delete.png")}
+                      onPress={handleDelete}
+                      iconStyle={styles.icon}
+                    />
+                  )}
+                </View>
+              </View>
+            )}
+        </ThemedView>
+      </ThemedView>
+
+      <Modal visible={cameraVisible} animationType="slide">
+        <View style={{ flex: 1 }}>
+          <CameraView
+            style={{ flex: 1 }}
+            facing={facing}
+            ref={cameraRef}
+            onCameraReady={() => setCameraReady(true)}
+          >
+            <View
+              style={{
+                position: "absolute",
+                bottom: 40,
+                left: 0,
+                right: 0,
+                alignItems: "center",
+                flexDirection: "row",
+                justifyContent: "center",
+                gap: 30,
+              }}
+            >
               <Button
-                type="default"
-                title="Completed Task"
-                onPress={handleComplete}
+                type="icon-rounded"
+                icon={require("@/assets/icons/dismiss.png")}
+                onPress={() => setCameraVisible(false)}
+              />
+              <Button
+                type="icon-rounded"
+                icon={require("@/assets/icons/camera.png")}
+                style={{ height: 80, width: 80 }}
+                iconStyle={{ height: 40, width: 40 }}
+                onPress={takePicture}
+              />
+              <Button
+                type="icon-rounded"
+                icon={require("@/assets/icons/camera-flip.png")}
+                onPress={toggleCameraFacing}
               />
             </View>
-          )}
-
-        {task?.status === TASK_STATUS.REVIEWING &&
-          (role === "DIRECTOR" ||
-            role === "RESIDENT_MANAGER" ||
-            (role === "FACILITY_MANAGER" &&
-              task.category === "MAINTENANCE")) && (
-            <View style={styles.ctaRowCentered}>
-              <View style={{ flex: 1 }}>
-                <Button
-                  type="default"
-                  title="Reject Task"
-                  onPress={handleReject}
-                />
-              </View>
-              <View style={styles.ctaButtonWrapper}>
-                <Button
-                  type="default"
-                  title="Approve Task"
-                  onPress={handleApprove}
-                />
-              </View>
-            </View>
-          )}
-
-        {canDeleteTask && (
-          <Pressable
-            style={[styles.deleteBtn, { backgroundColor: primaryColor }]}
-            onPress={handleDelete}
-          >
-            <Image
-              source={require("@/assets/icons/delete.png")}
-              style={styles.icon}
-            />
-          </Pressable>
-        )}
-      </ThemedView>
-    </ThemedView>
+          </CameraView>
+        </View>
+      </Modal>
+    </>
   );
 }
 
@@ -278,7 +432,7 @@ const styles = StyleSheet.create({
   },
   taskCTAContainer: {
     width: "100%",
-    flexDirection: "column", // vertical stacking for mobile UX
+    flexDirection: "column",
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 20,
@@ -293,7 +447,12 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   ctaButtonWrapper: {
+    position: "absolute",
     flex: 1,
+    width: "100%",
+    minHeight: 60,
+    // borderWidth: 1,
+    bottom: "10%",
   },
   deleteBtn: {
     height: 60,
@@ -307,8 +466,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     width: "100%",
-    gap: 50,
-    marginBottom: 5,
+    gap: 10,
   },
   ctaButtonFlex: {
     flex: 1,
@@ -323,5 +481,8 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     justifyContent: "center",
     alignItems: "center",
+  },
+  ImageContainer: {
+    flex: 1,
   },
 });

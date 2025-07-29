@@ -41,7 +41,7 @@ export function UserAvatar({ size = 40, user: propUser }: AvatarProps) {
             borderRadius: size / 2,
             backgroundColor: "#F2F2F2",
             borderColor: displayUser?.image ? "transparent" : profileBorder,
-            borderWidth: displayUser?.image ? 0 : 3,
+            borderWidth: displayUser?.image ? 0 : 2,
             overflow: "hidden",
           },
         ]}
@@ -64,7 +64,7 @@ export function UserAvatar({ size = 40, user: propUser }: AvatarProps) {
           >
             <ThemedText
               type="default"
-              style={[styles.initial, { fontSize: size * 0.5 }]}
+              style={[styles.initial, { fontSize: size * 0.4, lineHeight: size }]}
             >
               {getInitial()}
             </ThemedText>
@@ -83,13 +83,12 @@ const styles = StyleSheet.create({
     // borderWidth: 1
   },
   initialContainer: {
-    flexDirection: "column",
     alignItems: "center",
     justifyContent: "center",
-    height: "100%",
   },
   initial: {
     textAlign: "center",
+    // lineHeight: 60,
     textAlignVertical: "center",
   },
 });

@@ -69,7 +69,7 @@ const styles = StyleSheet.create({
   header: {
     paddingVertical: 5,
     paddingHorizontal: 15,
-    paddingTop: 20,
+    paddingTop: 40,
     height: 100,
     flexDirection: "row",
     alignItems: "center",

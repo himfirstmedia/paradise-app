@@ -55,13 +55,21 @@ export default {
       ],
       "expo-web-browser",
       "expo-notifications",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera",
+          "microphonePermission": "Allow $(PRODUCT_NAME) to access your microphone",
+          "recordAudioAndroid": true
+        }
+      ]
     ],
     experiments: {
       typedRoutes: true,
     },
     extra: {
       router: {},
-      BASE_URL: process.env.BASE_URL || process.env.EXPO_PUBLIC_BASE_URL,
+      BASE_URL: process.env.EXPO_PUBLIC_BASE_URL,
       eas: {
         projectId: "1c4bcd8c-d599-43cc-8cae-decc1a455423",
       },

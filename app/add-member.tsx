@@ -41,7 +41,8 @@ const roleMap: Record<string, string> = {
 
 export default function AddMemberScreen() {
   const errorColor = useThemeColor({}, "overdue");
-  const [name, setName] = useState("");
+  const [firstname, setFirstName] = useState("");
+  const [lastname, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [gender, setGender] = useState("");
@@ -64,9 +65,9 @@ export default function AddMemberScreen() {
   const navigation = useRouter();
 
   const { width } = useWindowDimensions();
-  
-    const isLargeScreen = Platform.OS === "web" && width >= 1024;
-    const isMediumScreen = Platform.OS === "web" && width >= 768;
+
+  const isLargeScreen = Platform.OS === "web" && width >= 1024;
+  const isMediumScreen = Platform.OS === "web" && width >= 768;
 
   const currentUserRole = user?.role;
 
@@ -83,7 +84,8 @@ export default function AddMemberScreen() {
   const handleMemberCreation = async (): Promise<void> => {
     const newErrors: Record<string, string> = {};
 
-    if (!name) newErrors.name = "Name is required.";
+    if (!firstname) newErrors.firstname = "firstname is required.";
+    if (!lastname) newErrors.lastname = "Lastname is required.";
     if (!email) newErrors.email = "Email is required.";
     if (!phone) newErrors.phone = "Phone is required.";
     if (!gender) newErrors.gender = "Gender is required.";
@@ -101,9 +103,13 @@ export default function AddMemberScreen() {
       return;
     }
 
+    const name = `${firstname.trim()} ${lastname.trim()}`;
+
     setLoading(true);
     try {
       await api.post("/users", {
+        firstname,
+        lastname,
         name,
         email,
         phone,
@@ -119,7 +125,8 @@ export default function AddMemberScreen() {
       });
       await reload();
       Alert.alert("Success", "Member created successfully!");
-      setName("");
+      setFirstName("");
+      setLastName("");
       setEmail("");
       setPhone("");
       setGender("");
@@ -146,24 +153,24 @@ export default function AddMemberScreen() {
   };
 
   const responsiveStyles = StyleSheet.create({
-      headerContainer: {
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "space-between",
-        gap: isLargeScreen ? 40 : 20,
-      },
-      containerPadding: {
-        paddingHorizontal: isLargeScreen ? 150 : isMediumScreen ? 40 : 15,
-      },
-      scriptureSection: {
-        marginBottom: isLargeScreen ? 15 : 20,
-        marginTop: isLargeScreen ? 10 : 5,
-        maxHeight: isLargeScreen ? 200 : 100,
-      },
-      taskSection: {
-        marginTop: isLargeScreen ? 10 : 5,
-      },
-    });
+    headerContainer: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: isLargeScreen ? 40 : 20,
+    },
+    containerPadding: {
+      paddingHorizontal: isLargeScreen ? 150 : isMediumScreen ? 40 : 5,
+    },
+    scriptureSection: {
+      marginBottom: isLargeScreen ? 15 : 20,
+      marginTop: isLargeScreen ? 10 : 5,
+      maxHeight: isLargeScreen ? 200 : 100,
+    },
+    taskSection: {
+      marginTop: isLargeScreen ? 10 : 5,
+    },
+  });
 
   return (
     <>
@@ -186,19 +193,39 @@ export default function AddMemberScreen() {
               New Member
             </ThemedText>
 
-            <ThemedView style={styles.inputField}>
-              <ThemedText type="default">
-                Name <Dot />{" "}
-              </ThemedText>
-              <ThemedTextInput
-                placeholder="Enter full name"
-                value={name}
-                onChangeText={(text) => {
-                  setName(text);
-                  if (errors.name) setErrors((e) => ({ ...e, name: "" }));
-                }}
-                errorMessage={errors.name}
-              />
+            <ThemedView style={styles.row}>
+              <ThemedView style={{ width: "48%" }}>
+                <ThemedView style={styles.inputField}>
+                  <ThemedText type="default">
+                    First Name <Dot />{" "}
+                  </ThemedText>
+                  <ThemedTextInput
+                    placeholder="Enter first name"
+                    value={firstname}
+                    onChangeText={(text) => {
+                      setFirstName(text);
+                      if (errors.name) setErrors((e) => ({ ...e, name: "" }));
+                    }}
+                    errorMessage={errors.name}
+                  />
+                </ThemedView>
+              </ThemedView>
+              <ThemedView style={{ width: "48%" }}>
+                <ThemedView style={styles.inputField}>
+                  <ThemedText type="default">
+                    Last Name <Dot />{" "}
+                  </ThemedText>
+                  <ThemedTextInput
+                    placeholder="Enter last name"
+                    value={lastname}
+                    onChangeText={(text) => {
+                      setLastName(text);
+                      if (errors.name) setErrors((e) => ({ ...e, name: "" }));
+                    }}
+                    errorMessage={errors.name}
+                  />
+                </ThemedView>
+              </ThemedView>
             </ThemedView>
             <ThemedView style={styles.inputField}>
               <ThemedText type="default">
@@ -231,7 +258,7 @@ export default function AddMemberScreen() {
             </ThemedView>
 
             <ThemedView style={styles.row}>
-              <ThemedView style={{ width: "48%" }}>
+              <ThemedView style={{ width: "40%" }}>
                 <ThemedView style={styles.inputField}>
                   <ThemedText type="default">
                     Gender <Dot />
@@ -246,10 +273,11 @@ export default function AddMemberScreen() {
                         setErrors((e) => ({ ...e, gender: "" }));
                     }}
                     errorMessage={errors.gender}
+                    multiSelect={false}
                   />
                 </ThemedView>
               </ThemedView>
-              <ThemedView style={{ width: "48%" }}>
+              <ThemedView style={{ width: "56%" }}>
                 <ThemedView style={styles.inputField}>
                   <ThemedText type="default">
                     Role <Dot />
@@ -263,6 +291,7 @@ export default function AddMemberScreen() {
                       if (errors.role) setErrors((e) => ({ ...e, role: "" }));
                     }}
                     errorMessage={errors.role}
+                    multiSelect={false}
                   />
                 </ThemedView>
               </ThemedView>
@@ -294,6 +323,7 @@ export default function AddMemberScreen() {
                       if (errors.house) setErrors((e) => ({ ...e, house: "" }));
                     }}
                     errorMessage={errors.house}
+                    multiSelect={false}
                   />
                 )}
               </ThemedView>

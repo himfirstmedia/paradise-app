@@ -3,6 +3,7 @@ import { Image } from "expo-image";
 import React, { useState } from "react";
 import {
   Modal,
+  Platform,
   Pressable,
   StyleSheet,
   TouchableOpacity,
@@ -31,6 +32,8 @@ export function ScriptureCard({
   const [modalVisible, setModalVisible] = useState(false);
   const textColor = useThemeColor({}, "text");
   const backBtnColor = useThemeColor({}, "input");
+
+  const isIOS = Platform.OS === "ios";
 
   const cardContent = (
     <>
@@ -80,6 +83,12 @@ export function ScriptureCard({
     </>
   );
 
+  const IOSStyles = StyleSheet.create({
+    verticalPadding: {
+      paddingVertical: isIOS ? 100 : 40,
+    }
+  });
+
   return (
     <>
       <TouchableOpacity
@@ -96,8 +105,8 @@ export function ScriptureCard({
         transparent={true}
         onRequestClose={() => setModalVisible(false)}
       >
-        <View style={styles.modalOverlay}>
-          <ThemedView style={styles.modalContent}>
+        <View style={[styles.modalOverlay]}>
+          <ThemedView style={[styles.modalContent, IOSStyles.verticalPadding]}>
             <Pressable
               style={[
                 styles.closeButton,

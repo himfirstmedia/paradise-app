@@ -1,12 +1,22 @@
 import { AdministratorCard } from "@/components/AdministratorCard";
 import { MemberCard } from "@/components/MemberCard";
+import { TaskCard } from "@/components/TaskCard";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
+import { FloatingButton } from "@/components/ui/FloatingButton";
+import { useReduxAuth } from "@/hooks/useReduxAuth";
 import { useReduxHouse } from "@/hooks/useReduxHouse";
 import { useReduxMembers } from "@/hooks/useReduxMembers";
-import { useLocalSearchParams } from "expo-router";
-import React from "react";
-import { ScrollView, StyleSheet, useWindowDimensions, Platform } from "react-native";
+import { useReduxTasks } from "@/hooks/useReduxTasks";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import React, { useEffect, useState } from "react";
+import {
+  ScrollView,
+  StyleSheet,
+  useWindowDimensions,
+  Platform,
+} from "react-native";
+import dayjs from "dayjs";
 
 // Helper to format house names
 function getFriendlyHouseName(name: string) {
@@ -22,18 +32,40 @@ function getFriendlyHouseName(name: string) {
 }
 
 export default function HouseDetailScreen() {
+  const navigation = useRouter();
   const params = useLocalSearchParams();
+  const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
+
   const { houses } = useReduxHouse();
   const { members } = useReduxMembers();
+  const { tasks } = useReduxTasks();
 
   const { width } = useWindowDimensions();
-  
-    const isLargeScreen = Platform.OS === "web" && width >= 1024;
-    const isMediumScreen = Platform.OS === "web" && width >= 768;
+
+  const isLargeScreen = Platform.OS === "web" && width >= 1024;
+  const isMediumScreen = Platform.OS === "web" && width >= 768;
+
+  const { user } = useReduxAuth();
+
+  useEffect(() => {
+    setCurrentUserRole(user?.role ?? null);
+  }, [user]);
 
   // Find the house by id (params.id comes as string or string[])
   const houseId = Array.isArray(params.id) ? params.id[0] : params.id;
-  const house = houses.find((h: { id: any; }) => String(h.id) === String(houseId));
+  const house = houses.find(
+    (h: { id: any }) => String(h.id) === String(houseId)
+  );
+
+  const usersInHouse = members.filter(
+    (member) => String(member.houseId) === String(houseId)
+  );
+
+  const userIdsInHouse = new Set(usersInHouse.map((u) => u.id));
+
+  const houseTasks = tasks.filter(
+    (task) => task.userId && userIdsInHouse.has(task.userId)
+  );
 
   // Filter members for this house
   const houseReduxMembers = members.filter(
@@ -56,6 +88,16 @@ export default function HouseDetailScreen() {
     );
   }
 
+  const startDate = house.workPeriod?.startDate;
+  const endDate = house.workPeriod?.endDate;
+
+  let workPeriodRangeInDays: number | null = null;
+  if (startDate && endDate) {
+    const start = dayjs(startDate);
+    const end = dayjs(endDate);
+    workPeriodRangeInDays = end.diff(start, "day") + 1;
+  }
+
   const responsiveStyles = StyleSheet.create({
     headerContainer: {
       flexDirection: "row",
@@ -76,17 +118,28 @@ export default function HouseDetailScreen() {
     },
   });
 
+  const showEditDelete = currentUserRole !== "FACILITY_MANAGER";
+
   return (
     <ThemedView style={[styles.container, responsiveStyles.containerPadding]}>
       <ScrollView contentContainerStyle={{ paddingBottom: 30 }}>
         <ThemedText type="title" style={{ marginBottom: 10 }}>
           {getFriendlyHouseName(house.name)}
         </ThemedText>
+
         <ThemedText type="defaultSemiBold" style={{ marginBottom: 5 }}>
-          Capacity: {house.users.length} / {house.capacity}
-        </ThemedText>
-        <ThemedText type="defaultSemiBold" style={{ marginBottom: 15 }}>
           Abbreviation: {house.abbreviation}
+        </ThemedText>
+
+        <ThemedText type="defaultSemiBold" style={{ marginBottom: 30 }}>
+          Capacity: {house.users.length} / {house.capacity} members
+        </ThemedText>
+
+        <ThemedText type="defaultSemiBold" style={{ marginBottom: 30 }}>
+          Work Period:{" "}
+          {workPeriodRangeInDays !== null
+            ? `${workPeriodRangeInDays} days (${dayjs(startDate).format("MMM D")} - ${dayjs(endDate).format("MMM D, YYYY")})`
+            : "Not set"}
         </ThemedText>
 
         {managers.length > 0 && (
@@ -106,7 +159,49 @@ export default function HouseDetailScreen() {
             No members assigned to this house.
           </ThemedText>
         )}
+
+        {houseTasks.length > 0 ? (
+          <ThemedView style={{ marginTop: 20 }}>
+            <TaskCard tasks={houseTasks} />
+          </ThemedView>
+        ) : (
+          <ThemedText type="default" style={{ marginTop: 30 }}>
+            No tasks assigned to this house.
+          </ThemedText>
+        )}
       </ScrollView>
+
+      <FloatingButton
+        type="icon-rounded"
+        icon={require("@/assets/icons/add.png")}
+        childrenButtons={[
+          ...(showEditDelete
+            ? [
+                {
+                  label: "Add Member",
+                  icon: require("@/assets/icons/profile.png"),
+                  onPress: () =>
+                    navigation.push({
+                      pathname: "/add-member",
+                      // params: { id: id },
+                    }),
+                },
+              ]
+            : [
+                {
+                  label: "Add Task",
+                  icon: require("@/assets/icons/task.png"),
+                  onPress: () =>
+                    navigation.push({
+                      pathname: "/add-task",
+                      params: {
+                        // memberName: name,
+                      },
+                    }),
+                },
+              ]),
+        ]}
+      />
     </ThemedView>
   );
 }

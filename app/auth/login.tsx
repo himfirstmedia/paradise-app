@@ -41,12 +41,12 @@ export default function LoginScreen() {
   const [checked, setChecked] = useState(true);
   const { signin, loading } = useReduxAuth();
   const { width } = useWindowDimensions();
-  
+
   const isLargeScreen = Platform.OS === "web" && width >= 1024;
   const isMediumScreen = Platform.OS === "web" && width >= 768;
-  
+
   const { isAuthenticated, user } = useAppSelector((state) => state.auth);
-  
+
   useEffect(() => {
     if (alertMessage) {
       const timeout = setTimeout(() => setAlertMessage(""), 6000);
@@ -56,8 +56,6 @@ export default function LoginScreen() {
 
   useEffect(() => {
     if (isAuthenticated && user?.role) {
-      console.log("✅ Logged in User:", user);
-
       const roleRoutes: Record<string, AppRoutes> = {
         SUPER_ADMIN: "/(director)",
         DIRECTOR: "/(director)",
@@ -67,9 +65,7 @@ export default function LoginScreen() {
         INDIVIDUAL: "/(individuals)",
       };
 
-      console.log(`User role: ${user.role}`);
       const route = roleRoutes[user.role] || "/auth/login";
-      console.log(`Redirecting to: ${route}`);
 
       router.replace(route);
     } else if (isAuthenticated) {
@@ -101,24 +97,24 @@ export default function LoginScreen() {
   };
 
   const responsiveStyles = StyleSheet.create({
-      headerContainer: {
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "space-between",
-        gap: isLargeScreen ? 40 : 20,
-      },
-      containerPadding: {
-        paddingHorizontal: isLargeScreen ? 300 : isMediumScreen ? 150 : 15,
-      },
-      scriptureSection: {
-        marginBottom: isLargeScreen ? 15 : 20,
-        marginTop: isLargeScreen ? 10 : 5,
-        maxHeight: isLargeScreen ? 200 : 100,
-      },
-      taskSection: {
-        marginTop: isLargeScreen ? 10 : 5,
-      },
-    });
+    headerContainer: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: isLargeScreen ? 40 : 20,
+    },
+    containerPadding: {
+      paddingHorizontal: isLargeScreen ? 300 : isMediumScreen ? 150 : 15,
+    },
+    scriptureSection: {
+      marginBottom: isLargeScreen ? 15 : 20,
+      marginTop: isLargeScreen ? 10 : 5,
+      maxHeight: isLargeScreen ? 200 : 100,
+    },
+    taskSection: {
+      marginTop: isLargeScreen ? 10 : 5,
+    },
+  });
 
   return (
     <>

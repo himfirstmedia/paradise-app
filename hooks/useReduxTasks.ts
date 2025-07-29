@@ -1,36 +1,39 @@
-// hooks/useReduxTasks.ts
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
-import { loadTasks } from "@/redux/slices/taskSlice";
 import { selectCurrentUser } from "@/redux/slices/authSlice";
-import { useEffect, useCallback } from "react";
+import { loadTasks, loadTaskSummary } from "@/redux/slices/taskSlice";
+import { useCallback, useEffect } from "react";
+
 
 export function useReduxTasks({ onlyCurrentUser = false } = {}) {
   const dispatch = useAppDispatch();
-  const { tasks, status, error } = useAppSelector((state) => state.task);
+  const { tasks, tasksStatus, error, summary, summaryStatus } = useAppSelector((state) => state.task);
   const currentUser = useAppSelector(selectCurrentUser);
 
   const reload = useCallback(() => {
     dispatch(loadTasks());
-  }, [dispatch]);
+    if (currentUser?.id) {
+      dispatch(loadTaskSummary(currentUser.id));
+    }
+  }, [dispatch, currentUser]);
 
   useEffect(() => {
-    if (status === 'idle') {
+    if (tasksStatus === 'idle' && currentUser?.id) {
       reload();
     }
-  }, [status, reload]);
+  }, [tasksStatus, currentUser, reload]);
 
-  const loading = status === 'loading';
-  
-  // Filter tasks for current user using userId
+  const loading = tasksStatus === 'loading';
   const filteredTasks = onlyCurrentUser && currentUser
     ? tasks.filter(task => task.userId === currentUser.id)
     : tasks;
 
-  return { 
-    tasks: filteredTasks, 
-    loading, 
-    error, 
-    reload, 
-    status 
+  return {
+    tasks: filteredTasks,
+    loading,
+    error,
+    reload,
+    tasksStatus,
+    summary,     
+    summaryLoading: summaryStatus === 'loading',
   };
 }

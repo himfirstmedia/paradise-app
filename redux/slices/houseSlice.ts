@@ -1,4 +1,3 @@
-// redux/slices/houseSlice.ts
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from '@/utils/api';
@@ -9,7 +8,14 @@ export interface House {
   name: string;
   abbreviation: string;
   capacity: number;
-  users: { id: number; role?: string }[];
+  users: { id: number }[];
+  workPeriod?: {
+    id: number;
+    name: string;
+    startDate: string;
+    endDate: string;
+    carryOverEnabled: boolean;
+  };
 }
 
 interface HouseState {

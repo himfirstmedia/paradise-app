@@ -29,7 +29,7 @@ export default function AddHouseScreen() {
     setLoading(true);
     try {
       await api.post("/houses", {
-        name, // <-- backend expects this key
+        name, 
         abbreviation: abbrev,
         capacity: capacityNum,
       });
@@ -47,7 +47,13 @@ export default function AddHouseScreen() {
   return (
     <HouseForm
       mode="add"
-      initialValues={{ houseName: "", abbreviation: "", capacity: "" }}
+      initialValues={{
+        houseName: "",
+        abbreviation: "",
+        capacity: "",
+        workPeriodStart: "",
+        workPeriodEnd: "",
+      }}
       onSubmit={handleSubmit}
       loading={loading}
     />
