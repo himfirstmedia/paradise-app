@@ -1,6 +1,5 @@
 import React from "react";
 import {
-  TouchableOpacity,
   Text,
   ActivityIndicator,
   StyleSheet,
@@ -11,6 +10,7 @@ import {
   StyleProp,
   TextStyle,
   ImageStyle,
+  Pressable,
 } from "react-native";
 import { useThemeColor } from "@/hooks/useThemeColor";
 
@@ -41,7 +41,7 @@ export const Button: React.FC<ButtonProps> = ({
   const isIconDefault = type === "icon-default";
 
   return (
-    <TouchableOpacity
+    <Pressable
       onPress={onPress}
       style={[
         styles.button,
@@ -61,7 +61,7 @@ export const Button: React.FC<ButtonProps> = ({
       ) : (
         <Text style={styles.text}>{title}</Text>
       )}
-    </TouchableOpacity>
+    </Pressable>
   );
 };
 

@@ -1,5 +1,11 @@
 import React from "react";
-import { View, StyleSheet, Image, Pressable } from "react-native";
+import {
+  View,
+  StyleSheet,
+  Image,
+  Pressable,
+  GestureResponderEvent,
+} from "react-native";
 import { useRouter } from "expo-router";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { ThemedText } from "./ThemedText";
@@ -7,9 +13,10 @@ import { ThemedView } from "./ThemedView";
 
 type SimpleHeaderProps = {
   title?: string;
+  onBack?: (event: GestureResponderEvent) => void;
 };
 
-export function SimpleHeader({ title }: SimpleHeaderProps) {
+export function SimpleHeader({ title, onBack }: SimpleHeaderProps) {
   const navigation = useRouter();
   const bgColor = useThemeColor({}, "selection");
 
@@ -19,13 +26,15 @@ export function SimpleHeader({ title }: SimpleHeaderProps) {
         style={[styles.headerContainer, { backgroundColor: bgColor }]}
       >
         <View style={styles.row}>
-          <Pressable onPress={() => navigation.back()}>
+          <Pressable onPress={onBack ? onBack : () => navigation.back()}>
             <Image
               source={require("@/assets/icons/arrow-left.png")}
               style={styles.backIcon}
             />
           </Pressable>
-          <ThemedText type="subtitle" style={styles.title}>{title}</ThemedText>
+          <ThemedText type="subtitle" style={styles.title}>
+            {title}
+          </ThemedText>
         </View>
       </ThemedView>
     </ThemedView>

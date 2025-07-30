@@ -5,9 +5,10 @@ import { ThemedView } from "@/components/ThemedView";
 import { StyleSheet, ScrollView, View, ActivityIndicator } from "react-native";
 import { useReduxAuth } from "@/hooks/useReduxAuth";
 import { useReduxChats } from "@/hooks/useReduxChats";
-import { useRouter } from "expo-router";
+import { useRouter, useFocusEffect } from "expo-router";
 import { Button } from "@/components/ui/Button";
 import { useThemeColor } from "@/hooks/useThemeColor";
+import { useCallback } from "react";
 
 export default function ConversationsScreen() {
   const primaryColor = useThemeColor({}, "selection");
@@ -17,11 +18,25 @@ export default function ConversationsScreen() {
 
   const isManager = role === "FACILITY_MANAGER" || role === "RESIDENT_MANAGER";
 
-  const { chats, loading } = useReduxChats();
+  const { chats, loading, reloadChats } = useReduxChats();
 
-  const filteredChats = chats.filter((chat) =>
-    isManager ? chat.isGroup : !chat.isGroup
-  );
+  console.log("Chats: ", chats);
+
+  useFocusEffect(
+  useCallback(() => {
+    reloadChats();
+  }, [reloadChats])
+);
+
+  const filteredChats = chats.filter((chat) => {
+  if (isManager) return true;  
+  
+  const userHouseIds = user?.house ? [user.house.id] : [];
+  const inUserHouses = chat.houseId && userHouseIds.includes(chat.houseId);
+  
+  return !chat.isGroup || (chat.isGroup && inUserHouses);
+});
+
 
   const handleStartNewMessage = () => {
     router.push("/new-message");
@@ -30,7 +45,10 @@ export default function ConversationsScreen() {
   return (
     <ThemedView style={styles.container}>
       <ScrollView
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[
+          styles.scrollContent,
+          filteredChats.length > 0 && styles.scrollContentWithChats
+        ]}
         style={styles.innerContainer}
       >
         {loading ? (
@@ -52,21 +70,21 @@ export default function ConversationsScreen() {
             <ThemedText type="default" style={{ marginBottom: 10 }}>
               No new messages
             </ThemedText>
-
-            {isManager && (
-              <ThemedView style={styles.ctaButton}>
-                <Button
-                  type="icon-default"
-                  icon={require("@/assets/icons/message.png")}
-                  onPress={handleStartNewMessage}
-                  iconStyle={{ height: 32, width: 32 }}
-                  style={{ height: 60, width: 60 }}
-                />
-              </ThemedView>
-            )}
           </View>
         )}
       </ScrollView>
+
+      {isManager && (
+        <View style={styles.floatingButton}>
+          <Button
+            type="icon-default"
+            icon={require("@/assets/icons/message.png")}
+            onPress={handleStartNewMessage}
+            iconStyle={{ height: 32, width: 32 }}
+            style={{ height: 60, width: 60 }}
+          />
+        </View>
+      )}
     </ThemedView>
   );
 }
@@ -77,6 +95,7 @@ const styles = StyleSheet.create({
     justifyContent: "flex-start",
     alignItems: "center",
     gap: 4,
+    position: 'relative', 
   },
   innerContainer: {
     flex: 1,
@@ -89,16 +108,19 @@ const styles = StyleSheet.create({
     width: "100%",
     flexGrow: 1,
   },
+  scrollContentWithChats: {
+    paddingBottom: 80,
+  },
   noChatsWrapper: {
     flex: 1,
     alignItems: "center",
     marginTop: 30,
     width: "100%",
   },
-
-  ctaButton: {
-    position: "absolute",
-    bottom: "5%",
-    right: 15,
+  floatingButton: {
+    position: 'absolute',
+    bottom: "10%",
+    right: 20,
+    zIndex: 10, 
   },
 });

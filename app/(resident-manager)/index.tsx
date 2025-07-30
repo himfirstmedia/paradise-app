@@ -19,6 +19,7 @@ import { useReduxScripture } from "@/hooks/useReduxScripture";
 import { useRouter } from "expo-router";
 import { useReduxHouse } from "@/hooks/useReduxHouse";
 import { HouseSelectCard } from "@/components/HouseCard";
+import { Button } from "@/components/ui/Button";
 
 function getGreeting() {
   const hour = new Date().getHours();
@@ -107,7 +108,15 @@ export default function HomeScreen() {
                 {userName}
               </ThemedText>
             </ThemedView>
-            <Avatar />
+            <View style={[styles.row, {gap: 10}]}>
+                          <Button
+                            type="icon-rounded"
+                            icon={require("@/assets/icons/chat.png")}
+                            onPress={() => router.push("/conversations")}
+                            style={{width: 50}}
+                          />
+                        <Avatar />
+                        </View>
           </ThemedView>
 
           <View style={{ marginTop: 10, gap: 12 }}>

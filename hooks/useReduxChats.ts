@@ -60,7 +60,6 @@ export function useReduxChats() {
 
   try {
     await dispatch(sendMessage(fullPayload));
-    // Refresh messages after sending
     dispatch(getMessages(currentChat.id));
   } catch (error) {
     console.error("Message send failed:", error);

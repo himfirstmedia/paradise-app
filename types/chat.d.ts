@@ -24,8 +24,8 @@ export interface Chat {
   id: number;
   name?: string | null;
   isGroup: boolean;
-  houseId?: number | null;
-  house?: { name: string }; // ✅ Add this for frontend
+  houseId?: number;
+  house?: { name: string };
   createdAt: string;
   updatedAt: string;
   users: ChatUser[];
@@ -44,4 +44,5 @@ export interface SendMessagePayload {
   content: string;
   senderId: number;
   chatId: number;
+  image: string;
 }

@@ -14,17 +14,18 @@ import { useThemeColor } from "@/hooks/useThemeColor";
 
 export default function NewMessageScreen() {
   const router = useRouter();
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { user } = useReduxAuth();
-  
   const { houses, loading: housesLoading } = useReduxHouse();
-
 
   const [selectedHouses, setSelectedHouses] = useState<string[]>([]);
   const tintColor = useThemeColor({}, "tint");
   const [isProceeding, setIsProceeding] = useState(false);
 
   
+  const userHouse = user?.houseId
+    ? houses.filter(house => house.id === user.houseId)
+    : [];
+
   const toggleHouse = (houseId: string) => {
     setSelectedHouses((prev) =>
       prev.includes(houseId)
@@ -37,10 +38,9 @@ export default function NewMessageScreen() {
     if (isProceeding) return;
     setIsProceeding(true);
 
-    router.push({
+    router.replace({
       pathname: "/chat-room",
       params: {
-        
         houseIds: selectedHouses.join(","),
       },
     });
@@ -61,23 +61,25 @@ export default function NewMessageScreen() {
           </ThemedText>
 
           {housesLoading ? (
-            <ThemedText>Loading houses...</ThemedText>
-          ) : houses.length > 0 ? (
-            houses.map((house) => (
-              <RecipientItem
-                key={`house-${house.id}`}
-                id={house.id.toString()}
-                name={house.name}
-                isSelected={selectedHouses.includes(house.id.toString())}
-                onSelect={() => toggleHouse(house.id.toString())}
-                isGroup={true}
-              />
-            ))
-          ) : (
-            <ThemedText style={styles.emptyText}>
-              No houses available
-            </ThemedText>
-          )}
+          <ThemedText>Loading...</ThemedText>
+        ) : userHouse.length > 0 ? (
+          userHouse.map((house) => (
+            <RecipientItem
+              key={`house-${house.id}`}
+              id={house.id.toString()}
+              name={house.name}
+              isSelected={selectedHouses.includes(house.id.toString())}
+              onSelect={() => toggleHouse(house.id.toString())}
+              isGroup={true}
+            />
+          ))
+        ) : (
+          <ThemedText style={styles.emptyText}>
+            {user?.houseId 
+              ? "Your house information is not available" 
+              : "You don't belong to any house"}
+          </ThemedText>
+        )}
 
         </ScrollView>
 

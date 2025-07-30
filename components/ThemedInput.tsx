@@ -32,6 +32,7 @@ export type ThemedInputProps = TextInputProps & {
   errorMessage?: string | null;
   background?: string;
   height?: number;
+  onSendImage?: (image: string) => void;
 };
 
 type ThemedDropdownProps = {
@@ -687,6 +688,7 @@ export function ThemedChatInput({
   placeholder,
   value,
   onChangeText,
+  onSendImage,
   ...rest
 }: ThemedInputProps) {
   const bgColor = useThemeColor({}, "input");
@@ -721,7 +723,9 @@ export function ThemedChatInput({
   };
 
   const handleSendImage = () => {
-    Alert.alert("Send Image", "Image sent successfully!");
+    if (capturedImage && onSendImage) {
+      onSendImage(capturedImage);
+    }
     setCapturedImage(null);
     setPreviewVisible(false);
   };
@@ -800,38 +804,39 @@ export function ThemedChatInput({
             facing={facing}
             ref={cameraRef}
             onCameraReady={() => setCameraReady(true)}
+          />
+
+          {/* This view is NOT inside CameraView anymore */}
+          <View
+            style={{
+              position: "absolute",
+              bottom: 40,
+              left: 0,
+              right: 0,
+              alignItems: "center",
+              flexDirection: "row",
+              justifyContent: "center",
+              gap: 30,
+            }}
           >
-            <View
-              style={{
-                position: "absolute",
-                bottom: 40,
-                left: 0,
-                right: 0,
-                alignItems: "center",
-                flexDirection: "row",
-                justifyContent: "center",
-                gap: 30,
-              }}
-            >
-              <Button
-                type="icon-default"
-                icon={require("@/assets/icons/dismiss.png")}
-                onPress={() => setCameraVisible(false)}
-              />
-              <Button
-                type="icon-default"
-                icon={require("@/assets/icons/camera.png")}
-                style={{ height: 80, width: 80 }}
-                iconStyle={{ height: 40, width: 40 }}
-                onPress={takePicture}
-              />
-              <Button
-                type="icon-default"
-                icon={require("@/assets/icons/camera-flip.png")}
-                onPress={toggleCameraFacing}
-              />
-            </View>
-          </CameraView>
+            <Button
+              type="icon-default"
+              icon={require("@/assets/icons/dismiss.png")}
+              onPress={() => setCameraVisible(false)}
+            />
+            <Button
+              type="icon-default"
+              icon={require("@/assets/icons/camera.png")}
+              style={{ height: 80, width: 80 }}
+              iconStyle={{ height: 40, width: 40 }}
+              onPress={takePicture}
+            />
+            <Button
+              type="icon-default"
+              icon={require("@/assets/icons/camera-flip.png")}
+              onPress={toggleCameraFacing}
+            />
+          </View>
         </View>
       </Modal>
 

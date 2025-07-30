@@ -13,15 +13,17 @@ import { useColorScheme } from "@/hooks/useColorScheme";
 import { Colors } from "@/constants/Colors";
 import * as SplashScreen from "expo-splash-screen";
 import { useAppSelector } from "@/redux/hooks";
+import { registerForPushNotificationsAsync } from "@/utils/firebase"
+import * as Notifications from 'expo-notifications';
 
-// Prevent auto-hiding splash until manually dismissed
+
 SplashScreen.preventAutoHideAsync();
 
 export default function AppLayout() {
   const colorScheme = useColorScheme() ?? "light";
   const [appIsReady, setAppIsReady] = useState(false);
   const hasCheckedAuthRef = useRef(false);
-
+  
   const [fontsLoaded] = useFonts({
     SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
   });
@@ -31,12 +33,36 @@ export default function AppLayout() {
   useEffect(() => {
     if (!fontsLoaded) return;
 
-    // Only check auth status once
+    
     if (!hasCheckedAuthRef.current) {
       hasCheckedAuthRef.current = true;
       setAppIsReady(true);
     }
   }, [fontsLoaded, isAuthenticated]);
+
+  
+  useEffect(() => {
+    
+    registerForPushNotificationsAsync();
+    
+    const token = registerForPushNotificationsAsync();
+    console.log("Token: ", token);
+
+    
+    const notificationListener = Notifications.addNotificationReceivedListener(notification => {
+      console.log('Notification received:', notification);
+    });
+
+    const responseListener = Notifications.addNotificationResponseReceivedListener(response => {
+      
+      console.log('Notification response:', response);
+    });
+
+    return () => {
+      Notifications.removeNotificationSubscription(notificationListener);
+      Notifications.removeNotificationSubscription(responseListener);
+    };
+  }, []);
 
   const onLayoutRootView = useCallback(() => {
     if (appIsReady) {
@@ -175,7 +201,7 @@ export default function AppLayout() {
           />
           <Stack.Screen
             name="conversations"
-            options={{ header: () => <SimpleHeader title="Message" /> }}
+            options={{ header: () => <SimpleHeader title="Messages" /> }}
           />
            <Stack.Screen
             name="new-message"

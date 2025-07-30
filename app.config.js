@@ -30,6 +30,7 @@ export default {
       edgeToEdgeEnabled: true,
       package: "com.himfirstapps.ParadiseApp",
       permissions: ["INTERNET", "NOTIFICATIONS"],
+      googleServicesFile: "./paradise-app-7af9e-firebase-adminsdk-fbsvc-4b7eadb276.json",
     },
     web: {
       bundler: "metro",

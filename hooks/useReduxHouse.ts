@@ -24,7 +24,7 @@ export function useReduxHouse() {
     if (!loading && houses.length === 0) {
       const timeout = setTimeout(() => {
         reload();
-      }, 3000);
+      }, 0);
 
       return () => clearTimeout(timeout);
     }
@@ -40,7 +40,7 @@ export function useReduxHouse() {
     return map;
   }, [houses]);
 
-  // Get display name with fallback
+  
   const getDisplayName = useCallback((houseValue: string | null) => {
     if (!houseValue) return "Individual";
     const normalized = normalizeHouseName(houseValue);

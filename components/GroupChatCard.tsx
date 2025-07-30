@@ -40,6 +40,7 @@ export function GroupChatCard({ chat }: GroupChatCardProps) {
                 {formatTime(lastMessageTime)}
               </ThemedText>
             </View>
+
             {lastMessage ? (
               <View
                 style={[styles.row, { gap: 5, justifyContent: "flex-start" }]}
@@ -51,12 +52,16 @@ export function GroupChatCard({ chat }: GroupChatCardProps) {
                 <ThemedText
                   type="default"
                   numberOfLines={1}
-                  style={{ width: "90%" }}
+                  style={{ width: "70%" }}
                 >
                   <ThemedText type="default" style={{ fontWeight: "bold" }}>
                     {lastSenderName}:{" "}
                   </ThemedText>
-                  {lastMessage?.content}
+                  {lastMessage.content && lastMessage.content.trim().length > 0
+                    ? lastMessage.content
+                    : lastMessage.image
+                      ? "Image"
+                      : ""}
                 </ThemedText>
               </View>
             ) : (
