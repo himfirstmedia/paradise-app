@@ -157,7 +157,7 @@ export function ChoreTaskCard({
       >
         <ThemedView style={[styles.card, { backgroundColor: bgColor }]}>
           <View style={[styles.card, { width: "100%" }]}>
-            <View style={[styles.row, { marginRight: 50 }]}>
+            <View style={[styles.row, { marginRight: "5%" }]}>
               <Tooltip
                 infoTitle="Task Details"
                 infoText={choreTask.description}
@@ -175,7 +175,7 @@ export function ChoreTaskCard({
                   onPress={() => {
                     setShowMore((prev) => !prev);
                   }}
-                  style={{ marginRight: 10 }}
+                  style={{ marginRight: "1%" }}
                 >
                   <Image
                     source={

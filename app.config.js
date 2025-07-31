@@ -20,7 +20,7 @@ export default {
       icon: {
         dark: "./assets/images/ios-dark.png",
         light: "./assets/images/ios-light.png",
-      }
+      },
     },
     android: {
       adaptiveIcon: {
@@ -29,8 +29,16 @@ export default {
       },
       edgeToEdgeEnabled: true,
       package: "com.himfirstapps.ParadiseApp",
-      permissions: ["INTERNET", "NOTIFICATIONS"],
-      googleServicesFile: "./paradise-app-7af9e-firebase-adminsdk-fbsvc-4b7eadb276.json",
+      permissions: [
+        "INTERNET",
+        "NOTIFICATIONS",
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE",
+        "FOREGROUND_SERVICE",
+      ],
+      googleServicesFile:
+        "./paradise-app-7af9e-firebase-adminsdk-fbsvc-4b7eadb276.json",
     },
     web: {
       bundler: "metro",
@@ -59,11 +67,12 @@ export default {
       [
         "expo-camera",
         {
-          "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera",
-          "microphonePermission": "Allow $(PRODUCT_NAME) to access your microphone",
-          "recordAudioAndroid": true
-        }
-      ]
+          cameraPermission: "Allow $(PRODUCT_NAME) to access your camera",
+          microphonePermission:
+            "Allow $(PRODUCT_NAME) to access your microphone",
+          recordAudioAndroid: true,
+        },
+      ],
     ],
     experiments: {
       typedRoutes: true,

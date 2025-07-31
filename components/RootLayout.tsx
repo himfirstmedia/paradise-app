@@ -4,65 +4,90 @@ import {
   ThemeProvider,
 } from "@react-navigation/native";
 import { useFonts } from "expo-font";
-import { Stack } from "expo-router";
+import { Stack, useRouter } from "expo-router";
 import { SimpleHeader } from "@/components/SimpleHeader";
 import { UpdateHeader } from "@/components/UpdateHeader";
-import { useCallback, useEffect, useState, useRef } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { View, StatusBar } from "react-native";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { Colors } from "@/constants/Colors";
 import * as SplashScreen from "expo-splash-screen";
 import { useAppSelector } from "@/redux/hooks";
-import { registerForPushNotificationsAsync } from "@/utils/firebase"
-import * as Notifications from 'expo-notifications';
-
+import {
+  registerNotificationListeners,
+  SetupPushNotifications,
+} from "@/utils/notificationHandler";
 
 SplashScreen.preventAutoHideAsync();
 
 export default function AppLayout() {
   const colorScheme = useColorScheme() ?? "light";
   const [appIsReady, setAppIsReady] = useState(false);
-  const hasCheckedAuthRef = useRef(false);
-  
+
+  const { user, isAuthenticated } = useAppSelector((state) => state.auth);
+  const router = useRouter();
+
   const [fontsLoaded] = useFonts({
     SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
   });
 
-  const { isAuthenticated } = useAppSelector((state) => state.auth);
+  // Initialize notifications and handle setup
+  const initializeNotifications = SetupPushNotifications();
 
+  // Set up app and notifications
   useEffect(() => {
     if (!fontsLoaded) return;
 
-    
-    if (!hasCheckedAuthRef.current) {
-      hasCheckedAuthRef.current = true;
-      setAppIsReady(true);
+    setAppIsReady(true);
+
+    if (isAuthenticated && user?.id) {
+      // Initialize push notifications
+      initializeNotifications();
+
+      // Register notification listeners
+      const unsubscribe = registerNotificationListeners(
+        (notification) => {
+          console.log("Notification received:", notification);
+        },
+        (response) => {
+          console.log("Notification response:", response);
+          const taskId = response.notification.request.content.data?.taskId;
+          if (taskId) {
+            router.push(`/task-detail?id=${taskId}`);
+          }
+        }
+      );
+
+      // Cleanup listeners on unmount
+      return () => unsubscribe();
     }
-  }, [fontsLoaded, isAuthenticated]);
+  }, [fontsLoaded, isAuthenticated, user?.id, router, initializeNotifications]);
 
-  
-  useEffect(() => {
-    
-    registerForPushNotificationsAsync();
-    
-    const token = registerForPushNotificationsAsync();
-    console.log("Token: ", token);
+  // useEffect(() => {
+  //   if (isAuthenticated && user?.id) {
+  //     const initializeNotifications = SetupPushNotifications();
+  //     initializeNotifications();
 
-    
-    const notificationListener = Notifications.addNotificationReceivedListener(notification => {
-      console.log('Notification received:', notification);
-    });
+  //     // Register notification listeners
+  //     const unsubscribe = registerNotificationListeners(
+  //       (notification) => {
+  //         console.log('Notification received:', notification);
+  //         // Handle foreground notifications (e.g., show an in-app alert)
+  //       },
+  //       (response) => {
+  //         console.log('Notification response:', response);
+  //         const taskId = response.notification.request.content.data?.taskId;
+  //         if (taskId) {
+  //           // Navigate to task details screen
+  //           router.push({ pathname: "/task-detail", params: { id: taskId } });
+  //         }
+  //       }
+  //     );
 
-    const responseListener = Notifications.addNotificationResponseReceivedListener(response => {
-      
-      console.log('Notification response:', response);
-    });
-
-    return () => {
-      Notifications.removeNotificationSubscription(notificationListener);
-      Notifications.removeNotificationSubscription(responseListener);
-    };
-  }, []);
+  //     // Cleanup listeners on unmount
+  //     return () => unsubscribe();
+  //   }
+  // }, [isAuthenticated, user?.id, router]);
 
   const onLayoutRootView = useCallback(() => {
     if (appIsReady) {
@@ -81,7 +106,7 @@ export default function AppLayout() {
     >
       <StatusBar
         barStyle={colorScheme === "dark" ? "light-content" : "dark-content"}
-        backgroundColor={Colors[colorScheme].selection} 
+        backgroundColor={Colors[colorScheme].selection}
       />
       <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
         <Stack>
@@ -127,9 +152,12 @@ export default function AppLayout() {
           <Stack.Screen
             name="member-detail"
             options={{ header: () => <SimpleHeader title="Member Profile" /> }}
-          /><Stack.Screen
+          />
+          <Stack.Screen
             name="chore-detail"
-            options={{ header: () => <SimpleHeader title="Primary Chore Details" /> }}
+            options={{
+              header: () => <SimpleHeader title="Primary Chore Details" />,
+            }}
           />
           <Stack.Screen
             name="change-password"
@@ -203,14 +231,11 @@ export default function AppLayout() {
             name="conversations"
             options={{ header: () => <SimpleHeader title="Messages" /> }}
           />
-           <Stack.Screen
+          <Stack.Screen
             name="new-message"
             options={{ header: () => <SimpleHeader title="New Message" /> }}
           />
-          <Stack.Screen
-            name="chat-room"
-            options={{ headerShown: false }}
-          />
+          <Stack.Screen name="chat-room" options={{ headerShown: false }} />
         </Stack>
       </ThemeProvider>
     </View>

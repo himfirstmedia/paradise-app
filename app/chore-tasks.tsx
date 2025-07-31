@@ -27,13 +27,12 @@ export default function ChoreTasksScreen() {
   );
 
   const primaryChore = chores.find((chore) => chore.id === userTask?.choreId);
-  
+
   const member = members.find((m) => m.id === userId);
   const memberHouse = houses.find(
     (house) =>
       house.id === userTask?.user?.houseId || house.id === member?.houseId
   );
-  
 
   return (
     <ThemedView style={styles.container}>
@@ -59,11 +58,10 @@ export default function ChoreTasksScreen() {
             .filter((task) => task.userId === userId)
             .map((task) => (
               <ChoreTaskCard
-  key={task.id}
-  choreTask={task}
-  currentUserRole={user?.role}
-/>
-
+                key={task.id}
+                choreTask={task}
+                currentUserRole={user?.role}
+              />
             ))}
         </ThemedView>
       </ScrollView>

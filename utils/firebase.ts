@@ -46,7 +46,7 @@ interface PushTokenPayload {
 
 async function sendPushTokenToBackend(token: string): Promise<void> {
   try {
-    await api.post('/', {
+    await api.post('/users/test/token', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

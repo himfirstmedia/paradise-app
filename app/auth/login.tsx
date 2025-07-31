@@ -21,6 +21,7 @@ import { Image } from "expo-image";
 
 import { useReduxAuth } from "@/hooks/useReduxAuth";
 import { useAppSelector } from "@/redux/hooks";
+import { SetupPushNotifications } from "@/utils/notificationHandler";
 
 type AppRoutes =
   | "/(director)"
@@ -66,7 +67,7 @@ export default function LoginScreen() {
       };
 
       const route = roleRoutes[user.role] || "/auth/login";
-
+      console.log("User Details: ", user);
       router.replace(route);
     } else if (isAuthenticated) {
       console.warn("⚠️ Authenticated but missing role:", user);
@@ -82,6 +83,11 @@ export default function LoginScreen() {
 
     try {
       await signin(email, password);
+
+      // Get and log push notification token after successful login
+      await SetupPushNotifications();
+
+      // Optionally: send token to your backend here
     } catch (error: unknown) {
       let errorMessage = "Invalid credentials. Please try again.";
 

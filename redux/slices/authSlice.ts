@@ -24,6 +24,7 @@ export interface User {
     name: string;
   }
   currentChoreId?: number;
+  expoPushToken?: string;
 }
 
 interface AuthState {

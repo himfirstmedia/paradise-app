@@ -8,8 +8,8 @@ import { useReduxAuth } from "@/hooks/useReduxAuth";
 import { useReduxHouse } from "@/hooks/useReduxHouse";
 import { useReduxMembers } from "@/hooks/useReduxMembers";
 import { useReduxTasks } from "@/hooks/useReduxTasks";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import React, { useEffect, useState } from "react";
+import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   ScrollView,
   StyleSheet,
@@ -37,7 +37,7 @@ export default function HouseDetailScreen() {
   const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
 
   const { houses } = useReduxHouse();
-  const { members } = useReduxMembers();
+  const { members, reload } = useReduxMembers();
   const { tasks } = useReduxTasks();
 
   const { width } = useWindowDimensions();
@@ -46,6 +46,12 @@ export default function HouseDetailScreen() {
   const isMediumScreen = Platform.OS === "web" && width >= 768;
 
   const { user } = useReduxAuth();
+
+  useFocusEffect(
+    useCallback(() => {
+      reload();
+    }, [reload])
+  );
 
   useEffect(() => {
     setCurrentUserRole(user?.role ?? null);
