@@ -27,6 +27,7 @@ export interface User {
     id: number;
     name: string;
   }
+  expoPushToken?: string;
 }
 
 interface UserState {

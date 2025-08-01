@@ -70,7 +70,7 @@ export default function TabThreeScreen() {
     try {
       await UserSessionUtils.logout();
       await signout();
-      navigation.replace("../auth");
+      navigation.replace("../auth/login");
     } catch (error) {
       console.error("Logout Error:", error);
       Alert.alert("Logout Failed", "An error occurred during logout.");

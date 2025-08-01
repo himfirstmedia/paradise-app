@@ -10,6 +10,7 @@ import { useReduxAuth } from "@/hooks/useReduxAuth";
 import { useReduxMembers } from "@/hooks/useReduxMembers";
 import { useReduxTasks } from "@/hooks/useReduxTasks";
 import { useThemeColor } from "@/hooks/useThemeColor";
+import { Task } from "@/types/task";
 import api from "@/utils/api";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
@@ -45,7 +46,7 @@ export default function AssignTaskScreen() {
   const isFacilityManager = user?.role === "FACILITY_MANAGER";
 
   const visibleTasks = isFacilityManager
-    ? tasks.filter((task) => task.progress === "PENDING")
+    ? tasks.filter((task: Task) => task.progress === "PENDING")
     : tasks;
 
   const handleTaskAssignment = async () => {
@@ -120,9 +121,9 @@ export default function AssignTaskScreen() {
         style={styles.innerContainer}
       >
         <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          behavior={Platform.OS === "ios" ? "padding" : "padding"}
           style={styles.keyboardAvoid}
-          keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 0}
+          keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 40}
         >
           <ThemedText type="title" style={{ marginBottom: 30, marginTop: 15 }}>
             Assign Task
@@ -172,7 +173,7 @@ export default function AssignTaskScreen() {
 
           <Button
             onPress={handleTaskAssignment}
-            title="Assign"
+            title="Assign Task"
             loading={loading}
           />
         </KeyboardAvoidingView>

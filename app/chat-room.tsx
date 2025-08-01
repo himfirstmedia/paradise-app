@@ -12,14 +12,23 @@ import {
   Image,
   ActivityIndicator,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
-import { Message, CreateChatPayload, Chat } from "@/types/chat";
+import { Message, CreateChatPayload, Chat, User } from "@/types/chat";
 import { formatTime } from "@/utils/Formatters";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { UserAvatar } from "@/components/ui/UserAvatar";
 import { useReduxChats } from "@/hooks/useReduxChats";
 import { useReduxHouse } from "@/hooks/useReduxHouse";
+
+
+interface House {
+  id: number;
+  name: string;
+  users?: User[];
+}
 
 export default function ChatRoomScreen() {
   const navigation = useRouter();
@@ -35,11 +44,10 @@ export default function ChatRoomScreen() {
     createNewChat,
     loading: chatLoading,
   } = useReduxChats();
-
   const { houses } = useReduxHouse();
 
-  const userHouse = houses.find((house) =>
-    house.users?.some((u) => u.id === user?.id)
+  const userHouse = houses.find((house: House) =>
+    house.users?.some((u: User) => u.id === user?.id)
   );
 
   const userHouseId = userHouse?.id;
@@ -51,8 +59,8 @@ export default function ChatRoomScreen() {
 
   const scrollViewRef = useRef<ScrollView>(null);
 
-  function getHouseById(id: number) {
-    return houses.find((h) => h.id === id) || null;
+  function getHouseById(id: number): House | null {
+    return houses.find((h: House) => h.id === id) || null;
   }
 
   const canSendMessage =
@@ -65,71 +73,73 @@ export default function ChatRoomScreen() {
       (chat: Chat) => chat.houseId !== undefined && chat.houseId === userHouseId
     );
 
-    const houseUserIds = userHouse?.users?.map((user) => user.id) || [];
+    const houseUserIds = userHouse?.users?.map((user: User) => user.id) || [];
 
     const allParticipantIds = [user?.id || -1, ...houseUserIds].filter(
-      (id, index, self) => id > 0 && self.indexOf(id) === index
+      (id: number, index: number, self: number[]) =>
+        id > 0 && self.indexOf(id) === index
     );
 
-    return houseChats.find((chat) => {
-      const chatUserIds = chat.users?.map((u) => u.user.id) || [];
+    return houseChats.find((chat: Chat) => {
+      const chatUserIds = chat.users?.map((u: { user: User }) => u.user.id) || [];
       return (
         chatUserIds.length === allParticipantIds.length &&
-        chatUserIds.every((id) => allParticipantIds.includes(id))
+        chatUserIds.every((id: number) => allParticipantIds.includes(id))
       );
     });
   }, [userHouseId, userHouse, user?.id, chats]);
 
   const initializeChat = useCallback(async () => {
-  if (initializationAttempted || currentChat) return;
-  if (!userHouseId) {
-    console.warn("No userHouseId, skipping chat initialization");
-    return;
-  }
-  setIsCreatingChat(true);
-  setInitializationAttempted(true);
-  try {
-    const existingChat = findTargetChat();
-    if (existingChat) {
-      setActiveChat(existingChat);
+    if (initializationAttempted || currentChat) return;
+    if (!userHouseId) {
+      console.warn("No userHouseId, skipping chat initialization");
       return;
     }
-    const targetHouse = houses.find((house) => house.id === userHouseId);
-    const houseUserIds = targetHouse?.users?.map((user) => user.id) || [];
-    const allParticipantIds = [user?.id || -1, ...houseUserIds].filter(
-      (id, index, self) => id > 0 && self.indexOf(id) === index
-    );
-    const payload: CreateChatPayload = {
-      participantIds: allParticipantIds,
-      houseIds: [userHouseId],
-      isGroup: true,
-    };
-    const newChat = await createNewChat(payload);
-    if (newChat && newChat.id) {
-      setActiveChat(newChat);
-    } else {
-      console.warn("Failed to create new chat or chat lacks id:", newChat);
-      const createdChat = findTargetChat();
-      if (createdChat && createdChat.id) {
-        setActiveChat(createdChat);
+    setIsCreatingChat(true);
+    setInitializationAttempted(true);
+    try {
+      const existingChat = findTargetChat();
+      if (existingChat) {
+        setActiveChat(existingChat);
+        return;
       }
+      const targetHouse = houses.find((house: House) => house.id === userHouseId);
+      const houseUserIds = targetHouse?.users?.map((user: User) => user.id) || [];
+      const allParticipantIds = [user?.id || -1, ...houseUserIds].filter(
+        (id: number, index: number, self: number[]) =>
+          id > 0 && self.indexOf(id) === index
+      );
+      const payload: CreateChatPayload = {
+        participantIds: allParticipantIds,
+        houseIds: [userHouseId],
+        isGroup: true,
+      };
+      const newChat = await createNewChat(payload);
+      if (newChat && newChat.id) {
+        setActiveChat(newChat);
+      } else {
+        console.warn("Failed to create new chat or chat lacks id:", newChat);
+        const createdChat = findTargetChat();
+        if (createdChat && createdChat.id) {
+          setActiveChat(createdChat);
+        }
+      }
+    } catch (error) {
+      console.error("Chat initialization failed:", error);
+      setInitializationAttempted(false);
+    } finally {
+      setIsCreatingChat(false);
     }
-  } catch (error) {
-    console.error("Chat initialization failed:", error);
-    setInitializationAttempted(false);
-  } finally {
-    setIsCreatingChat(false);
-  }
-}, [
-  user?.id,
-  createNewChat,
-  currentChat,
-  houses,
-  setActiveChat,
-  initializationAttempted,
-  findTargetChat,
-  userHouseId,
-]);
+  }, [
+    user?.id,
+    createNewChat,
+    currentChat,
+    houses,
+    setActiveChat,
+    initializationAttempted,
+    findTargetChat,
+    userHouseId,
+  ]);
 
   useEffect(() => {
     initializeChat();
@@ -178,35 +188,40 @@ export default function ChatRoomScreen() {
     }
   };
 
-  
-const handleSendImage = async (imageUrl: string) => {
-  if (!user || !currentChat?.id) {
-    Alert.alert("Error", "User or chat not available");
-    return;
-  }
+  const handleSendImage = async (imageUrl: string) => {
+    if (!user || !currentChat?.id) {
+      Alert.alert("Error", "User or chat not available");
+      return;
+    }
 
-  try {
-    setIsSending(true);
-    await sendNewMessage({
-      content: "",
-      senderId: user.id,
-      chatId: currentChat.id,
-      image: imageUrl,
-    });
-  } catch (error: any) {
-    console.error("Failed to send message with image:", error.response?.data || error.message);
-    Alert.alert("Error", `Failed to send message: ${error.response?.data?.error || error.message}`);
-  } finally {
-    setIsSending(false);
-  }
-};
+    try {
+      setIsSending(true);
+      await sendNewMessage({
+        content: "",
+        senderId: user.id,
+        chatId: currentChat.id,
+        image: imageUrl,
+      });
+    } catch (error: any) {
+      console.error(
+        "Failed to send message with image:",
+        error.response?.data || error.message
+      );
+      Alert.alert(
+        "Error",
+        `Failed to send message: ${error.response?.data?.error || error.message}`
+      );
+    } finally {
+      setIsSending(false);
+    }
+  };
 
   const getChatName = () => {
     if (currentChat?.name) return currentChat.name;
     if (currentChat?.users && currentChat.users.length === 2) {
       const otherUser = currentChat.users
-        .map((u) => u.user)
-        .find((u) => u.id !== user?.id);
+        .map((u: { user: User }) => u.user)
+        .find((u: User) => u.id !== user?.id);
       if (otherUser) return otherUser.name;
     }
     if (currentChat?.isGroup) {
@@ -235,22 +250,24 @@ const handleSendImage = async (imageUrl: string) => {
   return (
     <>
       <SimpleHeader title={getChatName()} onBack={() => navigation.back()} />
-      <ThemedView style={styles.container}>
+    <ThemedView style={styles.container}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
+        style={styles.keyboardAvoid}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 20} // Adjust for header and status bar
+      >
         <ScrollView
           ref={scrollViewRef}
-          contentContainerStyle={{
-            alignItems: "flex-start",
-            width: "100%",
-            flexGrow: 1,
-          }}
+          contentContainerStyle={styles.scrollContent}
           style={styles.innerContainer}
+          keyboardShouldPersistTaps="handled"
         >
           {!currentChat?.messages || currentChat.messages.length === 0 ? (
             <ThemedText type="default" style={styles.noMessagesText}>
               No messages yet. Start the conversation!
             </ThemedText>
           ) : (
-            currentChat.messages.map((message) => (
+            currentChat.messages.map((message: Message) => (
               <MessageBubble
                 key={`${message.id}-${message.createdAt}`}
                 message={message}
@@ -273,14 +290,15 @@ const handleSendImage = async (imageUrl: string) => {
             </View>
             <Button
               type="icon-default"
-              icon={require("@/assets/icons/send.png")}
+              icon={require('@/assets/icons/send.png')}
               onPress={handleSubmit}
               disabled={isSending || !inputText.trim()}
               loading={isSending}
             />
           </View>
         )}
-      </ThemedView>
+      </KeyboardAvoidingView>
+    </ThemedView>
     </>
   );
 }
@@ -381,11 +399,21 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 4,
   },
+  keyboardAvoid: {
+    flex: 1,
+    width: "100%"
+  },
   innerContainer: {
     flex: 1,
     width: "100%",
     paddingHorizontal: 15,
     paddingVertical: 20,
+  },
+  scrollContent: {
+    alignItems: 'flex-start',
+    width: '100%',
+    flexGrow: 1,
+    paddingBottom: 50, 
   },
   ctaContainer: {
     position: "absolute",

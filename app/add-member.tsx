@@ -22,6 +22,7 @@ import {
   useWindowDimensions,
 } from "react-native";
 import { useThemeColor } from "@/hooks/useThemeColor";
+import { House } from "@/types/house";
 
 const genderMap: Record<string, string> = {
   Male: "MALE",
@@ -76,7 +77,7 @@ export default function AddMemberScreen() {
     roleOptions.push("Facility Manager", "Resident Manager");
   }
 
-  const houseOptions = houses.map((house) => ({
+  const houseOptions = houses.map((house: House) => ({
     label: house.name,
     value: house.id,
   }));
@@ -176,9 +177,9 @@ export default function AddMemberScreen() {
     <>
       <ThemedView style={[styles.container, responsiveStyles.containerPadding]}>
         <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          behavior={Platform.OS === "ios" ? "padding" : "padding"}
           style={styles.keyboardAvoid}
-          keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 0}
+          keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 40}
         >
           <ScrollView
             style={styles.scrollView}

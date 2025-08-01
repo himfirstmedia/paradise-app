@@ -3,10 +3,9 @@ import { ThemedView } from "@/components/ThemedView";
 import { UserAvatar } from "@/components/ui/UserAvatar";
 import { useReduxAuth } from "@/hooks/useReduxAuth";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { UserSessionUtils } from "@/utils/UserSessionUtils";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
-import React from "react";
+import React, { useEffect } from "react";
 import { Pressable, ScrollView, StyleSheet, View, Alert, useWindowDimensions, Platform } from "react-native";
 
 type ActionButton = {
@@ -64,17 +63,24 @@ export default function TabThreeScreen() {
     const isLargeScreen = Platform.OS === "web" && width >= 1024;
     const isMediumScreen = Platform.OS === "web" && width >= 768;
 
+    useEffect(() => {
+        if (!user) {
+          navigation.replace('/auth/login');
+        }
+      }, [user, navigation]);
+
 
   const handleLogout = async () => {
       try {
-        await UserSessionUtils.logout(); // if this clears AsyncStorage or similar
         await signout(); // dispatches Redux logout
-        navigation.replace("../auth");
+        navigation.replace("../auth/login");
       } catch (error) {
         console.error("Logout Error:", error);
         Alert.alert("Logout Failed", "An error occurred during logout.");
       }
     };
+
+
 
      const responsiveStyles = StyleSheet.create({
         profileRow: {

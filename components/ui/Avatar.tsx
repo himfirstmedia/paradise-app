@@ -1,16 +1,10 @@
-import React, { useState } from "react";
-import {
-  StyleSheet,
-  TouchableOpacity,
-  Modal,
-  Pressable,
-  Alert,
-} from "react-native";
-import { ThemedView } from "../ThemedView";
-import { Image } from "expo-image";
-import { ThemedText } from "../ThemedText";
-import { useRouter, usePathname } from "expo-router";
-import { useReduxAuth } from "@/hooks/useReduxAuth";
+import React, { useState, useEffect } from 'react';
+import { StyleSheet, TouchableOpacity, Modal, Pressable, Alert } from 'react-native';
+import { ThemedView } from '../ThemedView';
+import { Image } from 'expo-image';
+import { ThemedText } from '../ThemedText';
+import { useRouter, usePathname } from 'expo-router';
+import { useReduxAuth } from '@/hooks/useReduxAuth';
 
 type AvatarProps = {
   size?: number;
@@ -22,22 +16,33 @@ export function Avatar({ size = 40 }: AvatarProps) {
   const pathname = usePathname();
   const { user, signout } = useReduxAuth();
 
+  useEffect(() => {
+    if (!user) {
+      navigation.replace('/auth/login');
+    }
+  }, [user, navigation]);
+
   const getInitial = () => {
-    const displayName = user?.name || user?.name || "U";
+    const displayName = user?.name || 'U';
     return displayName.trim().charAt(0).toUpperCase();
   };
 
   const handleLogout = async () => {
     try {
       await signout();
-      navigation.replace("../auth");
-    } catch (error) {
-      console.error("Logout Error:", error);
-      Alert.alert("Logout Failed", "An error occurred during logout.");
+      setPopoverVisible(false); // Close modal before navigation
+      navigation.replace('/auth/login');
+    } catch (error: any) {
+      console.error('Logout Error:', error);
+      Alert.alert('Logout Failed', 'An error occurred during logout.');
     }
   };
 
-  const shouldShowModal = popoverVisible && !pathname.includes("profile");
+  if (!user) {
+    return null; // Return null during render to avoid errors
+  }
+
+  const shouldShowModal = popoverVisible && !pathname.includes('profile');
 
   return (
     <>
@@ -51,7 +56,7 @@ export function Avatar({ size = 40 }: AvatarProps) {
             { height: size, width: size, borderRadius: size / 2 },
           ]}
         >
-          {user?.image ? (
+          {user.image ? (
             <Image
               source={{ uri: user.image }}
               style={{
@@ -92,7 +97,7 @@ export function Avatar({ size = 40 }: AvatarProps) {
             <Pressable
               style={styles.button}
               onPress={() => {
-                navigation.push("/profile");
+                navigation.push('/profile');
                 setPopoverVisible(false);
               }}
             >
@@ -110,28 +115,23 @@ export function Avatar({ size = 40 }: AvatarProps) {
 
 const styles = StyleSheet.create({
   container: {
-    overflow: "hidden",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  image: {
-    // dynamic
+    overflow: 'hidden',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   initialContainer: {
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   initial: {
-    textAlign: "center",
-    // height: "100%",
-    // width: "100%",
-    textAlignVertical: "center",
+    textAlign: 'center',
+    textAlignVertical: 'center',
   },
   overlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.2)",
-    justifyContent: "flex-start",
-    alignItems: "flex-end",
+    backgroundColor: 'rgba(0,0,0,0.2)',
+    justifyContent: 'flex-start',
+    alignItems: 'flex-end',
   },
   popover: {
     borderRadius: 12,
@@ -139,13 +139,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     minWidth: 200,
     elevation: 5,
-    shadowColor: "rgba(0, 0, 0, 0.03)",
-    alignItems: "flex-start",
+    shadowColor: 'rgba(0, 0, 0, 0.03)',
+    alignItems: 'flex-start',
     marginTop: 70,
     marginRight: 15,
   },
   button: {
     paddingVertical: 5,
-    width: "100%",
+    width: '100%',
   },
 });

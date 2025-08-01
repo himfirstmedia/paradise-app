@@ -44,17 +44,21 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = React.useState(false);
 
   const { houses, loading, reload: ReloadHouses } = useReduxHouse();
-  
-    const { scriptures, loading: scriptureLoading, reload: ReloadScripture } = useReduxScripture();
-  
-    const latestScripture = scriptures.length > 0 ? scriptures[0] : null;
-  
-    const handleRefresh = async () => {
-      setRefreshing(true);
-      await ReloadHouses();
-      await ReloadScripture();
-      setRefreshing(false);
-    };
+
+  const {
+    scriptures,
+    loading: scriptureLoading,
+    reload: ReloadScripture,
+  } = useReduxScripture();
+
+  const latestScripture = scriptures.length > 0 ? scriptures[0] : null;
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await ReloadHouses();
+    await ReloadScripture();
+    setRefreshing(false);
+  };
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -99,14 +103,14 @@ export default function HomeScreen() {
   return (
     <ThemedView style={styles.container}>
       <ScrollView
-      refreshControl={
-                  <RefreshControl
-                    refreshing={refreshing}
-                    onRefresh={handleRefresh}
-                    tintColor={primaryColor} // iOS
-                    colors={[primaryColor]} // Android
-                  />
-                }
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor={primaryColor} // iOS
+            colors={[primaryColor]} // Android
+          />
+        }
         contentContainerStyle={{
           alignItems: "center",
           width: "100%",
@@ -116,73 +120,73 @@ export default function HomeScreen() {
         showsVerticalScrollIndicator={false}
       >
         <ThemedView
-                  style={[
-                    styles.headerCard,
-                    { backgroundColor: primaryColor },
-                    responsiveStyles.containerPadding,
-                  ]}
-                >
-                  <ThemedView style={[styles.row, { backgroundColor: primaryColor }]}>
-                    <ThemedView style={{ backgroundColor: primaryColor }}>
-                      <ThemedText
-                        type="subtitle"
-                        style={{
-                          fontWeight: "600",
-                          color: "#FFFFFF",
-                          fontSize: fontSizes.subtitle,
-                        }}
-                      >
-                        {getFormattedDate()}
-                      </ThemedText>
-                    </ThemedView>
-                    <ThemedView
-                      style={[
-                        {
-                          backgroundColor: primaryColor,
-                          justifyContent: "flex-end",
-                          alignItems: "center",
-                          flexDirection: "row",
-                          width: 100,
-                        },
-                      ]}
-                    >
-                      <Button
-                        type="icon-rounded"
-                        icon={require("@/assets/icons/chat.png")}
-                        iconStyle={{ height: 30, width: 30 }}
-                        onPress={() => {
-                          router.push("/conversations");
-                        }}
-                        style={{ width: 50, marginRight: 10 }}
-                      />
-                      <Avatar />
-                    </ThemedView>
-                  </ThemedView>
-        
-                  <View style={{ marginTop: 10, gap: 12 }}>
-                    <ThemedText
-                      type="title"
-                      style={{
-                        width: "100%",
-                        color: "#FFFFFF",
-                        fontSize: fontSizes.title,
-                      }}
-                    >
-                      {getGreeting()}
-                      {userName}
-                    </ThemedText>
-                     <ThemedText
-                      type="default"
-                      style={{
-                        width: "100%",
-                        color: "#FFFFFF",
-                        fontSize: fontSizes.subtitle,
-                      }}
-                    >
-                      {userHouse}
-                    </ThemedText>
-                  </View>
-                </ThemedView>
+          style={[
+            styles.headerCard,
+            { backgroundColor: primaryColor },
+            responsiveStyles.containerPadding,
+          ]}
+        >
+          <ThemedView style={[styles.row, { backgroundColor: primaryColor }]}>
+            <ThemedView style={{ backgroundColor: primaryColor }}>
+              <ThemedText
+                type="subtitle"
+                style={{
+                  fontWeight: "600",
+                  color: "#FFFFFF",
+                  fontSize: fontSizes.subtitle,
+                }}
+              >
+                {getFormattedDate()}
+              </ThemedText>
+            </ThemedView>
+            <ThemedView
+              style={[
+                {
+                  backgroundColor: primaryColor,
+                  justifyContent: "flex-end",
+                  alignItems: "center",
+                  flexDirection: "row",
+                  width: 100,
+                },
+              ]}
+            >
+              <Button
+                type="icon-rounded"
+                icon={require("@/assets/icons/chat.png")}
+                iconStyle={{ height: 30, width: 30 }}
+                onPress={() => {
+                  router.push("/conversations");
+                }}
+                style={{ width: 50, marginRight: 10 }}
+              />
+              <Avatar />
+            </ThemedView>
+          </ThemedView>
+
+          <View style={{ marginTop: 10, gap: 12 }}>
+            <ThemedText
+              type="title"
+              style={{
+                width: "100%",
+                color: "#FFFFFF",
+                fontSize: fontSizes.title,
+              }}
+            >
+              {getGreeting()}
+              {userName}
+            </ThemedText>
+            <ThemedText
+              type="default"
+              style={{
+                width: "100%",
+                color: "#FFFFFF",
+                fontSize: fontSizes.subtitle,
+              }}
+            >
+              {userHouse}
+            </ThemedText>
+          </View>
+        </ThemedView>
 
         <ThemedView
           style={[styles.subContainer, responsiveStyles.containerPadding]}

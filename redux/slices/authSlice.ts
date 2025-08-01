@@ -1,7 +1,6 @@
 import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
 import api from '@/utils/api';
 
-
 export interface User {
   id: number;
   name: string;
@@ -21,7 +20,7 @@ export interface User {
   currentChore?: {
     id: number;
     name: string;
-  }
+  };
   currentChoreId?: number;
   expoPushToken?: string;
 }
@@ -31,7 +30,7 @@ interface AuthState {
   isAuthenticated: boolean;
   loading: boolean;
   error: string | null;
-  expoPushToken: string | null; // Changed from token to expoPushToken
+  expoPushToken: string | null;
 }
 
 const initialState: AuthState = {
@@ -62,30 +61,38 @@ export const login = createAsyncThunk(
   }
 );
 
-export const validateToken = createAsyncThunk(
-  'auth/validateToken',
-  async (_, { rejectWithValue, getState, dispatch }) => {
+export const validatePushToken = createAsyncThunk(
+  'auth/validatePushToken',
+  async (_, { rejectWithValue, getState }) => {
     const state = getState() as { auth: AuthState };
     const token = state.auth.expoPushToken;
+
     if (!token) {
-      return rejectWithValue('No token available');
+      return rejectWithValue('No Expo push token available');
     }
+
     try {
-      const response = await api.post('/users/validate-token', { token });
-      if (response.data && response.data.user) {
-        return response.data.user;
+      const response = await api.post('/users/validate-push-token', { token });
+      if (response.data?.valid) {
+        return response.data.valid;
       }
-      return rejectWithValue('Invalid token response');
+      return rejectWithValue('Expo token is invalid');
     } catch (error: any) {
-      dispatch(logoutAsync());
-      return rejectWithValue(error?.response?.data?.message || 'Token validation failed');
+      return rejectWithValue(
+        error?.response?.data?.message || 'Push token validation failed'
+      );
     }
   }
 );
 
-export const logoutAsync = createAsyncThunk('auth/logout', async () => {
-  return true;
-});
+export const logoutAsync = createAsyncThunk(
+  'auth/logout',
+  async (_, { rejectWithValue }) => {
+    // Now just return true. Purging is handled externally.
+    return true;
+  }
+);
+
 
 const authSlice = createSlice({
   name: 'auth',
@@ -108,6 +115,12 @@ const authSlice = createSlice({
         state.user = { ...state.user, ...action.payload };
       }
     },
+    setPushToken: (state, action: PayloadAction<string>) => {
+      state.expoPushToken = action.payload;
+      if (state.user) {
+        state.user.expoPushToken = action.payload;
+      }
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -128,21 +141,16 @@ const authSlice = createSlice({
         state.isAuthenticated = false;
         state.error = action.payload as string;
       })
-      .addCase(validateToken.pending, (state) => {
+      .addCase(validatePushToken.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
-      .addCase(validateToken.fulfilled, (state, action) => {
+      .addCase(validatePushToken.fulfilled, (state) => {
         state.loading = false;
-        state.user = action.payload;
-        state.isAuthenticated = true;
         state.error = null;
       })
-      .addCase(validateToken.rejected, (state, action) => {
+      .addCase(validatePushToken.rejected, (state, action) => {
         state.loading = false;
-        state.user = null;
-        state.expoPushToken = null;
-        state.isAuthenticated = false;
         state.error = action.payload as string;
       })
       .addCase(logoutAsync.fulfilled, (state) => {
@@ -150,10 +158,13 @@ const authSlice = createSlice({
         state.expoPushToken = null;
         state.isAuthenticated = false;
         state.error = null;
+      })
+      .addCase(logoutAsync.rejected, (state, action) => {
+        state.error = action.payload as string;
       });
   },
 });
 
-export const { setUser, logout, updateUser } = authSlice.actions;
+export const { setUser, logout, updateUser, setPushToken } = authSlice.actions;
 export default authSlice.reducer;
 export const selectCurrentUser = (state: { auth: AuthState }) => state.auth.user;

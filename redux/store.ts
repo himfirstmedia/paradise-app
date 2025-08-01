@@ -1,4 +1,3 @@
-// store.ts
 import { configureStore, combineReducers } from '@reduxjs/toolkit';
 import { persistReducer, persistStore } from 'redux-persist';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -23,11 +22,10 @@ const rootReducer = combineReducers({
   chat: chatReducer,
 });
 
-// Configure persistence for the auth slice
 const persistConfig = {
   key: 'root',
   storage: AsyncStorage,
-  whitelist: ['auth'], // Only persist the auth slice
+  whitelist: ['auth'],
 };
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);
@@ -37,12 +35,9 @@ export const store = configureStore({
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       serializableCheck: {
-        ignoredActions: ['persist/PERSIST', 'persist/REHYDRATE'],
+        ignoredActions: ['persist/PURGE', 'persist/REHYDRATE', 'persist/PERSIST'],
       },
     }),
 });
 
 export const persistor = persistStore(store);
-
-export type RootState = ReturnType<typeof store.getState>;
-export type AppDispatch = typeof store.dispatch;

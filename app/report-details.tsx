@@ -13,6 +13,7 @@ import {
   ActivityIndicator,
   Image,
   Platform,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   TouchableOpacity,
@@ -20,7 +21,8 @@ import {
   View,
 } from "react-native";
 import { Task } from "@/redux/slices/taskSlice";
-
+import { TaskCard } from "@/components/TaskCard";
+import { User } from "@/redux/slices/userSlice";
 
 function normalizeHouseName(name: string | null): string {
   if (!name) return "INDIVIDUAL";
@@ -43,14 +45,21 @@ export default function ReportDetails() {
   const isLargeScreen = Platform.OS === "web" && width >= 1024;
   const isMediumScreen = Platform.OS === "web" && width >= 768;
 
-  const { loading, members } = useReduxMembers();
+  const { loading, members, reload } = useReduxMembers();
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   // Handle array parameters
   const houseParam = Array.isArray(house) ? house[0] : house;
   const typeParam = Array.isArray(type) ? type[0] : type;
   const houseIdParam = Array.isArray(houseId) ? houseId[0] : houseId;
   const houseNameParam = Array.isArray(houseName) ? houseName[0] : houseName;
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await reload();
+    setRefreshing(false);
+  };
 
   // Memoized filtered members and report data
   const { filteredMembers, reportTitle, taskStats } = useMemo(() => {
@@ -67,23 +76,22 @@ export default function ReportDetails() {
       };
     }
 
-
     if (houseIdParam) {
       const id = parseInt(houseIdParam, 10);
       if (!isNaN(id)) {
         title = `${houseNameParam || "House"} Report`;
-        filtered = members.filter((member) => member.house?.id === id);
+        filtered = members.filter((member: User) => member.house?.id === id);
       }
     } else if (houseParam) {
       const normalizedParam = normalizeHouseName(houseParam);
       title = `${normalizedParam.replace(/_/g, " ")} Report`;
-      filtered = members.filter((member) => {
+      filtered = members.filter((member: User) => {
         const memberHouse = member.house?.name || "";
         return normalizeHouseName(memberHouse) === normalizedParam;
       });
     } else if (typeParam === "individuals") {
       title = "Individuals Report";
-      filtered = members.filter((member) => !member.house);
+      filtered = members.filter((member: User) => !member.house);
     }
 
     // Calculate task stats
@@ -112,6 +120,24 @@ export default function ReportDetails() {
     return { filteredMembers: filtered, reportTitle: title, taskStats: stats };
   }, [members, houseParam, typeParam, houseIdParam, houseNameParam]);
 
+  const filteredTasks = useMemo(() => {
+  if (!filteredMembers) return [];
+
+  return filteredMembers.reduce((acc, member) => {
+    if (member.task && member.task.length > 0) {
+      const tasksWithMember = member.task
+        .filter((task: Task) => task.progress !== "COMPLETED") // Filter out completed tasks
+        .map((task: Task) => ({
+          ...task,
+          memberName: member.name,
+          memberId: member.id,
+        }));
+      return [...acc, ...tasksWithMember];
+    }
+    return acc;
+  }, [] as Task[]);
+}, [filteredMembers]);
+
   const completionPercent = useMemo(() => {
     return taskStats.totalTasks > 0
       ? Math.round((taskStats.completed / taskStats.totalTasks) * 100)
@@ -124,69 +150,136 @@ export default function ReportDetails() {
       const fileName = `${reportTitle.replace(/\s+/g, "_")}_${new Date().toISOString().slice(0, 10)}.pdf`;
 
       const html = `
-        <html>
-          <head>
-            <style>
-              body { font-family: Arial, sans-serif; padding: 20px; }
-              h1 { font-size: 24px; }
-              h2 { font-size: 20px; margin-top: 20px; }
-              table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-              th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
-              th { background-color: #f0f0f0; }
-            </style>
-          </head>
-          <body>
-            <h1>${reportTitle}</h1>
-            <p><strong>Pending Tasks:</strong> ${taskStats.pending}</p>
-            <p><strong>Completed Tasks:</strong> ${taskStats.completed}</p>
-            <p><strong>Overdue Tasks:</strong> ${taskStats.overdue}</p>
+  <html>
+    <head>
+      <style>
+        body {
+          font-family: Arial, sans-serif;
+          padding: 20px;
+          font-size: 14px;
+          color: #333;
+        }
 
-            ${filteredMembers
-              .map(
-                (member) => `
-              <h2>${member.name}</h2>
-              <p>
-                <strong>Phone:</strong> ${member.phone || "N/A"}<br/>
-                <strong>Email:</strong> ${member.email || "N/A"}<br/>
-                <strong>Team:</strong> ${member.role || "N/A"}<br/>
-                <strong>House:</strong> ${member.house ? getHouseDisplayName(member.house.name) : "Individual"}<br/>
-                <strong>Start Date:</strong> ${member.joinedDate || "N/A"}<br/>
-                <strong>End Date:</strong> ${member.leavingDate || "N/A"}
-              </p>
-              ${
-                member.task?.length
-                  ? `
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Task Name</th>
-                      <th>Description</th>
-                      <th>Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    ${member.task
-                      .map(
-                        (task: Task) => `
-                      <tr>
-                        <td>${task.name || "N/A"}</td>
-                        <td>${task.description || ""}</td>
-                        <td>${task.progress || ""}</td>
-                      </tr>
-                    `
-                      )
-                      .join("")}
-                  </tbody>
-                </table>
-              `
-                  : "<p>No tasks assigned</p>"
-              }
+        h1 {
+          text-align: center;
+          margin-bottom: 30px;
+        }
+
+        .member-table {
+          margin-bottom: 20px;
+        }
+
+        .member-table th,
+        .member-table td {
+          padding: 8px;
+          text-align: left;
+        }
+
+        .member-header {
+          background-color: #e0e0e0;
+          font-weight: bold;
+        }
+
+        .task-container {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 10px;
+          margin-top: 10px;
+          margin-bottom: 20px;
+        }
+
+        .task-card {
+          border: 1px solid #ccc;
+          border-radius: 4px;
+          padding: 10px;
+          width: 220px;
+          background-color: #f9f9f9;
+          box-sizing: border-box;
+        }
+
+        .task-card p {
+          margin: 4px 0;
+        }
+
+        .summary {
+          margin-bottom: 30px;
+        }
+
+        .summary p {
+          margin: 6px 0;
+        }
+      </style>
+    </head>
+    <body>
+      <h1>${reportTitle}</h1>
+
+      <div class="summary">
+        <p><strong>Pending Tasks:</strong> ${taskStats.pending}</p>
+        <p><strong>Completed Tasks:</strong> ${taskStats.completed}</p>
+        <p><strong>Overdue Tasks:</strong> ${taskStats.overdue}</p>
+      </div>
+
+      ${filteredMembers
+        .map(
+          (member) => `
+        <div class="member-table">
+          <table width="100%" border="1" cellspacing="0" cellpadding="0">
+            <tr class="member-header">
+              <th colspan="2">${member.name}</th>
+            </tr>
+            <tr>
+              <td width="25%"><strong>Phone</strong></td>
+              <td>${member.phone || "N/A"}</td>
+            </tr>
+            <tr>
+              <td><strong>Email</strong></td>
+              <td>${member.email || "N/A"}</td>
+            </tr>
+            <tr>
+              <td><strong>Team</strong></td>
+              <td>${member.role || "N/A"}</td>
+            </tr>
+            <tr>
+              <td><strong>House</strong></td>
+              <td>${member.house ? getHouseDisplayName(member.house.name) : "Individual"}</td>
+            </tr>
+            <tr>
+              <td><strong>Start Date</strong></td>
+              <td>${member.joinedDate || "N/A"}</td>
+            </tr>
+            <tr>
+              <td><strong>End Date</strong></td>
+              <td>${member.leavingDate || "N/A"}</td>
+            </tr>
+          </table>
+
+          ${
+            member.task?.length
+              ? `
+              <div class="task-container">
+                ${member.task
+                  .map(
+                    (task: Task) => `
+                    <div class="task-card">
+                      <p><strong>Task Name:</strong> ${task.name || "N/A"}</p>
+                      <p><strong>Description:</strong> ${task.description || ""}</p>
+                      <p><strong>Status:</strong> ${task.progress || ""}</p>
+                    </div>
+                  `
+                  )
+                  .join("")}
+              </div>
             `
-              )
-              .join("")}
-          </body>
-        </html>
-      `;
+              : "<p>No tasks assigned</p>"
+          }
+        </div>
+      `
+        )
+        .join("")}
+    </body>
+  </html>
+`;
+
 
       const { uri } = await Print.printToFileAsync({ html });
 
@@ -239,6 +332,14 @@ export default function ReportDetails() {
   return (
     <ThemedView style={[styles.container, responsiveStyles.containerPadding]}>
       <ScrollView
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor={primaryColor} // iOS
+            colors={[primaryColor]} // Android
+          />
+        }
         style={styles.scrollView}
         contentContainerStyle={[
           styles.scrollContent,
@@ -308,7 +409,10 @@ export default function ReportDetails() {
           {loading ? (
             <ActivityIndicator size="large" color={primaryColor} />
           ) : (
-            <MemberCard members={filteredMembers} />
+            <>
+              <MemberCard members={filteredMembers} />
+              <TaskCard tasks={filteredTasks} />
+            </>
           )}
         </ThemedView>
       </ScrollView>
@@ -366,6 +470,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 16,
     marginBottom: 20,
+    height: 210,
   },
   chartCenterText: {
     fontWeight: "bold",
@@ -374,11 +479,12 @@ const styles = StyleSheet.create({
   },
   legendContainer: {
     marginTop: 10,
+    marginLeft: 10,
   },
   legendTitle: {
     color: "#fff",
     fontSize: 18,
-    textAlign: "center",
+    textAlign: "left",
   },
   legendText: {
     color: "#fff",

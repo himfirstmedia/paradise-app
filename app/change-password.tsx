@@ -125,9 +125,9 @@ const Dot = () => {
           <ThemedView style={[styles.container, responsiveStyles.containerPadding]}>
       
         <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          behavior={Platform.OS === "ios" ? "padding" : "padding"}
           style={styles.keyboardAvoid}
-          keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 0}
+          keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 40}
         >
           <ThemedText
             type="title"

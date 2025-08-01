@@ -20,7 +20,7 @@ import { useThemeColor } from "@/hooks/useThemeColor";
 import { useReduxAuth } from "@/hooks/useReduxAuth";
 import { useReduxScripture } from "@/hooks/useReduxScripture";
 import { useReduxTasks } from "@/hooks/useReduxTasks";
-import { SetupPushNotifications } from "@/utils/notificationHandler";
+import { UseSetupPushNotifications } from "@/utils/notificationHandler";
 
 function getGreeting() {
   const hour = new Date().getHours();
@@ -38,20 +38,28 @@ export default function HomeScreen() {
 
   const { user } = useReduxAuth();
   const userName = user?.name?.split(" ")[0] || "User";
-const [refreshing, setRefreshing] = React.useState(false);
-  const { tasks, loading: tasksLoading, reload: ReloadTasks } = useReduxTasks({
+  const [refreshing, setRefreshing] = React.useState(false);
+  const {
+    tasks,
+    loading: tasksLoading,
+    reload: ReloadTasks,
+  } = useReduxTasks({
     onlyCurrentUser: true,
   });
-  const { scriptures, loading: scriptureLoading, reload: ReloadScripture } = useReduxScripture();
+  const {
+    scriptures,
+    loading: scriptureLoading,
+    reload: ReloadScripture,
+  } = useReduxScripture();
 
   const latestScripture = scriptures.length > 0 ? scriptures[0] : null;
 
   const handleRefresh = async () => {
-      setRefreshing(true);
-      await ReloadTasks();
-      await ReloadScripture();
-      setRefreshing(false);
-    };
+    setRefreshing(true);
+    await ReloadTasks();
+    await ReloadScripture();
+    setRefreshing(false);
+  };
 
   const fontSizes = {
     title: isLargeScreen ? 36 : isMediumScreen ? 28 : 22,
@@ -78,28 +86,32 @@ const [refreshing, setRefreshing] = React.useState(false);
     },
   });
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const TestNotificationPermission = () => {
-  const initializeNotifications = SetupPushNotifications();
-  const requestPermission = async () => {
-    const token = await initializeNotifications(false);
-    console.log('Notification setup result:', token);
-  };
+    const initializeNotifications = UseSetupPushNotifications();
+    const requestPermission = async () => {
+      const token = await initializeNotifications(false);
+      console.log("Notification setup result:", token);
+    };
 
-  return <Button title="Request Notification Permission" onPress={requestPermission} />;
-};
+    return (
+      <Button
+        title="Request Notification Permission"
+        onPress={requestPermission}
+      />
+    );
+  };
 
   return (
     <ThemedView style={styles.container}>
       <ScrollView
-      refreshControl={
-                  <RefreshControl
-                    refreshing={refreshing}
-                    onRefresh={handleRefresh}
-                    tintColor={primaryColor} // iOS
-                    colors={[primaryColor]} // Android
-                  />
-                }
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor={primaryColor} // iOS
+            colors={[primaryColor]} // Android
+          />
+        }
         contentContainerStyle={{
           alignItems: "center",
           width: "100%",
@@ -172,7 +184,7 @@ const [refreshing, setRefreshing] = React.useState(false);
             ) : null}
           </View>
 
-          {/* <TestNotificationPermission /> */}
+          <TestNotificationPermission />
 
           <View style={{ marginTop: "1%" }}>
             {tasksLoading ? (

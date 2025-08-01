@@ -139,7 +139,7 @@ export default function TabThreeScreen() {
               <View style={{ marginTop: "10%" }}>
                 <ProfileActionButton
                   label="Logout"
-                  route="../auth"
+                  route="../auth/login"
                   bgColor={bgColor}
                   navigation={navigation}
                   onPress={handleLogout}

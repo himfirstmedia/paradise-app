@@ -10,6 +10,7 @@ import { useReduxAuth } from "@/hooks/useReduxAuth";
 import { useReduxChores } from "@/hooks/useReduxChores";
 import { useReduxHouse } from "@/hooks/useReduxHouse";
 import { useThemeColor } from "@/hooks/useThemeColor";
+import { House } from "@/types/house";
 import api from "@/utils/api";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
@@ -50,13 +51,13 @@ export default function AddChoreScreen() {
   const filteredHouseOptions: HouseOption[] = allowedRoles.includes(
     user?.role ?? ""
   )
-    ? (houses?.map((h) => ({
+    ? (houses?.map((h: House) => ({
         label: h.abbreviation,
         value: h.id.toString(),
       })) ?? [])
     : (houses
-        ?.filter((h) => h.id === user?.houseId) // Filter to current user's house
-        .map((h) => ({
+        ?.filter((h: House) => h.id === user?.houseId)
+        .map((h: House) => ({
           label: h.abbreviation,
           value: h.id.toString(),
         })) ?? []);
@@ -119,9 +120,9 @@ export default function AddChoreScreen() {
   return (
     <ThemedView style={[styles.container, responsiveStyles.containerPadding]}>
       <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        behavior={Platform.OS === "ios" ? "padding" : "padding"}
         style={styles.keyboardAvoid}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 0}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 40}
       >
         <ScrollView
           style={styles.scrollView}

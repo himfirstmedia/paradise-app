@@ -115,6 +115,7 @@ export default function TabThreeScreen() {
           paddingBottom: "30%",
         }}
         style={styles.innerContainer}
+        showsVerticalScrollIndicator={false}
       >
         <ThemedView
           style={[

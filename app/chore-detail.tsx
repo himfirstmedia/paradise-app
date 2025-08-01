@@ -3,6 +3,8 @@ import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { useReduxChores } from "@/hooks/useReduxChores";
 import { useReduxTasks } from "@/hooks/useReduxTasks";
+import { Chore } from "@/types/chore";
+import { Task } from "@/types/task";
 import { useLocalSearchParams } from "expo-router";
 import { StyleSheet, ScrollView, Platform } from "react-native";
 
@@ -12,8 +14,8 @@ export default function ChoreDetailScreen() {
   const { chores } = useReduxChores();
   const { tasks } = useReduxTasks();
 
-  const chore = chores.find((c) => c.id === Number(id));
-  const relatedTasks = tasks.filter((t) => Number(t.choreId) === chore?.id);
+  const chore = chores.find((c: Chore) => c.id === Number(id));
+  const relatedTasks = tasks.filter((t: Task) => Number(t.choreId) === chore?.id);
 
   console.log("Chore Details: ", chore);
 

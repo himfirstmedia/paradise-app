@@ -40,6 +40,12 @@ interface UserFormData {
   password: string;
 }
 
+interface HouseData {
+  id: number;
+  name: string;
+  abbreviation: string;
+}
+
 export default function EditProfileScreen() {
   const errorColor = useThemeColor({}, "overdue");
   const navigation = useRouter();
@@ -65,7 +71,7 @@ export default function EditProfileScreen() {
   const userId = paramId ? Number(paramId) : currentUser?.id || null;
 
   // Find member in Redux store
-  const member = userId ? members.find((m) => m.id === userId) : null;
+  const member = userId ? members.find((m: User) => m.id === userId) : null;
 
   const [formData, setFormData] = useState<UserFormData>({
     id: null,
@@ -209,7 +215,7 @@ export default function EditProfileScreen() {
     }
   }, [formData, navigation, reloadMembers, currentUser?.id, updateCurrentUser]);
 
-  const houseOptions = houses.map((house) => ({
+  const houseOptions = houses.map((house: HouseData) => ({
     label: house.name,
     value: house.id,
   }));
@@ -241,9 +247,9 @@ export default function EditProfileScreen() {
   return (
     <ThemedView style={[styles.container, responsiveStyles.containerPadding]}>
       <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        behavior={Platform.OS === "ios" ? "padding" : "padding"}
         style={styles.keyboardAvoid}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 60}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 40}
       >
         <ScrollView
           contentContainerStyle={[

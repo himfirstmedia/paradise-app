@@ -181,9 +181,9 @@ export default function PostScriptureScreen() {
     <>
       <ThemedView style={styles.container}>
         <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          behavior={Platform.OS === "ios" ? "padding" : "padding"}
           style={styles.keyboardAvoid}
-          keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 0}
+          keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 40}
         >
           <View style={{ flex: 1, width: "100%" }}>
             <ScrollView

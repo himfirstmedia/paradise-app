@@ -8,15 +8,17 @@ import { useReduxAuth } from "@/hooks/useReduxAuth";
 import { useReduxHouse } from "@/hooks/useReduxHouse";
 import { useReduxMembers } from "@/hooks/useReduxMembers";
 import { useReduxTasks } from "@/hooks/useReduxTasks";
-import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
-import React, { useCallback, useEffect, useState } from "react";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import React, { useEffect, useState } from "react";
 import {
   ScrollView,
   StyleSheet,
   useWindowDimensions,
   Platform,
+  RefreshControl,
 } from "react-native";
 import dayjs from "dayjs";
+import { useThemeColor } from "@/hooks/useThemeColor";
 
 // Helper to format house names
 function getFriendlyHouseName(name: string) {
@@ -32,9 +34,11 @@ function getFriendlyHouseName(name: string) {
 }
 
 export default function HouseDetailScreen() {
+  const primaryColor = useThemeColor({}, "selection");
   const navigation = useRouter();
   const params = useLocalSearchParams();
   const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = React.useState(false);
 
   const { houses } = useReduxHouse();
   const { members, reload } = useReduxMembers();
@@ -47,11 +51,11 @@ export default function HouseDetailScreen() {
 
   const { user } = useReduxAuth();
 
-  useFocusEffect(
-    useCallback(() => {
-      reload();
-    }, [reload])
-  );
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await reload();
+    setRefreshing(false);
+  };
 
   useEffect(() => {
     setCurrentUserRole(user?.role ?? null);
@@ -128,7 +132,18 @@ export default function HouseDetailScreen() {
 
   return (
     <ThemedView style={[styles.container, responsiveStyles.containerPadding]}>
-      <ScrollView contentContainerStyle={{ paddingBottom: 30 }}>
+      <ScrollView
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor={primaryColor} // iOS
+            colors={[primaryColor]} // Android
+          />
+        }
+        contentContainerStyle={{ paddingBottom: 30 }}
+        showsVerticalScrollIndicator={false}
+      >
         <ThemedText type="title" style={{ marginBottom: 10 }}>
           {getFriendlyHouseName(house.name)}
         </ThemedText>
