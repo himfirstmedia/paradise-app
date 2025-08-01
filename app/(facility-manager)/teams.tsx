@@ -7,10 +7,11 @@ import { useReduxAuth } from "@/hooks/useReduxAuth";
 import { useReduxMembers } from "@/hooks/useReduxMembers";
 import { useThemeColor } from "@/hooks/useThemeColor";
 
-import React, { useEffect, useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Platform,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   useWindowDimensions,
@@ -35,17 +36,14 @@ export default function TeamsScreen() {
 
   const isFacilityManager = user?.role === "FACILITY_MANAGER";
 
+  const [refreshing, setRefreshing] = useState(false);
   const { members, loading, reload } = useReduxMembers();
 
-  useEffect(() => {
-    if (members.length === 0 && !loading) {
-      const timeout = setTimeout(() => {
-        reload();
-      }, 3000);
-
-      return () => clearTimeout(timeout);
-    }
-  }, [members, loading, reload]);
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await reload();
+    setRefreshing(false);
+  };
 
   const houseReduxTaskstats = useMemo(() => {
     const stats: Record<
@@ -158,10 +156,18 @@ export default function TeamsScreen() {
     <>
       <ThemedView style={styles.container}>
         <ScrollView
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              tintColor={primaryColor} // iOS
+              colors={[primaryColor]} // Android
+            />
+          }
           contentContainerStyle={{
             alignItems: "center",
             width: "100%",
-            paddingBottom: "20%",
+            paddingBottom: "40%",
           }}
           style={styles.innerContainer}
         >
@@ -291,7 +297,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
   },
   headerCard: {
-    height: 430,
+    height: 450,
     width: "100%",
     borderBottomEndRadius: 20,
     borderBottomStartRadius: 20,

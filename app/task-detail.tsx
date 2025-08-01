@@ -290,7 +290,7 @@ export default function TaskDetailScreen() {
                   style={[styles.ctaRowCentered, { justifyContent: "center" }]}
                 >
                   <Button
-                    type="icon-rounded"
+                    type="icon-default"
                     icon={require("@/assets/icons/delete.png")}
                     onPress={handleDelete}
                     iconStyle={styles.icon}
@@ -330,7 +330,7 @@ export default function TaskDetailScreen() {
               <View style={styles.ctaButtonWrapper}>
                 <View style={styles.ctaRowCentered}>
                   <Button
-                    type="icon-rounded"
+                    type="icon-default"
                     icon={require("@/assets/icons/dismiss.png")}
                     onPress={handleReject}
                   />
@@ -343,7 +343,7 @@ export default function TaskDetailScreen() {
                   />
                   {canDeleteTask && (
                     <Button
-                      type="icon-rounded"
+                      type="icon-default"
                       icon={require("@/assets/icons/delete.png")}
                       onPress={handleDelete}
                       iconStyle={styles.icon}
@@ -410,7 +410,8 @@ const styles = StyleSheet.create({
   innerContainer: {
     flexGrow: 1,
     width: "100%",
-    padding: 24,
+    paddingVertical: 24,
+    paddingHorizontal: 15
   },
   column: {
     flexDirection: "column",

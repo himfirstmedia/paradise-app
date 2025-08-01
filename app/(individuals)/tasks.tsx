@@ -1,8 +1,9 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import React from "react";
+import React, { useState } from "react";
 import {
   ActivityIndicator,
   Platform,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   useWindowDimensions,
@@ -30,9 +31,20 @@ export default function TabTwoScreen() {
   const isLargeScreen = Platform.OS === "web" && width >= 1024;
   const isMediumScreen = Platform.OS === "web" && width >= 768;
 
-  const { tasks, loading: tasksLoading } = useReduxTasks({
+  const [refreshing, setRefreshing] = useState(false);
+  const {
+    tasks,
+    loading: tasksLoading,
+    reload,
+  } = useReduxTasks({
     onlyCurrentUser: true,
   });
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await reload();
+    setRefreshing(false);
+  };
 
   let pending = 0,
     completed = 0,
@@ -82,6 +94,14 @@ export default function TabTwoScreen() {
     <>
       <ThemedView style={styles.container}>
         <ScrollView
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              tintColor={primaryColor} // iOS
+              colors={[primaryColor]} // Android
+            />
+          }
           contentContainerStyle={{
             alignItems: "center",
             width: "100%",

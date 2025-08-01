@@ -22,6 +22,10 @@ export function useReduxChats() {
     (state) => state.chat
   );
 
+  const validChats = chats.filter(
+    (chat): chat is Chat => chat && typeof chat === "object" && !!chat.id
+  );
+
   const currentUser = useAppSelector(selectCurrentUser);
 
   const reloadChats = useCallback(() => {
@@ -101,7 +105,7 @@ export function useReduxChats() {
   }, [chatsStatus, currentUser, reloadChats]);
 
   return {
-    chats,
+    chats: validChats,
     currentChat,
     chatsStatus,
     error,

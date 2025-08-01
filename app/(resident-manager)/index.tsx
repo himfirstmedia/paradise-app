@@ -2,6 +2,7 @@ import React, { useEffect } from "react";
 import {
   ActivityIndicator,
   Platform,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   useWindowDimensions,
@@ -32,18 +33,28 @@ export default function HomeScreen() {
   const router = useRouter();
   const primaryColor = useThemeColor({}, "selection");
   const { width } = useWindowDimensions();
+  const navigation = useRouter();
 
   const isLargeScreen = Platform.OS === "web" && width >= 1024;
   const isMediumScreen = Platform.OS === "web" && width >= 768;
 
   const { user, isAuthenticated } = useReduxAuth();
   const userName = user?.name?.split(" ")[0] || "User";
+  const userHouse = user?.house?.name;
+  const [refreshing, setRefreshing] = React.useState(false);
 
-  const { houses, loading } = useReduxHouse();
-
-  const { scriptures, loading: scriptureLoading } = useReduxScripture();
-
-  const latestScripture = scriptures.length > 0 ? scriptures[0] : null;
+  const { houses, loading, reload: ReloadHouses } = useReduxHouse();
+  
+    const { scriptures, loading: scriptureLoading, reload: ReloadScripture } = useReduxScripture();
+  
+    const latestScripture = scriptures.length > 0 ? scriptures[0] : null;
+  
+    const handleRefresh = async () => {
+      setRefreshing(true);
+      await ReloadHouses();
+      await ReloadScripture();
+      setRefreshing(false);
+    };
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -51,7 +62,15 @@ export default function HomeScreen() {
     }
   }, [isAuthenticated, router]);
 
-  
+  const getFormattedDate = () => {
+    const now = new Date();
+    return now.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  };
+
   const fontSizes = {
     title: isLargeScreen ? 36 : isMediumScreen ? 28 : 22,
     subtitle: isLargeScreen ? 22 : isMediumScreen ? 18 : 16,
@@ -80,12 +99,21 @@ export default function HomeScreen() {
   return (
     <ThemedView style={styles.container}>
       <ScrollView
+      refreshControl={
+                  <RefreshControl
+                    refreshing={refreshing}
+                    onRefresh={handleRefresh}
+                    tintColor={primaryColor} // iOS
+                    colors={[primaryColor]} // Android
+                  />
+                }
         contentContainerStyle={{
           alignItems: "center",
           width: "100%",
           paddingBottom: "30%",
         }}
         style={styles.innerContainer}
+        showsVerticalScrollIndicator={false}
       >
         <ThemedView
           style={[
@@ -104,19 +132,31 @@ export default function HomeScreen() {
                   fontSize: fontSizes.subtitle,
                 }}
               >
-                {getGreeting()}
-                {userName}
+                {getFormattedDate()}
               </ThemedText>
             </ThemedView>
-            <View style={[styles.row, {gap: 10}]}>
-                          <Button
-                            type="icon-rounded"
-                            icon={require("@/assets/icons/chat.png")}
-                            onPress={() => router.push("/conversations")}
-                            style={{width: 50}}
-                          />
-                        <Avatar />
-                        </View>
+            <ThemedView
+              style={[
+                {
+                  backgroundColor: primaryColor,
+                  justifyContent: "flex-end",
+                  alignItems: "center",
+                  flexDirection: "row",
+                  width: 100,
+                },
+              ]}
+            >
+              <Button
+                type="icon-rounded"
+                icon={require("@/assets/icons/chat.png")}
+                iconStyle={{ height: 30, width: 30 }}
+                onPress={() => {
+                  navigation.push("/conversations");
+                }}
+                style={{ width: 50, marginRight: 10 }}
+              />
+              <Avatar />
+            </ThemedView>
           </ThemedView>
 
           <View style={{ marginTop: 10, gap: 12 }}>
@@ -128,7 +168,18 @@ export default function HomeScreen() {
                 fontSize: fontSizes.title,
               }}
             >
-              Welcome to Paradise App.
+              {getGreeting()}
+              {userName}
+            </ThemedText>
+             <ThemedText
+              type="default"
+              style={{
+                width: "100%",
+                color: "#FFFFFF",
+                fontSize: fontSizes.subtitle,
+              }}
+            >
+              {userHouse}
             </ThemedText>
           </View>
         </ThemedView>
@@ -178,7 +229,6 @@ export default function HomeScreen() {
                 There are no houses added yet.
               </ThemedText>
             ) : (
-              
               <HouseSelectCard houses={houses} />
             )}
           </View>

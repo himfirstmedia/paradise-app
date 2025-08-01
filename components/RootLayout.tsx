@@ -12,7 +12,8 @@ import { View, StatusBar } from "react-native";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { Colors } from "@/constants/Colors";
 import * as SplashScreen from "expo-splash-screen";
-import { useAppSelector } from "@/redux/hooks";
+import { useAppDispatch, useAppSelector } from "@/redux/hooks";
+import { validateToken } from "@/redux/slices/authSlice";
 import {
   registerNotificationListeners,
   SetupPushNotifications,
@@ -20,31 +21,60 @@ import {
 
 SplashScreen.preventAutoHideAsync();
 
-export default function AppLayout() {
+export default function RootLayout() {
   const colorScheme = useColorScheme() ?? "light";
   const [appIsReady, setAppIsReady] = useState(false);
-
-  const { user, isAuthenticated } = useAppSelector((state) => state.auth);
+  const { user, isAuthenticated, expoPushToken } = useAppSelector(
+    (state) => state.auth
+  );
+  const dispatch = useAppDispatch();
   const router = useRouter();
 
   const [fontsLoaded] = useFonts({
     SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
   });
 
-  // Initialize notifications and handle setup
   const initializeNotifications = SetupPushNotifications();
 
-  // Set up app and notifications
   useEffect(() => {
-    if (!fontsLoaded) return;
+    async function prepareApp() {
+      if (!fontsLoaded) return;
 
-    setAppIsReady(true);
+      if (isAuthenticated && expoPushToken) {
+        try {
+          await dispatch(validateToken()).unwrap();
+        } catch (error) {
+          console.warn("Token validation failed:", error);
+          router.replace("/auth/login");
+        }
+      }
 
+      setAppIsReady(true);
+    }
+
+    prepareApp();
+  }, [fontsLoaded, isAuthenticated, expoPushToken, dispatch, router]);
+
+  useEffect(() => {
+    async function setupNotifications() {
+      const token = await initializeNotifications(false);
+      if (token) {
+        console.log("Notifications initialized with token:", token);
+      }
+    }
+    setupNotifications();
+  }, [initializeNotifications]);
+
+  useEffect(() => {
     if (isAuthenticated && user?.id) {
-      // Initialize push notifications
-      initializeNotifications();
+      async function saveToken() {
+        const token = await initializeNotifications(true);
+        if (token) {
+          console.log("Push token saved for authenticated user:", token);
+        }
+      }
+      saveToken();
 
-      // Register notification listeners
       const unsubscribe = registerNotificationListeners(
         (notification) => {
           console.log("Notification received:", notification);
@@ -58,36 +88,9 @@ export default function AppLayout() {
         }
       );
 
-      // Cleanup listeners on unmount
       return () => unsubscribe();
     }
-  }, [fontsLoaded, isAuthenticated, user?.id, router, initializeNotifications]);
-
-  // useEffect(() => {
-  //   if (isAuthenticated && user?.id) {
-  //     const initializeNotifications = SetupPushNotifications();
-  //     initializeNotifications();
-
-  //     // Register notification listeners
-  //     const unsubscribe = registerNotificationListeners(
-  //       (notification) => {
-  //         console.log('Notification received:', notification);
-  //         // Handle foreground notifications (e.g., show an in-app alert)
-  //       },
-  //       (response) => {
-  //         console.log('Notification response:', response);
-  //         const taskId = response.notification.request.content.data?.taskId;
-  //         if (taskId) {
-  //           // Navigate to task details screen
-  //           router.push({ pathname: "/task-detail", params: { id: taskId } });
-  //         }
-  //       }
-  //     );
-
-  //     // Cleanup listeners on unmount
-  //     return () => unsubscribe();
-  //   }
-  // }, [isAuthenticated, user?.id, router]);
+  }, [isAuthenticated, user?.id, router, initializeNotifications]);
 
   const onLayoutRootView = useCallback(() => {
     if (appIsReady) {
@@ -110,7 +113,6 @@ export default function AppLayout() {
       />
       <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
         <Stack>
-          {/* Auth & Role Groups */}
           <Stack.Screen name="auth" options={{ headerShown: false }} />
           <Stack.Screen name="(individuals)" options={{ headerShown: false }} />
           <Stack.Screen name="(director)" options={{ headerShown: false }} />
@@ -123,8 +125,6 @@ export default function AppLayout() {
             options={{ headerShown: false }}
           />
           <Stack.Screen name="(residents)" options={{ headerShown: false }} />
-
-          {/* Other Routes */}
           <Stack.Screen
             name="task-detail"
             options={{ header: () => <UpdateHeader title="Task Details" /> }}

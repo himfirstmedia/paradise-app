@@ -15,13 +15,14 @@ export function Tooltip({
   const [visible, setVisible] = useState(false);
 
   const bgColor = useThemeColor({}, "input");
+  const textColor = useThemeColor({}, "text")
 
   return (
     <>
       <Pressable onPress={() => setVisible(true)} style={styles.icon}>
         <Image
           source={require("@/assets/icons/info.png")}
-          style={{ height: 25, width: 25 }}
+          style={{ height: 25, width: 25, tintColor: textColor }}
         />
       </Pressable>
 

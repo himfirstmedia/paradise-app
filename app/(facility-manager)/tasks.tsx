@@ -2,6 +2,7 @@ import React from "react";
 import {
   ActivityIndicator,
   Platform,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   useWindowDimensions,
@@ -26,10 +27,17 @@ export default function TabTwoScreen() {
   const pendingColor = useThemeColor({}, "pending");
   const overdueColor = useThemeColor({}, "overdue");
   const navigation = useRouter();
-  const { loading: tasksLoading, tasks } = useReduxTasks();
+  const [refreshing, setRefreshing] = React.useState(false);
+  const { loading: tasksLoading, tasks, reload } = useReduxTasks();
   const { user } = useReduxAuth();
 
   const { width } = useWindowDimensions();
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await reload();
+    setRefreshing(false);
+  };
 
   const isLargeScreen = Platform.OS === "web" && width >= 1024;
   const isMediumScreen = Platform.OS === "web" && width >= 768;
@@ -87,6 +95,14 @@ export default function TabTwoScreen() {
     <>
       <ThemedView style={styles.container}>
         <ScrollView
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              tintColor={primaryColor} // iOS
+              colors={[primaryColor]} // Android
+            />
+          }
           contentContainerStyle={{
             alignItems: "center",
             width: "100%",

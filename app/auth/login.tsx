@@ -40,7 +40,7 @@ export default function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [checked, setChecked] = useState(true);
-  const { signin, loading } = useReduxAuth();
+  const { signin, loading, signout } = useReduxAuth();
   const { width } = useWindowDimensions();
 
   const isLargeScreen = Platform.OS === "web" && width >= 1024;
@@ -56,23 +56,25 @@ export default function LoginScreen() {
   }, [alertMessage]);
 
   useEffect(() => {
-    if (isAuthenticated && user?.role) {
-      const roleRoutes: Record<string, AppRoutes> = {
-        SUPER_ADMIN: "/(director)",
-        DIRECTOR: "/(director)",
-        RESIDENT_MANAGER: "/(resident-manager)",
-        FACILITY_MANAGER: "/(facility-manager)",
-        RESIDENT: "/(residents)",
-        INDIVIDUAL: "/(individuals)",
-      };
+  if (isAuthenticated && user?.role) {
+    const roleRoutes: Record<string, AppRoutes> = {
+      SUPER_ADMIN: '/(director)',
+      DIRECTOR: '/(director)',
+      RESIDENT_MANAGER: '/(resident-manager)',
+      FACILITY_MANAGER: '/(facility-manager)',
+      RESIDENT: '/(residents)',
+      INDIVIDUAL: '/(individuals)',
+    };
 
-      const route = roleRoutes[user.role] || "/auth/login";
-      console.log("User Details: ", user);
-      router.replace(route);
-    } else if (isAuthenticated) {
-      console.warn("⚠️ Authenticated but missing role:", user);
-    }
-  }, [isAuthenticated, user, router]);
+    const route = roleRoutes[user.role] || '/auth/login';
+    console.log('Navigating to:', route, 'User:', user);
+    router.replace(route);
+  } else if (isAuthenticated && !user?.role) {
+    setAlertMessage('Authentication error: Missing user role.');
+    setAlertType('error');
+    signout(); // Log out if role is missing
+  }
+}, [isAuthenticated, user, router, signout]);
 
   const handleSignin = async (): Promise<void> => {
     if (!email || !password) {
@@ -88,14 +90,8 @@ export default function LoginScreen() {
       await SetupPushNotifications();
 
       // Optionally: send token to your backend here
-    } catch (error: unknown) {
+    } catch {
       let errorMessage = "Invalid credentials. Please try again.";
-
-      if (error instanceof Error) {
-        errorMessage = error.message;
-      } else if (typeof error === "string") {
-        errorMessage = error;
-      }
 
       setAlertMessage(errorMessage);
       setAlertType("error");

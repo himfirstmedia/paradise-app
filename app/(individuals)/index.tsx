@@ -1,7 +1,9 @@
 import React from "react";
 import {
   ActivityIndicator,
+  Button,
   Platform,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   useWindowDimensions,
@@ -18,6 +20,7 @@ import { useThemeColor } from "@/hooks/useThemeColor";
 import { useReduxAuth } from "@/hooks/useReduxAuth";
 import { useReduxScripture } from "@/hooks/useReduxScripture";
 import { useReduxTasks } from "@/hooks/useReduxTasks";
+import { SetupPushNotifications } from "@/utils/notificationHandler";
 
 function getGreeting() {
   const hour = new Date().getHours();
@@ -35,13 +38,20 @@ export default function HomeScreen() {
 
   const { user } = useReduxAuth();
   const userName = user?.name?.split(" ")[0] || "User";
-
-  const { tasks, loading: tasksLoading } = useReduxTasks({
+const [refreshing, setRefreshing] = React.useState(false);
+  const { tasks, loading: tasksLoading, reload: ReloadTasks } = useReduxTasks({
     onlyCurrentUser: true,
   });
-  const { scriptures, loading: scriptureLoading } = useReduxScripture();
+  const { scriptures, loading: scriptureLoading, reload: ReloadScripture } = useReduxScripture();
 
   const latestScripture = scriptures.length > 0 ? scriptures[0] : null;
+
+  const handleRefresh = async () => {
+      setRefreshing(true);
+      await ReloadTasks();
+      await ReloadScripture();
+      setRefreshing(false);
+    };
 
   const fontSizes = {
     title: isLargeScreen ? 36 : isMediumScreen ? 28 : 22,
@@ -68,15 +78,35 @@ export default function HomeScreen() {
     },
   });
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const TestNotificationPermission = () => {
+  const initializeNotifications = SetupPushNotifications();
+  const requestPermission = async () => {
+    const token = await initializeNotifications(false);
+    console.log('Notification setup result:', token);
+  };
+
+  return <Button title="Request Notification Permission" onPress={requestPermission} />;
+};
+
   return (
     <ThemedView style={styles.container}>
       <ScrollView
+      refreshControl={
+                  <RefreshControl
+                    refreshing={refreshing}
+                    onRefresh={handleRefresh}
+                    tintColor={primaryColor} // iOS
+                    colors={[primaryColor]} // Android
+                  />
+                }
         contentContainerStyle={{
           alignItems: "center",
           width: "100%",
           paddingBottom: "30%",
         }}
         style={styles.innerContainer}
+        showsVerticalScrollIndicator={false}
       >
         <ThemedView
           style={[
@@ -141,6 +171,8 @@ export default function HomeScreen() {
               )
             ) : null}
           </View>
+
+          {/* <TestNotificationPermission /> */}
 
           <View style={{ marginTop: "1%" }}>
             {tasksLoading ? (

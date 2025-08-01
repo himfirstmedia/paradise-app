@@ -29,10 +29,22 @@ export default function ChoreTasksScreen() {
   const primaryChore = chores.find((chore) => chore.id === userTask?.choreId);
 
   const member = members.find((m) => m.id === userId);
-  const memberHouse = houses.find(
-    (house) =>
-      house.id === userTask?.user?.houseId || house.id === member?.houseId
-  );
+
+  // Determine house to display based on user role
+  let memberHouse;
+  if (
+    (user?.role === "RESIDENT_MANAGER" || user?.role === "FACILITY_MANAGER") &&
+    userId !== user?.id
+  ) {
+    // Manager viewing another user's data
+    memberHouse = houses.find(
+      (house) =>
+        house.id === userTask?.user?.houseId || house.id === member?.houseId
+    );
+  } else {
+    // Owner of data or non-manager, show their own house
+    memberHouse = houses.find((house) => house.id === user?.houseId);
+  }
 
   return (
     <ThemedView style={styles.container}>
@@ -44,16 +56,17 @@ export default function ChoreTasksScreen() {
           Record Your Hours
         </ThemedText>
         <ThemedText type="default" style={{ marginBottom: 10 }}>
-          {memberHouse?.name}
+          {memberHouse?.name ?? "No House Assigned"}
         </ThemedText>
         <View style={styles.row}>
-          <ThemedText type="defaultSemiBold">Current Primary:</ThemedText>
+          <ThemedText type="defaultSemiBold">Current Primary Chore:</ThemedText>
           <ThemedText type="default">
             {primaryChore?.name ?? "No Primary Assigned"}
           </ThemedText>
         </View>
 
         <ThemedView style={styles.taskContainer}>
+          <ThemedText type="title" style={{marginBottom: 15}}>Tasks Assigned</ThemedText>
           {tasks
             .filter((task) => task.userId === userId)
             .map((task) => (

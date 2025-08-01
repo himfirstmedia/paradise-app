@@ -53,6 +53,9 @@ export function ChoreTaskCard({
   const cameraRef = useRef<any>(null);
   const [cameraReady, setCameraReady] = useState(false);
 
+  const disabled = !["PENDING", "REJECTED"].includes(choreTask.status);
+
+
   const { tasks, reload } = useReduxTasks();
 
   const [errors, setErrors] = useState({
@@ -167,8 +170,13 @@ export function ChoreTaskCard({
                 onPress={() => {
                   setShowMore((prev) => !prev);
                 }}
+                style={{ width: "50%" }}
               >
-                <ThemedText type="default">{choreTask.name}</ThemedText>
+                <ThemedText type="default">
+                  {choreTask.name.length > 15
+                    ? `${choreTask.name.slice(0, 15)}...`
+                    : choreTask.name}
+                </ThemedText>
               </Pressable>
               {!isManagerView && (
                 <Pressable
@@ -209,6 +217,7 @@ export function ChoreTaskCard({
                   value={date}
                   onChangeText={setDate}
                   errorMessage={errors.date}
+                  disabled={disabled}
                 />
               </View>
               <View style={{ width: "48%" }}>
@@ -219,6 +228,7 @@ export function ChoreTaskCard({
                   value={time}
                   onChangeText={setTime}
                   errorMessage={errors.time}
+                  disabled={disabled}
                 />
               </View>
             </View>
@@ -233,6 +243,7 @@ export function ChoreTaskCard({
                   onChangeText={setMessage}
                   errorMessage={errors.message}
                   height={100}
+                  disabled={disabled}
                 />
               </View>
 
@@ -259,11 +270,13 @@ export function ChoreTaskCard({
                 onPress={handleTaskSubmit}
                 loading={loading}
                 style={{ flex: 1 }}
+                disabled={disabled}
               />
               <Button
                 type="icon-default"
                 icon={require("@/assets/icons/camera.png")}
                 onPress={() => setCameraVisible(true)}
+                disabled={disabled}
               />
             </View>
           </View>

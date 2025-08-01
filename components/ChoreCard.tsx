@@ -22,7 +22,7 @@ export function ChoreCard({ chore, style }: ChoreCardProps) {
     return (
       <ThemedView style={[styles.container, style]}>
         <ThemedText type="subtitle" style={styles.title}>
-          Current Primary Chore
+          Your Current Primary Chore is:
         </ThemedText>
         <View style={[styles.card, { backgroundColor: bgColor }]}>
           <ThemedText type="default">Loading chore...</ThemedText>
@@ -38,36 +38,38 @@ export function ChoreCard({ chore, style }: ChoreCardProps) {
     <ThemedView style={[styles.container, style]}>
       <View style={[styles.row, { gap: 10, marginBottom: 10 }]}>
         <ThemedText type="subtitle" style={styles.title}>
-          Current Primary Chore
+          Your Current Primary Chore is:
         </ThemedText>
+      </View>
+      <View style={[styles.row, { backgroundColor: bgColor, borderRadius: 15, paddingHorizontal: 15 }]}>
         <Tooltip
           infoTitle="Chore Details"
           infoText={chore.description ?? "No description available"}
         />
+        <Pressable
+          style={[styles.card, {flex: 1}]}
+          onPress={() => {
+            if (!userId) return;
+
+            router.push({
+              pathname: "/chore-tasks",
+              params: {
+                chore: chore.id.toString(),
+                id: userId.toString(),
+              },
+            });
+          }}
+          disabled={!userId}
+        >
+          <ThemedText type="default">{chore.name}</ThemedText>
+          {userId && (
+            <Image
+              source={require("../assets/icons/chevron-right.png")}
+              style={styles.icon}
+            />
+          )}
+        </Pressable>
       </View>
-      <Pressable
-        style={[styles.card, { backgroundColor: bgColor }]}
-        onPress={() => {
-          if (!userId) return;
-          
-          router.push({
-            pathname: "/chore-tasks",
-            params: {
-              chore: chore.id.toString(),
-              id: userId.toString(),
-            },
-          });
-        }}
-        disabled={!userId}
-      >
-        <ThemedText type="default">{chore.name}</ThemedText>
-        {userId && (
-          <Image
-            source={require("../assets/icons/chevron-right.png")}
-            style={styles.icon}
-          />
-        )}
-      </Pressable>
     </ThemedView>
   );
 }

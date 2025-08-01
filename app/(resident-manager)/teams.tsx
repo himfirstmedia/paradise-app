@@ -6,7 +6,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { useReduxMembers } from "@/hooks/useReduxMembers";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { useRouter } from "expo-router";
-import React, { useEffect, useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Image,
@@ -16,6 +16,7 @@ import {
   StyleSheet,
   useWindowDimensions,
   View,
+  RefreshControl,
 } from "react-native";
 
 const houses = [
@@ -29,21 +30,19 @@ export default function TeamsScreen() {
   const pending = useThemeColor({}, "pending");
   const overdue = useThemeColor({}, "overdue");
   const navigation = useRouter();
+  const [refreshing, setRefreshing] = useState(false);
   const { members, loading, reload } = useReduxMembers();
   const { width } = useWindowDimensions();
 
   const isLargeScreen = Platform.OS === "web" && width >= 1024;
   const isMediumScreen = Platform.OS === "web" && width >= 768;
 
-  useEffect(() => {
-    if (members.length === 0 && !loading) {
-      const timeout = setTimeout(() => {
-        reload();
-      }, 3000);
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await reload();
+    setRefreshing(false);
+  };
 
-      return () => clearTimeout(timeout);
-    }
-  }, [members, loading, reload]);
 
   const houseReduxTaskstats = useMemo(() => {
     const stats: Record<
@@ -161,10 +160,18 @@ export default function TeamsScreen() {
     <>
       <ThemedView style={styles.container}>
         <ScrollView
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              tintColor={primaryColor} // iOS
+              colors={[primaryColor]} // Android
+            />
+          }
           contentContainerStyle={{
             alignItems: "center",
             width: "100%",
-            paddingBottom: "20%",
+            paddingBottom: "40%",
           }}
           style={styles.innerContainer}
         >
@@ -310,7 +317,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
   },
   headerCard: {
-    height: 440,
+    height: 450,
     width: "100%",
     borderBottomEndRadius: 20,
     borderBottomStartRadius: 20,

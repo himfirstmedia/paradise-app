@@ -2,6 +2,7 @@ import React, { useEffect } from "react";
 import {
   ActivityIndicator,
   Platform,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   useWindowDimensions,
@@ -37,12 +38,19 @@ export default function HomeScreen() {
 
   const { user, isAuthenticated } = useReduxAuth();
   const userName = user?.name?.split(" ")[0] || "User";
+  const [refreshing, setRefreshing] = React.useState(false);
+  const { houses, loading, reload: ReloadHouses } = useReduxHouse();
 
-  const { houses, loading } = useReduxHouse();
-
-  const { scriptures, loading: scriptureLoading } = useReduxScripture();
+  const { scriptures, loading: scriptureLoading, reload: ReloadScripture } = useReduxScripture();
 
   const latestScripture = scriptures.length > 0 ? scriptures[0] : null;
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await ReloadHouses();
+    await ReloadScripture();
+    setRefreshing(false);
+  };
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -50,7 +58,6 @@ export default function HomeScreen() {
     }
   }, [isAuthenticated, router]);
 
-  
   const fontSizes = {
     title: isLargeScreen ? 36 : isMediumScreen ? 28 : 22,
     subtitle: isLargeScreen ? 22 : isMediumScreen ? 18 : 16,
@@ -79,12 +86,21 @@ export default function HomeScreen() {
   return (
     <ThemedView style={styles.container}>
       <ScrollView
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor={primaryColor} // iOS
+            colors={[primaryColor]} // Android
+          />
+        }
         contentContainerStyle={{
           alignItems: "center",
           width: "100%",
           paddingBottom: "30%",
         }}
         style={styles.innerContainer}
+        showsVerticalScrollIndicator={false}
       >
         <ThemedView
           style={[
@@ -169,7 +185,6 @@ export default function HomeScreen() {
                 There are no houses added yet.
               </ThemedText>
             ) : (
-              
               <HouseSelectCard houses={houses} />
             )}
           </View>

@@ -25,6 +25,13 @@ import { Image } from "expo-image";
 
 import * as MediaLibrary from "expo-media-library";
 import { ThemedView } from "./ThemedView";
+import api from "@/utils/api";
+
+interface ImageFile {
+  uri: string;
+  name: string;
+  type: string;
+}
 
 export type ThemedInputProps = TextInputProps & {
   type?: "default" | "floating" | "rounded";
@@ -33,6 +40,7 @@ export type ThemedInputProps = TextInputProps & {
   background?: string;
   height?: number;
   onSendImage?: (image: string) => void;
+  disabled?: boolean;
 };
 
 type ThemedDropdownProps = {
@@ -48,6 +56,7 @@ type ThemedDropdownProps = {
   loading?: boolean;
   numColumns?: number;
   buttonStyle?: ViewStyle;
+  disabled?: boolean;
 };
 
 type ThemedCheckboxProps = {
@@ -57,6 +66,7 @@ type ThemedCheckboxProps = {
   type?: "default" | "floating" | "rounded";
   style?: ViewStyle;
   background?: string;
+  disabled?: boolean;
 };
 
 type ThemedTimePickerProps = {
@@ -66,12 +76,14 @@ type ThemedTimePickerProps = {
   onChangeText?: (time: string) => void;
   errorMessage?: string;
   background?: string;
+  disabled?: boolean;
 };
 
 export function ThemedEmailInput({
   type = "default",
   placeholder,
   errorMessage,
+  disabled = false,
   ...rest
 }: ThemedInputProps) {
   const bgColor = useThemeColor({}, "input");
@@ -84,11 +96,13 @@ export function ThemedEmailInput({
         style={[
           styles.input,
           { backgroundColor: bgColor },
+          disabled && styles.disabled,
           { color: textColor },
           type === "default" ? styles.default : undefined,
           type === "floating" ? styles.floating : undefined,
           type === "rounded" ? styles.rounded : undefined,
         ]}
+        editable={!disabled}
         keyboardType="email-address"
         selectionColor={useThemeColor({}, "selection")}
         placeholder={placeholder}
@@ -116,6 +130,7 @@ export function ThemedTextInput({
   errorMessage,
   value, // Add value prop
   onChangeText, // Add onChangeText prop
+  disabled = false,
   ...rest
 }: ThemedInputProps) {
   const bgColor = useThemeColor({}, "input");
@@ -128,10 +143,12 @@ export function ThemedTextInput({
         style={[
           styles.input,
           { backgroundColor: bgColor, color: textColor },
+          disabled && styles.disabled,
           type === "default" ? styles.default : undefined,
           type === "floating" ? styles.floating : undefined,
           type === "rounded" ? styles.rounded : undefined,
         ]}
+        editable={!disabled}
         selectionColor={useThemeColor({}, "selection")}
         placeholder={placeholder}
         placeholderTextColor={useThemeColor({}, "placeholder")}
@@ -159,6 +176,7 @@ export function ThemedTextArea({
   errorMessage,
   background,
   height,
+  disabled = false,
   ...rest
 }: ThemedInputProps) {
   const bgColor = useThemeColor({}, "input");
@@ -179,7 +197,9 @@ export function ThemedTextArea({
           type === "default" ? styles.default : undefined,
           type === "floating" ? styles.floating : undefined,
           type === "rounded" ? styles.rounded : undefined,
+          disabled && styles.disabled,
         ]}
+        editable={!disabled}
         selectionColor={useThemeColor({}, "selection")}
         placeholder={placeholder}
         placeholderTextColor={useThemeColor({}, "placeholder")}
@@ -207,6 +227,7 @@ export function ThemedCheckbox({
   type = "default",
   style,
   background,
+  disabled = false,
 }: ThemedCheckboxProps) {
   const bgColor = useThemeColor({}, "input");
   const selectionColor = useThemeColor({}, "selection");
@@ -216,7 +237,8 @@ export function ThemedCheckbox({
 
   return (
     <Pressable
-      onPress={() => onChange && onChange(!checked)}
+      onPress={() => !disabled && onChange && onChange(!checked)}
+       disabled={disabled} 
       style={[
         {
           flexDirection: "row",
@@ -244,6 +266,7 @@ export function ThemedCheckbox({
             justifyContent: "center",
             alignItems: "center",
           },
+          disabled && styles.disabled,
           type === "floating" && { elevation: 2, shadowColor: "#000" },
         ]}
       >
@@ -291,6 +314,7 @@ export function ThemedDropdown({
   loading = false,
   numColumns = 1,
   buttonStyle = {},
+  disabled = false,
   ...rest
 }: ThemedDropdownProps & { loading?: boolean }) {
   const bgColor = useThemeColor({}, "input");
@@ -317,6 +341,7 @@ export function ThemedDropdown({
   const dropdownRef = useRef<View>(null);
 
   const handleOpen = () => {
+    if (disabled) return;
     if (dropdownRef.current) {
       dropdownRef.current.measureInWindow((x, y, width, height) => {
         setDropdownLayout({ x, y, width, height });
@@ -364,7 +389,7 @@ export function ThemedDropdown({
     <>
       <View ref={dropdownRef} onLayout={() => {}} style={{ width: "100%" }}>
         <Pressable onPress={handleOpen}>
-          <View style={[styles.dropdown, { backgroundColor: bgColor }]}>
+          <View style={[styles.dropdown, { backgroundColor: bgColor },  disabled && styles.disabled,]}>
             <View style={styles.dropdownTopRow}>
               <View style={styles.tagsContainerWrapper}>
                 {selectedItems.length === 0 ? (
@@ -486,6 +511,8 @@ export function ThemedDropdown({
                   data={items}
                   keyExtractor={(item) => item}
                   numColumns={numColumns}
+                  style={{ flex: 1, width: "100%"}}
+                  showsVerticalScrollIndicator={false}
                   renderItem={({ item, index }) => {
                     const gap = 4;
                     const horizontalPadding = 20;
@@ -531,6 +558,7 @@ export function ThemedDatePicker({
   onChangeText,
   errorMessage,
   background,
+  disabled = false,
   ...rest
 }: ThemedInputProps & { errorMessage?: string }) {
   const bgColor = useThemeColor({}, "input");
@@ -553,9 +581,14 @@ export function ThemedDatePicker({
     setShowPicker(false);
   };
 
+   const handlePress = () => {
+    if (disabled) return; 
+    setShowPicker(true);
+  };
+
   return (
     <>
-      <Pressable onPress={() => setShowPicker(true)}>
+      <Pressable onPress={handlePress} disabled={disabled}>
         <View
           style={[
             styles.input,
@@ -565,6 +598,7 @@ export function ThemedDatePicker({
               alignItems: "center",
               flexDirection: "row",
             },
+            disabled && styles.disabled,
             type === "default" ? styles.default : undefined,
             type === "floating" ? styles.floating : undefined,
             type === "rounded" ? styles.rounded : undefined,
@@ -610,6 +644,7 @@ export function ThemedTimePicker({
   onChangeText,
   errorMessage,
   background,
+  disabled = false,
 }: ThemedTimePickerProps) {
   const bgColor = useThemeColor({}, "input");
   const errorColor = useThemeColor({}, "overdue");
@@ -631,9 +666,14 @@ export function ThemedTimePicker({
     setShowPicker(false);
   };
 
+  const handlePress = () => {
+    if (disabled) return;
+    setShowPicker(true);
+  };
+
   return (
     <>
-      <Pressable onPress={() => setShowPicker(true)}>
+      <Pressable onPress={handlePress} disabled={disabled}>
         <View
           style={[
             styles.input,
@@ -643,6 +683,7 @@ export function ThemedTimePicker({
               alignItems: "center",
               flexDirection: "row",
             },
+            disabled && styles.disabled,
             type === "default" ? styles.default : undefined,
             type === "floating" ? styles.floating : undefined,
             type === "rounded" ? styles.rounded : undefined,
@@ -689,6 +730,7 @@ export function ThemedChatInput({
   value,
   onChangeText,
   onSendImage,
+  disabled = false,
   ...rest
 }: ThemedInputProps) {
   const bgColor = useThemeColor({}, "input");
@@ -722,12 +764,33 @@ export function ThemedChatInput({
     setFacing((current) => (current === "back" ? "front" : "back"));
   };
 
-  const handleSendImage = () => {
+  const handleSendImage = async () => {
     if (capturedImage && onSendImage) {
-      onSendImage(capturedImage);
+      try {
+        const formData = new FormData();
+        // Cast the object to any to bypass TypeScript error, or use ReactNativeFile type
+        const file: ImageFile = {
+          uri: capturedImage,
+          name: `image-${Date.now()}.jpg`,
+          type: "image/jpeg",
+        };
+        formData.append("image", file as any); // Use type assertion to bypass TypeScript error
+
+        const response = await api.post("/chats/upload", formData, {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        });
+
+        const { imageUrl } = response.data;
+        onSendImage(imageUrl);
+        setCapturedImage(null);
+        setPreviewVisible(false);
+      } catch (error: any) {
+        console.error("Failed to send image:", error.response?.data || error.message);
+        Alert.alert("Error", `Failed to send image: ${error.response?.data?.error || error.message}`);
+      }
     }
-    setCapturedImage(null);
-    setPreviewVisible(false);
   };
 
   const handleCancelImage = () => {
@@ -740,7 +803,6 @@ export function ThemedChatInput({
       <View
         style={[
           {
-            // position: "relative",
             width: "100%",
             flexDirection: "row",
             alignItems: inputHeight ? "center" : "flex-start",
@@ -748,6 +810,7 @@ export function ThemedChatInput({
             backgroundColor: bgColor,
             minHeight: 50,
           },
+          disabled && styles.disabled,
           type === "default" ? styles.default : undefined,
           type === "floating" ? styles.floating : undefined,
           type === "rounded" ? styles.rounded : undefined,
@@ -764,6 +827,7 @@ export function ThemedChatInput({
               fontSize: 18,
             },
           ]}
+          editable={!disabled}
           autoCapitalize="sentences"
           autoCorrect={true}
           multiline
@@ -788,7 +852,8 @@ export function ThemedChatInput({
             justifyContent: "flex-end",
             alignItems: "center",
           }}
-          onPress={() => setCameraVisible(true)}
+          onPress={() => !disabled && setCameraVisible(true)}
+          disabled={disabled}
         >
           <RNImage
             source={require("../assets/icons/camera.png")}
@@ -806,7 +871,6 @@ export function ThemedChatInput({
             onCameraReady={() => setCameraReady(true)}
           />
 
-          {/* This view is NOT inside CameraView anymore */}
           <View
             style={{
               position: "absolute",
@@ -987,5 +1051,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginLeft: 5,
+  },
+   disabled: {
+    opacity: 0.5,
   },
 });

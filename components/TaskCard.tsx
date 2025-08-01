@@ -50,9 +50,10 @@ export function TaskCard({ onPress, tasks }: TaskCardProps) {
   };
 
   tasksToUse.forEach((task) => {
-    const category = (task.category?.toUpperCase() as TaskCategory) || "SUPPORT";
+    const category =
+      (task.category?.toUpperCase() as TaskCategory) || "SUPPORT";
     const status = (task.status?.toUpperCase() as TaskStatus) || "PENDING";
-    
+
     if (status === "REVIEWING") {
       groupedTasks.REVIEW.push(task);
     } else if (groupedTasks[category]) {
@@ -108,7 +109,11 @@ export function TaskCard({ onPress, tasks }: TaskCardProps) {
                     onPress?.(task);
                   }}
                 >
-                  <ThemedText type="default">{task.name}</ThemedText>
+                  <ThemedText type="default" numberOfLines={1}>
+                    {task.name.length > 30
+                      ? `${task.name.slice(0, 30)}...`
+                      : task.name}
+                  </ThemedText>
                   <Image
                     source={require("../assets/icons/chevron-right.png")}
                     style={{ height: 20, width: 20 }}
@@ -128,7 +133,7 @@ const styles = StyleSheet.create({
   container: {
     minHeight: "10%",
     width: "100%",
-    marginBottom: 12
+    marginBottom: 12,
   },
   row: {
     flexDirection: "row",

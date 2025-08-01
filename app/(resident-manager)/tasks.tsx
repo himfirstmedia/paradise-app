@@ -1,9 +1,9 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import {
   ActivityIndicator,
   Image,
   Platform,
   Pressable,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   useWindowDimensions,
@@ -19,6 +19,7 @@ import { useThemeColor } from "@/hooks/useThemeColor";
 import { useRouter } from "expo-router";
 
 import { useReduxTasks } from "@/hooks/useReduxTasks";
+import { useState } from "react";
 
 export default function TabTwoScreen() {
   const primaryColor = useThemeColor({}, "selection");
@@ -26,8 +27,15 @@ export default function TabTwoScreen() {
   const pendingColor = useThemeColor({}, "pending");
   const overdueColor = useThemeColor({}, "overdue");
   const navigation = useRouter();
-  const { loading: tasksLoading, tasks } = useReduxTasks();
+  const { loading: tasksLoading, tasks, reload } = useReduxTasks();
+  const [refreshing, setRefreshing] = useState(false);
   const { width } = useWindowDimensions();
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await reload();
+    setRefreshing(false);
+  };
 
   const isLargeScreen = Platform.OS === "web" && width >= 1024;
   const isMediumScreen = Platform.OS === "web" && width >= 768;
@@ -80,6 +88,14 @@ export default function TabTwoScreen() {
     <>
       <ThemedView style={styles.container}>
         <ScrollView
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              tintColor={primaryColor} // iOS
+              colors={[primaryColor]} // Android
+            />
+          }
           contentContainerStyle={{
             alignItems: "center",
             width: "100%",
@@ -169,8 +185,12 @@ export default function TabTwoScreen() {
           </ThemedView>
         </ScrollView>
 
-        {/* <Pressable
-          style={[styles.taskCTAbtn, { backgroundColor: primaryColor }, responsiveStyles.ctaButton]}
+        <Pressable
+          style={[
+            styles.taskCTAbtn,
+            { backgroundColor: primaryColor },
+            responsiveStyles.ctaButton,
+          ]}
           onPress={() => {
             navigation.push("/add-task");
           }}
@@ -179,7 +199,7 @@ export default function TabTwoScreen() {
             source={require("@/assets/icons/add.png")}
             style={styles.icon}
           />
-        </Pressable> */}
+        </Pressable>
       </ThemedView>
     </>
   );

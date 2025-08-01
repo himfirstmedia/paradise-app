@@ -18,7 +18,7 @@ export function useReduxMembers() {
   }, [dispatch]);
 
   useEffect(() => {
-    if (loading && members.length === 0 ) {
+    if (!loading && members.length === 0 ) {
       const timeout = setTimeout(() => {
         reload();
       }, 1000);

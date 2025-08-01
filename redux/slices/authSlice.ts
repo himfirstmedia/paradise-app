@@ -2,7 +2,6 @@ import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
 import api from '@/utils/api';
 
 
-
 export interface User {
   id: number;
   name: string;
@@ -32,6 +31,7 @@ interface AuthState {
   isAuthenticated: boolean;
   loading: boolean;
   error: string | null;
+  expoPushToken: string | null; // Changed from token to expoPushToken
 }
 
 const initialState: AuthState = {
@@ -39,16 +39,21 @@ const initialState: AuthState = {
   isAuthenticated: false,
   loading: false,
   error: null,
+  expoPushToken: null,
 };
 
 export const login = createAsyncThunk(
   'auth/login',
-  async ({ email, password }: { email: string; password: string }, { rejectWithValue }) => {
+  async (
+    { email, password }: { email: string; password: string },
+    { rejectWithValue }
+  ) => {
     try {
       const response = await api.post('/users/login', { email, password });
       if (response.data && response.data.id) {
-        // REMOVE storage calls - handled by redux-persist
-        return response.data;
+        return {
+          user: response.data,
+        };
       }
       return rejectWithValue('Invalid login response');
     } catch (error: any) {
@@ -57,8 +62,28 @@ export const login = createAsyncThunk(
   }
 );
 
+export const validateToken = createAsyncThunk(
+  'auth/validateToken',
+  async (_, { rejectWithValue, getState, dispatch }) => {
+    const state = getState() as { auth: AuthState };
+    const token = state.auth.expoPushToken;
+    if (!token) {
+      return rejectWithValue('No token available');
+    }
+    try {
+      const response = await api.post('/users/validate-token', { token });
+      if (response.data && response.data.user) {
+        return response.data.user;
+      }
+      return rejectWithValue('Invalid token response');
+    } catch (error: any) {
+      dispatch(logoutAsync());
+      return rejectWithValue(error?.response?.data?.message || 'Token validation failed');
+    }
+  }
+);
+
 export const logoutAsync = createAsyncThunk('auth/logout', async () => {
-  // REMOVE storage calls - handled by redux-persist
   return true;
 });
 
@@ -66,17 +91,19 @@ const authSlice = createSlice({
   name: 'auth',
   initialState,
   reducers: {
-    setUser(state, action: PayloadAction<User>) {
-      state.user = action.payload;
+    setUser(state, action: PayloadAction<{ user: User; expoPushToken?: string }>) {
+      state.user = action.payload.user;
+      state.expoPushToken = action.payload.expoPushToken || state.expoPushToken;
       state.isAuthenticated = true;
       state.error = null;
     },
     logout(state) {
       state.user = null;
+      state.expoPushToken = null;
       state.isAuthenticated = false;
       state.error = null;
     },
-     updateUser: (state, action: PayloadAction<Partial<User>>) => {
+    updateUser: (state, action: PayloadAction<Partial<User>>) => {
       if (state.user) {
         state.user = { ...state.user, ...action.payload };
       }
@@ -90,18 +117,37 @@ const authSlice = createSlice({
       })
       .addCase(login.fulfilled, (state, action) => {
         state.loading = false;
-        state.user = action.payload;
+        state.user = action.payload.user;
         state.isAuthenticated = true;
         state.error = null;
       })
       .addCase(login.rejected, (state, action) => {
         state.loading = false;
         state.user = null;
+        state.expoPushToken = null;
+        state.isAuthenticated = false;
+        state.error = action.payload as string;
+      })
+      .addCase(validateToken.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(validateToken.fulfilled, (state, action) => {
+        state.loading = false;
+        state.user = action.payload;
+        state.isAuthenticated = true;
+        state.error = null;
+      })
+      .addCase(validateToken.rejected, (state, action) => {
+        state.loading = false;
+        state.user = null;
+        state.expoPushToken = null;
         state.isAuthenticated = false;
         state.error = action.payload as string;
       })
       .addCase(logoutAsync.fulfilled, (state) => {
         state.user = null;
+        state.expoPushToken = null;
         state.isAuthenticated = false;
         state.error = null;
       });

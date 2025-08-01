@@ -2,13 +2,19 @@ import { ChatCard } from "@/components/ChatCard";
 import { GroupChatCard } from "@/components/GroupChatCard";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
-import { StyleSheet, ScrollView, View, ActivityIndicator } from "react-native";
+import {
+  StyleSheet,
+  ScrollView,
+  View,
+  ActivityIndicator,
+  RefreshControl,
+} from "react-native";
 import { useReduxAuth } from "@/hooks/useReduxAuth";
 import { useReduxChats } from "@/hooks/useReduxChats";
-import { useRouter, useFocusEffect } from "expo-router";
+import { useRouter } from "expo-router";
 import { Button } from "@/components/ui/Button";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { useCallback } from "react";
+import { useState } from "react";
 
 export default function ConversationsScreen() {
   const primaryColor = useThemeColor({}, "selection");
@@ -17,26 +23,27 @@ export default function ConversationsScreen() {
   const router = useRouter();
 
   const isManager = role === "FACILITY_MANAGER" || role === "RESIDENT_MANAGER";
-
+  const [refreshing, setRefreshing] = useState(false);
   const { chats, loading, reloadChats } = useReduxChats();
 
-  console.log("Chats: ", chats);
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await reloadChats();
+    setRefreshing(false);
+  };
 
-  useFocusEffect(
-  useCallback(() => {
-    reloadChats();
-  }, [reloadChats])
-);
-
+  console.log("Chats before filtering: ", chats);
   const filteredChats = chats.filter((chat) => {
-  if (isManager) return true;  
-  
-  const userHouseIds = user?.house ? [user.house.id] : [];
-  const inUserHouses = chat.houseId && userHouseIds.includes(chat.houseId);
-  
-  return !chat.isGroup || (chat.isGroup && inUserHouses);
-});
-
+    if (!chat || !chat.id) {
+      console.warn("Invalid chat found:", chat);
+      return false;
+    }
+    if (isManager) return true;
+    const userHouseIds = user?.house ? [user.house.id] : [];
+    const inUserHouses = chat.houseId && userHouseIds.includes(chat.houseId);
+    return !chat.isGroup || (chat.isGroup && inUserHouses);
+  });
+  console.log("Filtered chats: ", filteredChats);
 
   const handleStartNewMessage = () => {
     router.push("/new-message");
@@ -45,25 +52,45 @@ export default function ConversationsScreen() {
   return (
     <ThemedView style={styles.container}>
       <ScrollView
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor={primaryColor} // iOS
+            colors={[primaryColor]} // Android
+          />
+        }
         contentContainerStyle={[
           styles.scrollContent,
-          filteredChats.length > 0 && styles.scrollContentWithChats
+          filteredChats.length > 0 && styles.scrollContentWithChats,
         ]}
         style={styles.innerContainer}
+        showsVerticalScrollIndicator={false}
       >
         {loading ? (
-          <ActivityIndicator
-            size="large"
-            color={primaryColor}
-            style={{ marginTop: "5%" }}
-          />
+          <View
+            style={{
+              justifyContent: "center",
+              alignItems: "center",
+              flexDirection: "column",
+              width: "100%",
+            }}
+          >
+            <ActivityIndicator
+              size="large"
+              color={primaryColor}
+              style={{ marginTop: "5%" }}
+            />
+          </View>
         ) : filteredChats.length > 0 ? (
           filteredChats.map((chat) =>
-            chat.isGroup ? (
-              <GroupChatCard key={chat.id} chat={chat} />
-            ) : (
-              <ChatCard key={chat.id} chat={chat} />
-            )
+            chat && chat.id ? (
+              chat.isGroup ? (
+                <GroupChatCard key={chat.id} chat={chat} />
+              ) : (
+                <ChatCard key={chat.id} chat={chat} />
+              )
+            ) : null
           )
         ) : (
           <View style={styles.noChatsWrapper}>
@@ -95,7 +122,7 @@ const styles = StyleSheet.create({
     justifyContent: "flex-start",
     alignItems: "center",
     gap: 4,
-    position: 'relative', 
+    position: "relative",
   },
   innerContainer: {
     flex: 1,
@@ -118,9 +145,9 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   floatingButton: {
-    position: 'absolute',
-    bottom: "10%",
+    position: "absolute",
+    bottom: "5%",
     right: 20,
-    zIndex: 10, 
+    zIndex: 10,
   },
 });

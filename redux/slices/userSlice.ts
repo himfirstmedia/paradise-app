@@ -7,6 +7,8 @@ import { Task } from '@/types/task';
 export interface User {
   id: number;
   name: string;
+  firstname: string;
+  lastname: string;
   email: string;
   phone: string;
   gender: "MALE" | "FEMALE" | "OTHER";

@@ -6,32 +6,29 @@ import { updateUser } from '@/redux/slices/authSlice';
 import  api  from "./api";
 
 
-// Custom hook to handle push notification setup
 export const SetupPushNotifications = () => {
   const dispatch = useAppDispatch();
   const user = useAppSelector((state) => state.auth.user);
 
-  const initializeNotifications = async () => {
+  const initializeNotifications = async (saveToBackend = true) => {
     try {
-      // Check if running on a physical device
       if (!Constants.isDevice) {
         console.log('Push notifications are only supported on physical devices.');
         return null;
       }
 
-      // Request notification permissions
+      console.log('Checking notification permissions...');
       const { status: existingStatus } = await Notifications.getPermissionsAsync();
-      let finalStatus = existingStatus;
+      console.log('Existing permission status:', existingStatus);
 
+      let finalStatus = existingStatus;
       if (existingStatus !== 'granted') {
+        console.log('Requesting notification permissions...');
         const { status } = await Notifications.requestPermissionsAsync({
-          ios: {
-            allowAlert: true,
-            allowBadge: true,
-            allowSound: true,
-          },
+          ios: { allowAlert: true, allowBadge: true, allowSound: true },
         });
         finalStatus = status;
+        console.log('Requested permission status:', finalStatus);
       }
 
       if (finalStatus !== 'granted') {
@@ -39,39 +36,31 @@ export const SetupPushNotifications = () => {
         return null;
       }
 
-      // Get the Expo push token
+      console.log('Retrieving Expo push token...');
       const token = (await Notifications.getExpoPushTokenAsync({
         projectId: Constants.expoConfig?.extra?.eas?.projectId,
       })).data;
+      console.log('Expo push token:', token);
 
-      if (!token) {
-        console.log('Failed to retrieve Expo push token.');
-        return null;
-      }
-
-      // Only send to backend and update Redux if user is authenticated
       if (user?.id) {
+        console.log('Saving push token for user:', user.id);
         try {
-          // Send the token to the backend
           await api.post(`/users/save-token`, {
             token,
             userId: user.id,
           });
-
-          // Update Redux store with the new token
-          dispatch(updateUser({ expoPushToken: token }));
           console.log('Push token saved successfully:', token);
+          dispatch(updateUser({ expoPushToken: token }));
         } catch (error) {
           console.error('Error saving push token to backend:', error);
           return null;
         }
       } else {
-        console.log('No authenticated user found. Skipping token save.');
-        return null;
+        console.log('No authenticated user. Token not saved.');
       }
 
-      // Configure Android notification channel
       if (Platform.OS === 'android') {
+        console.log('Setting Android notification channel...');
         await Notifications.setNotificationChannelAsync('default', {
           name: 'default',
           importance: Notifications.AndroidImportance.MAX,
@@ -80,12 +69,12 @@ export const SetupPushNotifications = () => {
         });
       }
 
-      // Set up notification handler
+      console.log('Setting notification handler...');
       Notifications.setNotificationHandler({
         handleNotification: async () => ({
-          shouldShowAlert: true,     
-          shouldShowBanner: true,    
-          shouldShowList: true,     
+          shouldShowAlert: true,
+          shouldShowBanner: true,
+          shouldShowList: true,
           shouldPlaySound: true,
           shouldSetBadge: true,
         }),

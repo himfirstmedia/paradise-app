@@ -36,6 +36,7 @@ export default {
         "READ_EXTERNAL_STORAGE",
         "WRITE_EXTERNAL_STORAGE",
         "FOREGROUND_SERVICE",
+        "POST_NOTIFICATIONS",
       ],
     },
     web: {

@@ -18,7 +18,10 @@ export function GroupChatCard({ chat }: GroupChatCardProps) {
 
   const lastMessage = chat.messages?.[0];
   const lastMessageTime = lastMessage?.createdAt || chat.updatedAt;
-  const lastSenderName = lastMessage?.sender?.name || "System";
+  const lastSenderName = lastMessage?.sender?.name;
+
+  console.log("Message: ", lastMessage);
+  
 
   return (
     <Pressable

@@ -5,8 +5,8 @@ import { FloatingButton } from "@/components/ui/FloatingButton";
 import { UserAvatar } from "@/components/ui/UserAvatar";
 import { useReduxTasks } from "@/hooks/useReduxTasks";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
-import { useCallback, useEffect, useState } from "react";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Platform,
@@ -14,16 +14,19 @@ import {
   StyleSheet,
   useWindowDimensions,
   View,
+  Alert as Prompt,
+  RefreshControl,
 } from "react-native";
 import { useReduxHouse } from "@/hooks/useReduxHouse";
 import { useReduxMembers } from "@/hooks/useReduxMembers";
-import { AlertDialog } from "@/components/ui/AlertDialog";
 import api from "@/utils/api";
 import { useReduxAuth } from "@/hooks/useReduxAuth";
 import { StatusSummaryCard } from "@/components/StatusSummaryCard";
 import { ChoreCard } from "@/components/ChoreCard";
 import { useTaskSummary } from "@/hooks/useTaskSummary";
 import { useReduxChores } from "@/hooks/useReduxChores";
+import { format } from "date-fns";
+import { House } from "@/types/house";
 
 function getFriendlyHouseName(house?: string | null) {
   if (!house) return "";
@@ -51,8 +54,8 @@ export default function MemberDetailScreen() {
   const bgColor = useThemeColor({}, "background");
   const navigation = useRouter();
   const [alertMessage, setAlertMessage] = useState("");
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
 
   const { tasks, reload: reloadTasks, loading: tasksLoading } = useReduxTasks();
   const { summary, summaryLoading } = useTaskSummary();
@@ -73,12 +76,12 @@ export default function MemberDetailScreen() {
     setCurrentUserRole(user?.role ?? null);
   }, [user]);
 
-  useFocusEffect(
-    useCallback(() => {
-      reloadTasks();
-      reload();
-    }, [reloadTasks, reload])
-  );
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await reloadTasks();
+    await reload();
+    setRefreshing(false);
+  };
 
   if (!userId) {
     return (
@@ -90,6 +93,24 @@ export default function MemberDetailScreen() {
 
   const member = members.find((m) => m.id === Number(userId));
 
+  let periodStart = "";
+  let periodEnd = "";
+
+  if (member?.houseId && houses.length > 0) {
+    const userHouse = houses.find((h: House) => h.id === member.houseId);
+
+    if (userHouse?.workPeriod?.startDate && userHouse?.workPeriod?.endDate) {
+      periodStart = format(
+        new Date(userHouse.workPeriod.startDate),
+        "MMMM d, yyyy"
+      );
+      periodEnd = format(
+        new Date(userHouse.workPeriod.endDate),
+        "MMMM d, yyyy"
+      );
+    }
+  }
+
   if (!member) {
     return (
       <ThemedView style={styles.container}>
@@ -98,8 +119,18 @@ export default function MemberDetailScreen() {
     );
   }
 
-  const { id, name, houseId, role, phone, email, joinedDate, leavingDate } =
-    member;
+  const {
+    id,
+    firstname,
+    lastname,
+    name,
+    houseId,
+    role,
+    phone,
+    email,
+    joinedDate,
+    leavingDate,
+  } = member;
 
   // Fixed: Handle all types of house IDs consistently
   const getHouseNameById = (id: number | string | null) => {
@@ -130,11 +161,10 @@ export default function MemberDetailScreen() {
       await api.delete(`/users/${userId}`);
       setAlertMessage(`${name} has been successfully removed`);
       await reload();
-      setTimeout(() => navigation.back(), 1500);
+      navigation.back();
     } catch {
       setAlertMessage("Failed to delete member. Please try again.");
     } finally {
-      setShowDeleteDialog(false);
     }
   };
 
@@ -161,6 +191,14 @@ export default function MemberDetailScreen() {
   return (
     <ThemedView style={[styles.container, responsiveStyles.containerPadding]}>
       <ScrollView
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor={primaryColor} // iOS
+            colors={[primaryColor]} // Android
+          />
+        }
         contentContainerStyle={{
           alignItems: "flex-start",
           width: "100%",
@@ -170,6 +208,9 @@ export default function MemberDetailScreen() {
         style={[styles.innerContainer, { backgroundColor: bgColor }]}
         showsVerticalScrollIndicator={false}
       >
+        <ThemedText type="title" style={{ marginBottom: 20 }}>
+          Resident Information
+        </ThemedText>
         <View style={[styles.row, { marginBottom: 30 }]}>
           <UserAvatar
             size={100}
@@ -185,16 +226,38 @@ export default function MemberDetailScreen() {
           </View>
         </View>
 
+        <View style={styles.row}>
+          <ThemedText type="defaultSemiBold">First Name:</ThemedText>
+          <ThemedText type="default">{firstname}</ThemedText>
+        </View>
+        <View style={styles.row}>
+          <ThemedText type="defaultSemiBold">Last Name:</ThemedText>
+          <ThemedText type="default">{lastname}</ThemedText>
+        </View>
+
+        {role !== "INDIVIDUAL" && periodStart && periodEnd && (
+          <View style={{ marginVertical: 10 }}>
+            <View style={styles.row}>
+              <ThemedText type="defaultSemiBold">Period Start:</ThemedText>
+              <ThemedText type="default">{periodStart}</ThemedText>
+            </View>
+            <View style={styles.row}>
+              <ThemedText type="defaultSemiBold">Period End:</ThemedText>
+              <ThemedText type="default">{periodEnd}</ThemedText>
+            </View>
+          </View>
+        )}
+
         {role !== "INDIVIDUAL" && (
           <View style={styles.row}>
             <ThemedText type="defaultSemiBold">House:</ThemedText>
             <ThemedText type="default">{houseDisplayName}</ThemedText>
           </View>
         )}
-        <View style={styles.row}>
+        {/* <View style={styles.row}>
           <ThemedText type="defaultSemiBold">Member Type:</ThemedText>
           <ThemedText type="default">{role}</ThemedText>
-        </View>
+        </View> */}
 
         {role === "INDIVIDUAL" && (
           <>
@@ -253,7 +316,7 @@ export default function MemberDetailScreen() {
                     monthStatus: "0/0 hrs",
                     currentPeriod: "0/0 hrs",
                     currentBalance: "0 hrs",
-                    daysRemaining: "0",
+                    daysRemaining: 0,
                   }}
                 />
               ) : (
@@ -272,7 +335,21 @@ export default function MemberDetailScreen() {
                 {
                   label: "Delete Member",
                   icon: require("@/assets/icons/delete.png"),
-                  onPress: () => setShowDeleteDialog(true),
+                  onPress: () => {
+                    Prompt.alert(
+                      "Delete Member",
+                      `Are you sure you want to remove ${name} from the system? This action cannot be undone.`,
+                      [
+                        { text: "Cancel", style: "cancel" },
+                        {
+                          text: "Delete",
+                          onPress: handleDeleteMember,
+                          style: "destructive",
+                        },
+                      ],
+                      { cancelable: true }
+                    );
+                  },
                 },
                 {
                   label: "Edit Profile",
@@ -299,21 +376,13 @@ export default function MemberDetailScreen() {
         ]}
       />
 
-      <AlertDialog
-        visible={showDeleteDialog}
-        title="Delete Member"
-        message={`Are you sure you want to remove ${name} from the system? This action cannot be undone.`}
-        type="destructive"
-        onCancel={() => setShowDeleteDialog(false)}
-        onConfirm={handleDeleteMember}
-        confirmText="Delete"
-      />
-
       {alertMessage && (
-        <Alert
-          type={alertMessage.includes("successfully") ? "success" : "error"}
-          message={alertMessage}
-        />
+        <View>
+          <Alert
+            type={alertMessage.includes("successfully") ? "success" : "error"}
+            message={alertMessage}
+          />
+        </View>
       )}
     </ThemedView>
   );
@@ -338,7 +407,7 @@ const styles = StyleSheet.create({
   },
   innerContainer: {
     flexGrow: 1,
-    paddingVertical: 30,
+    paddingVertical: 20,
     width: "100%",
   },
   icon: {

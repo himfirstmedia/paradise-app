@@ -258,7 +258,7 @@ export default function AddMemberScreen() {
             </ThemedView>
 
             <ThemedView style={styles.row}>
-              <ThemedView style={{ width: "40%" }}>
+              <ThemedView style={{ width: "48%" }}>
                 <ThemedView style={styles.inputField}>
                   <ThemedText type="default">
                     Gender <Dot />
@@ -277,7 +277,7 @@ export default function AddMemberScreen() {
                   />
                 </ThemedView>
               </ThemedView>
-              <ThemedView style={{ width: "56%" }}>
+              <ThemedView style={{ width: "48%" }}>
                 <ThemedView style={styles.inputField}>
                   <ThemedText type="default">
                     Role <Dot />
@@ -415,7 +415,7 @@ const styles = StyleSheet.create({
   scrollView: {
     width: "100%",
     paddingVertical: "5%",
-    paddingHorizontal: 15,
+    paddingHorizontal: 12,
     ...(Platform.OS === "web" && { overflow: "scroll" }),
   },
   scrollContent: {
@@ -441,6 +441,5 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     width: "100%",
     paddingTop: "5%",
-    paddingHorizontal: 15,
   },
 });

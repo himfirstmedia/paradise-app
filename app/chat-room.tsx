@@ -11,6 +11,7 @@ import {
   View,
   Image,
   ActivityIndicator,
+  Alert,
 } from "react-native";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { Message, CreateChatPayload, Chat } from "@/types/chat";
@@ -37,13 +38,11 @@ export default function ChatRoomScreen() {
 
   const { houses } = useReduxHouse();
 
-  const userHouse = houses.find(house =>
-  house.users?.some(u => u.id === user?.id)
-);
+  const userHouse = houses.find((house) =>
+    house.users?.some((u) => u.id === user?.id)
+  );
 
-const userHouseId = userHouse?.id;
-
-
+  const userHouseId = userHouse?.id;
 
   const [inputText, setInputText] = useState("");
   const [isSending, setIsSending] = useState(false);
@@ -60,94 +59,77 @@ const userHouseId = userHouse?.id;
     user?.role === "RESIDENT_MANAGER" || user?.role === "FACILITY_MANAGER";
 
   const findTargetChat = useCallback(() => {
-  if (!userHouseId) return null;
+    if (!userHouseId) return null;
 
-  const houseChats = chats.filter((chat: Chat) =>
-    chat.houseId !== undefined && chat.houseId === userHouseId
-  );
-
-  const houseUserIds = userHouse?.users?.map(user => user.id) || [];
-
-  const allParticipantIds = [user?.id || -1, ...houseUserIds].filter(
-    (id, index, self) => id > 0 && self.indexOf(id) === index
-  );
-
-  return houseChats.find((chat) => {
-    const chatUserIds = chat.users?.map((u) => u.user.id) || [];
-    return (
-      chatUserIds.length === allParticipantIds.length &&
-      chatUserIds.every((id) => allParticipantIds.includes(id))
+    const houseChats = chats.filter(
+      (chat: Chat) => chat.houseId !== undefined && chat.houseId === userHouseId
     );
-  });
-}, [userHouseId, userHouse, user?.id, chats]);
 
+    const houseUserIds = userHouse?.users?.map((user) => user.id) || [];
+
+    const allParticipantIds = [user?.id || -1, ...houseUserIds].filter(
+      (id, index, self) => id > 0 && self.indexOf(id) === index
+    );
+
+    return houseChats.find((chat) => {
+      const chatUserIds = chat.users?.map((u) => u.user.id) || [];
+      return (
+        chatUserIds.length === allParticipantIds.length &&
+        chatUserIds.every((id) => allParticipantIds.includes(id))
+      );
+    });
+  }, [userHouseId, userHouse, user?.id, chats]);
 
   const initializeChat = useCallback(async () => {
-    console.log("initializeChat called");
-
-    if (initializationAttempted || currentChat) return;
-
-    if (userHouseId) {
-
-      setIsCreatingChat(true);
-      setInitializationAttempted(true);
-
-      try {
-        const existingChat = findTargetChat();
-        if (existingChat) {
-          setActiveChat(existingChat);
-          return;
-        }
-
-        const targetHouseId = userHouseId;
-
-
-        // FIX 4: Only include house users (no memberIds)
-        const targetHouse = houses.find((house) => house.id === targetHouseId);
-        const houseUserIds = targetHouse?.users?.map((user) => user.id) || [];
-
-        const allParticipantIds = [user?.id || -1, ...houseUserIds].filter(
-          (id, index, self) => id > 0 && self.indexOf(id) === index
-        );
-
-        const payload: CreateChatPayload = {
-          participantIds: allParticipantIds,
-          houseIds: [targetHouseId],
-          isGroup: true,
-        };
-
-        const newChat = await createNewChat(payload);
-        console.log("newChat returned:", newChat);
-
-        // If createNewChat returns the chat, set it as active
-        if (newChat) {
-          setActiveChat(newChat);
-        } else {
-          // If not, try to find it in the global state
-          const createdChat = findTargetChat();
-          if (createdChat) {
-            setActiveChat(createdChat);
-          }
-        }
-      } catch (error) {
-        console.error("Chat initialization failed:", error);
-        setInitializationAttempted(false);
-      } finally {
-        setIsCreatingChat(false);
-      }
-    } else {
-      console.log("initializeChat skipped: no params");
+  if (initializationAttempted || currentChat) return;
+  if (!userHouseId) {
+    console.warn("No userHouseId, skipping chat initialization");
+    return;
+  }
+  setIsCreatingChat(true);
+  setInitializationAttempted(true);
+  try {
+    const existingChat = findTargetChat();
+    if (existingChat) {
+      setActiveChat(existingChat);
+      return;
     }
-  }, [
-    user?.id,
-    createNewChat,
-    currentChat,
-    houses,
-    setActiveChat,
-    initializationAttempted,
-    findTargetChat,
-    userHouseId
-  ]);
+    const targetHouse = houses.find((house) => house.id === userHouseId);
+    const houseUserIds = targetHouse?.users?.map((user) => user.id) || [];
+    const allParticipantIds = [user?.id || -1, ...houseUserIds].filter(
+      (id, index, self) => id > 0 && self.indexOf(id) === index
+    );
+    const payload: CreateChatPayload = {
+      participantIds: allParticipantIds,
+      houseIds: [userHouseId],
+      isGroup: true,
+    };
+    const newChat = await createNewChat(payload);
+    if (newChat && newChat.id) {
+      setActiveChat(newChat);
+    } else {
+      console.warn("Failed to create new chat or chat lacks id:", newChat);
+      const createdChat = findTargetChat();
+      if (createdChat && createdChat.id) {
+        setActiveChat(createdChat);
+      }
+    }
+  } catch (error) {
+    console.error("Chat initialization failed:", error);
+    setInitializationAttempted(false);
+  } finally {
+    setIsCreatingChat(false);
+  }
+}, [
+  user?.id,
+  createNewChat,
+  currentChat,
+  houses,
+  setActiveChat,
+  initializationAttempted,
+  findTargetChat,
+  userHouseId,
+]);
 
   useEffect(() => {
     initializeChat();
@@ -196,51 +178,28 @@ const userHouseId = userHouse?.id;
     }
   };
 
-  const handleSendImage = async (uri: string) => {
-    if (!user || !currentChat?.id || !uri) return;
+  
+const handleSendImage = async (imageUrl: string) => {
+  if (!user || !currentChat?.id) {
+    Alert.alert("Error", "User or chat not available");
+    return;
+  }
 
+  try {
     setIsSending(true);
-
-    try {
-      const formData = new FormData();
-      formData.append("image", {
-        uri,
-        name: `chat-${Date.now()}.jpg`,
-        type: "image/jpeg",
-      } as any);
-
-      // Upload image to backend
-      const uploadRes = await fetch(
-        `${process.env.EXPO_PUBLIC_BASE_URL}/uploads/chat`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-          body: formData,
-        }
-      );
-
-      console.log("Upload URL:", process.env.EXPO_PUBLIC_BASE_URL);
-
-      const data = await uploadRes.json();
-
-      if (!uploadRes.ok || !data.filename) {
-        throw new Error("Image upload failed");
-      }
-
-      await sendNewMessage({
-        content: "",
-        senderId: user.id,
-        chatId: currentChat.id,
-        image: data.filename,
-      });
-    } catch (error) {
-      console.error("Failed to send image:", error);
-    } finally {
-      setIsSending(false);
-    }
-  };
+    await sendNewMessage({
+      content: "",
+      senderId: user.id,
+      chatId: currentChat.id,
+      image: imageUrl,
+    });
+  } catch (error: any) {
+    console.error("Failed to send message with image:", error.response?.data || error.message);
+    Alert.alert("Error", `Failed to send message: ${error.response?.data?.error || error.message}`);
+  } finally {
+    setIsSending(false);
+  }
+};
 
   const getChatName = () => {
     if (currentChat?.name) return currentChat.name;
@@ -260,7 +219,6 @@ const userHouseId = userHouse?.id;
     return "New Chat";
   };
 
-  // Combined loading state
   const isLoading =
     chatLoading || isCreatingChat || (initializationAttempted && !currentChat);
 
@@ -273,7 +231,6 @@ const userHouseId = userHouse?.id;
       </ThemedView>
     );
   }
-
 
   return (
     <>

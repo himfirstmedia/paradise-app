@@ -53,6 +53,13 @@ export default function EditProfileScreen() {
   const { houses } = useReduxHouse();
   const { members, reload: reloadMembers } = useReduxMembers();
 
+  const userRole = currentUser?.role ?? "";
+  const isPrivileged = [
+    "RESIDENT_MANAGER",
+    "FACILITY_MANAGER",
+    "DIRECTOR",
+  ].includes(userRole);
+
   // Get user ID from params
   const paramId = Array.isArray(params.id) ? params.id[0] : params.id;
   const userId = paramId ? Number(paramId) : currentUser?.id || null;
@@ -236,7 +243,7 @@ export default function EditProfileScreen() {
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.keyboardAvoid}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 0}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 60}
       >
         <ScrollView
           contentContainerStyle={[
@@ -280,26 +287,29 @@ export default function EditProfileScreen() {
               placeholder="Select your gender"
               items={["MALE", "FEMALE"]}
               value={formData.gender}
-              onValueChange={handleGenderChange}
+              onSelect={handleGenderChange}
+              multiSelect={false}
             />
           </ThemedView>
-          <ThemedView style={styles.inputField}>
-            <ThemedText type="default">
-              House <Dot />
-            </ThemedText>
-            <ThemedDropdown
-              placeholder="Select house"
-              items={houseOptions.map((h) => h.label)}
-              value={
-                houseOptions.find((h) => h.value === formData.houseId)?.label ||
-                ""
-              }
-              onSelect={(label) => {
-                const found = houseOptions.find((h) => h.label === label);
-                handleHouseChange(found?.value || null);
-              }}
-            />
-          </ThemedView>
+          {isPrivileged && (
+            <ThemedView style={styles.inputField}>
+              <ThemedText type="default">
+                House <Dot />
+              </ThemedText>
+              <ThemedDropdown
+                placeholder="Select house"
+                items={houseOptions.map((h) => h.label)}
+                value={
+                  houseOptions.find((h) => h.value === formData.houseId)
+                    ?.label || ""
+                }
+                onSelect={(label) => {
+                  const found = houseOptions.find((h) => h.label === label);
+                  handleHouseChange(found?.value || null);
+                }}
+              />
+            </ThemedView>
+          )}
 
           <ThemedView style={styles.row}>
             <ThemedView style={{ width: "45%" }}>

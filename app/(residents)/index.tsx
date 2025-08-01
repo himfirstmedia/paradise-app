@@ -2,6 +2,7 @@ import React from "react";
 import {
   ActivityIndicator,
   Platform,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   useWindowDimensions,
@@ -41,17 +42,35 @@ export default function HomeScreen() {
 
   const { user } = useReduxAuth();
   const userName = user?.name?.split(" ")[0] || "User";
+  const userHouse = user?.house?.name;
+  const [refreshing, setRefreshing] = React.useState(false);
 
-  const { tasks, loading: tasksLoading } = useReduxTasks({
+  const { chores, reload: ReloadChores } = useReduxChores({ onlyCurrentUser: true });
+  const { summary, summaryLoading } = useTaskSummary();
+  const {
+    tasks,
+    loading: tasksLoading,
+    reload: ReloadTasks,
+  } = useReduxTasks({
     onlyCurrentUser: true,
   });
-  const { chores } = useReduxChores({ onlyCurrentUser: true });
-  const { summary, summaryLoading } = useTaskSummary();
-  const { scriptures, loading: scriptureLoading } = useReduxScripture();
+  const {
+    scriptures,
+    loading: scriptureLoading,
+    reload: ReloadScripture,
+  } = useReduxScripture();
 
   const latestScripture = scriptures.length > 0 ? scriptures[0] : null;
 
-  console.log("Status Summary Details: ", summary);
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await ReloadTasks();
+    await ReloadChores();
+    await ReloadScripture();
+    setRefreshing(false);
+  };
+
+  // console.log("Status Summary Details: ", summary);
 
   const getFormattedDate = () => {
     const now = new Date();
@@ -90,12 +109,21 @@ export default function HomeScreen() {
   return (
     <ThemedView style={styles.container}>
       <ScrollView
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor={primaryColor} // iOS
+            colors={[primaryColor]} // Android
+          />
+        }
         contentContainerStyle={{
           alignItems: "center",
           width: "100%",
           paddingBottom: "30%",
         }}
         style={styles.innerContainer}
+        showsVerticalScrollIndicator={false}
       >
         <ThemedView
           style={[
@@ -152,6 +180,16 @@ export default function HomeScreen() {
             >
               {getGreeting()}
               {userName}
+            </ThemedText>
+            <ThemedText
+              type="default"
+              style={{
+                width: "100%",
+                color: "#FFFFFF",
+                fontSize: fontSizes.subtitle,
+              }}
+            >
+              {userHouse}
             </ThemedText>
           </View>
         </ThemedView>

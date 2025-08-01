@@ -36,11 +36,11 @@ const CATEGORY_OPTIONS: Record<string, CategoryOption[]> = {
   //   { label: "Household", value: "HOUSEHOLD" },
   //   { label: "Support", value: "SUPPORT" },
   // ],
-  // RESIDENT_MANAGER: [
-  //   { label: "Maintenance", value: "MAINTENANCE" },
-  //   { label: "Household", value: "HOUSEHOLD" },
-  //   { label: "Support", value: "SUPPORT" },
-  // ],
+  RESIDENT_MANAGER: [
+    { label: "Maintenance", value: "MAINTENANCE" },
+    { label: "Household", value: "HOUSEHOLD" },
+    { label: "Support", value: "SUPPORT" },
+  ],
   FACILITY_MANAGER: [
     { label: "Household", value: "HOUSEHOLD" },
     { label: "Maintenance", value: "MAINTENANCE" },
@@ -162,7 +162,7 @@ export default function AddTaskScreen() {
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={[styles.keyboardAvoid, {flex: 1}]}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 0}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 60}
       >
         <ScrollView
           style={styles.scrollView}
@@ -297,6 +297,7 @@ export default function AddTaskScreen() {
                 errorMessage={errors.category}
                 multiSelect={false}
                 numColumns={1}
+                
               />
             </ThemedView>
           )}
@@ -324,7 +325,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    paddingBottom: 50,
+    paddingBottom: "50%",
   },
   container: {
     flex: 1,

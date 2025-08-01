@@ -4,6 +4,7 @@ import {
   Image,
   Platform,
   Pressable,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   useWindowDimensions,
@@ -20,6 +21,7 @@ import { useRouter } from "expo-router";
 import { Task } from "@/redux/slices/taskSlice";
 
 import { useReduxTasks } from "@/hooks/useReduxTasks";
+import { useState } from "react";
 
 export default function TabTwoScreen() {
   const primaryColor = useThemeColor({}, "selection");
@@ -27,8 +29,15 @@ export default function TabTwoScreen() {
   const pendingColor = useThemeColor({}, "pending");
   const overdueColor = useThemeColor({}, "overdue");
   const navigation = useRouter();
-  const { loading: tasksLoading, tasks } = useReduxTasks();
+  const [refreshing, setRefreshing] = useState(false);
+  const { loading: tasksLoading, tasks, reload } = useReduxTasks();
   const { width } = useWindowDimensions();
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await reload();
+    setRefreshing(false);
+  };
 
   const isLargeScreen = Platform.OS === "web" && width >= 1024;
   const isMediumScreen = Platform.OS === "web" && width >= 768;
@@ -81,6 +90,14 @@ export default function TabTwoScreen() {
     <>
       <ThemedView style={styles.container}>
         <ScrollView
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              tintColor={primaryColor} // iOS
+              colors={[primaryColor]} // Android
+            />
+          }
           contentContainerStyle={{
             alignItems: "center",
             width: "100%",
