@@ -9,7 +9,22 @@ if (!BASE_URL) {
 
 const api = axios.create({
   baseURL: BASE_URL,
-  timeout: 5000,
+  timeout: 15000, // Increased from 5000ms to 15000ms
+  headers: { 'Content-Type': 'application/json' },
 });
+
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    console.error('API error:', {
+      url: error.config?.url,
+      method: error.config?.method,
+      status: error.response?.status,
+      data: error.response?.data,
+      message: error.message,
+    });
+    return Promise.reject(error);
+  }
+);
 
 export default api;

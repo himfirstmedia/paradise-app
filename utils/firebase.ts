@@ -33,25 +33,23 @@ export async function registerForPushNotificationsAsync() {
   token = (await Notifications.getExpoPushTokenAsync()).data;
   console.log('Push Token:', token);
 
-  // Send the token to your backend
-  sendPushTokenToBackend(token);
+  
 
   return token;
 }
 
-// Example function to send token to your backend
 interface PushTokenPayload {
   token: string;
 }
 
-async function sendPushTokenToBackend(token: string): Promise<void> {
+export async function sendPushTokenToBackend(token: string,userId:number): Promise<void> {
   try {
-    await api.post('/users/test/token', {
+    await api.post( '/users/save-token', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ token } as PushTokenPayload),
+      body: JSON.stringify({ token,userId } as PushTokenPayload),
     });
   } catch (error) {
     console.error('Error sending push token to backend:', error);

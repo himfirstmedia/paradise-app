@@ -8,21 +8,20 @@ import { useReduxAuth } from "@/hooks/useReduxAuth";
 import {
   ScrollView,
   StyleSheet,
-  View,
-  Image,
   ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
   Platform,
+  View,
+  Image,
 } from "react-native";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
-import { Message, CreateChatPayload, Chat, User } from "@/types/chat";
+import { Message, CreateChatPayload, User } from "@/types/chat";
 import { formatTime } from "@/utils/Formatters";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { UserAvatar } from "@/components/ui/UserAvatar";
 import { useReduxChats } from "@/hooks/useReduxChats";
 import { useReduxHouse } from "@/hooks/useReduxHouse";
-
 
 interface House {
   id: number;
@@ -33,7 +32,6 @@ interface House {
 export default function ChatRoomScreen() {
   const navigation = useRouter();
   const primaryColor = useThemeColor({}, "selection");
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const params = useLocalSearchParams();
   const { user } = useReduxAuth();
   const {
@@ -42,6 +40,8 @@ export default function ChatRoomScreen() {
     setActiveChat,
     sendNewMessage,
     createNewChat,
+    fetchChat,
+    fetchMessages,
     loading: chatLoading,
   } = useReduxChats();
   const { houses } = useReduxHouse();
@@ -49,13 +49,12 @@ export default function ChatRoomScreen() {
   const userHouse = houses.find((house: House) =>
     house.users?.some((u: User) => u.id === user?.id)
   );
-
   const userHouseId = userHouse?.id;
 
   const [inputText, setInputText] = useState("");
   const [isSending, setIsSending] = useState(false);
-  const [isCreatingChat, setIsCreatingChat] = useState(false);
-  const [initializationAttempted, setInitializationAttempted] = useState(false);
+  const [selectedHouseIds, setSelectedHouseIds] = useState<number[]>([]);
+  const [hasFetchedMessages, setHasFetchedMessages] = useState(false); // Prevent duplicate fetchMessages
 
   const scrollViewRef = useRef<ScrollView>(null);
 
@@ -66,165 +65,253 @@ export default function ChatRoomScreen() {
   const canSendMessage =
     user?.role === "RESIDENT_MANAGER" || user?.role === "FACILITY_MANAGER";
 
+  // Initialize selectedHouseIds from params
+  useEffect(() => {
+    if (params.houseIds) {
+      const houseIds = String(params.houseIds)
+        .split(",")
+        .map((id) => Number(id))
+        .filter((id) => !isNaN(id));
+      setSelectedHouseIds(houseIds);
+      console.log("Selected houseIds from params:", houseIds);
+    }
+  }, [params.houseIds]);
+
   const findTargetChat = useCallback(() => {
-    if (!userHouseId) return null;
-
+    if (!userHouseId || selectedHouseIds.length === 0) return null;
     const houseChats = chats.filter(
-      (chat: Chat) => chat.houseId !== undefined && chat.houseId === userHouseId
+      (chat) => chat.houseId !== undefined && selectedHouseIds.includes(chat.houseId)
     );
-
     const houseUserIds = userHouse?.users?.map((user: User) => user.id) || [];
-
     const allParticipantIds = [user?.id || -1, ...houseUserIds].filter(
       (id: number, index: number, self: number[]) =>
         id > 0 && self.indexOf(id) === index
-    );
-
-    return houseChats.find((chat: Chat) => {
-      const chatUserIds = chat.users?.map((u: { user: User }) => u.user.id) || [];
+    ).sort();
+    return houseChats.find((chat) => {
+      const chatUserIds = chat.users?.map((u: { user: User }) => u.user.id).sort() || [];
       return (
         chatUserIds.length === allParticipantIds.length &&
-        chatUserIds.every((id: number) => allParticipantIds.includes(id))
+        JSON.stringify(chatUserIds) === JSON.stringify(allParticipantIds)
       );
     });
-  }, [userHouseId, userHouse, user?.id, chats]);
+  }, [userHouseId, userHouse, user?.id, chats, selectedHouseIds]);
 
   const initializeChat = useCallback(async () => {
-    if (initializationAttempted || currentChat) return;
     if (!userHouseId) {
       console.warn("No userHouseId, skipping chat initialization");
+      Alert.alert("Error", "No house assigned. Please contact support.");
       return;
     }
-    setIsCreatingChat(true);
-    setInitializationAttempted(true);
-    try {
+
+    // Check if chatId is provided in params
+    const chatId = params.chatId ? Number(params.chatId) : null;
+    if (chatId) {
+      const existingChat = chats.find((chat) => chat.id === chatId);
+      if (existingChat) {
+        setActiveChat(existingChat);
+        if (!hasFetchedMessages) {
+          fetchMessages(chatId);
+          setHasFetchedMessages(true);
+        }
+      } else {
+        fetchChat(chatId);
+      }
+    } else {
+      // Check for existing chat with selected houseIds
       const existingChat = findTargetChat();
       if (existingChat) {
         setActiveChat(existingChat);
-        return;
-      }
-      const targetHouse = houses.find((house: House) => house.id === userHouseId);
-      const houseUserIds = targetHouse?.users?.map((user: User) => user.id) || [];
-      const allParticipantIds = [user?.id || -1, ...houseUserIds].filter(
-        (id: number, index: number, self: number[]) =>
-          id > 0 && self.indexOf(id) === index
-      );
-      const payload: CreateChatPayload = {
-        participantIds: allParticipantIds,
-        houseIds: [userHouseId],
-        isGroup: true,
-      };
-      const newChat = await createNewChat(payload);
-      if (newChat && newChat.id) {
-        setActiveChat(newChat);
-      } else {
-        console.warn("Failed to create new chat or chat lacks id:", newChat);
-        const createdChat = findTargetChat();
-        if (createdChat && createdChat.id) {
-          setActiveChat(createdChat);
+        if (!hasFetchedMessages) {
+          fetchMessages(existingChat.id);
+          setHasFetchedMessages(true);
         }
       }
-    } catch (error) {
-      console.error("Chat initialization failed:", error);
-      setInitializationAttempted(false);
-    } finally {
-      setIsCreatingChat(false);
+      // Defer chat creation to handleSubmit
     }
   }, [
-    user?.id,
-    createNewChat,
-    currentChat,
-    houses,
-    setActiveChat,
-    initializationAttempted,
-    findTargetChat,
     userHouseId,
+    params.chatId,
+    chats,
+    setActiveChat,
+    fetchChat,
+    fetchMessages,
+    findTargetChat,
+    hasFetchedMessages,
   ]);
 
   useEffect(() => {
     initializeChat();
   }, [initializeChat]);
 
-  useEffect(() => {
-    if (isCreatingChat && !currentChat) {
-      const createdChat = findTargetChat();
-      if (createdChat) {
-        console.log("Found newly created chat in global state:", createdChat);
-        setActiveChat(createdChat);
-      }
-    }
-  }, [chats, isCreatingChat, currentChat, findTargetChat, setActiveChat]);
-
   useFocusEffect(
     useCallback(() => {
       return () => {
-        setInitializationAttempted(false);
+        setActiveChat(null);
+        setHasFetchedMessages(false); // Reset for next navigation
       };
-    }, [])
+    }, [setActiveChat])
   );
 
   useEffect(() => {
     if (currentChat?.messages && currentChat.messages.length > 0) {
       scrollViewRef.current?.scrollToEnd({ animated: true });
     }
-  }, [currentChat]);
+  }, [currentChat?.messages]);
 
-  const handleSubmit = async () => {
-    if (!inputText.trim() || !user || !currentChat?.id) return;
+  const handleSendImage = async (imageUri: string) => {
+    if (!user || !userHouseId) {
+      Alert.alert("Error", "User or house not found.");
+      setIsSending(false);
+      return;
+    }
 
     setIsSending(true);
     try {
-      await sendNewMessage({
-        content: inputText.trim(),
+      let chatId = currentChat?.id;
+      if (!chatId) {
+        if (selectedHouseIds.length === 0) {
+          Alert.alert("Error", "No house selected.");
+          setIsSending(false);
+          return;
+        }
+
+        const targetHouse = houses.find((house: House) => house.id === userHouseId);
+        if (!targetHouse) {
+          Alert.alert("Error", "Selected house not found.");
+          setIsSending(false);
+          return;
+        }
+
+        const houseUserIds = targetHouse.users?.map((user: User) => user.id) || [];
+        const allParticipantIds = [user.id, ...houseUserIds].filter(
+          (id: number, index: number, self: number[]) =>
+            id > 0 && self.indexOf(id) === index
+        ).sort();
+        if (allParticipantIds.length < 2) {
+          Alert.alert("Error", "No valid participants found for the chat.");
+          setIsSending(false);
+          return;
+        }
+
+        const payload: CreateChatPayload = {
+          participantIds: allParticipantIds,
+          houseIds: selectedHouseIds,
+          isGroup: true,
+        };
+        console.log("Creating chat for image with payload:", payload);
+
+        const newChat = await createNewChat(payload);
+        if (!newChat || !newChat.id) {
+          console.warn("Failed to create new chat for image:", newChat);
+          Alert.alert("Error", "Failed to create chat. Please try again.");
+          setIsSending(false);
+          return;
+        }
+        chatId = newChat.id;
+      }
+
+      const result = await sendNewMessage({
+        content: "",
         senderId: user.id,
-        chatId: currentChat.id,
-        image: "",
+        chatId: chatId!,
+        image: imageUri,
       });
-      setInputText("");
-    } catch (error) {
-      console.error("Failed to send message:", error);
+      if (result?.error) {
+        Alert.alert("Error", `Failed to send image: ${result.error}`);
+      }
+    } catch (error: any) {
+      console.error("Failed to send image:", error.message);
+      Alert.alert("Error", `Failed to send image: ${error.message}`);
     } finally {
       setIsSending(false);
     }
   };
 
-  const handleSendImage = async (imageUrl: string) => {
-    if (!user || !currentChat?.id) {
-      Alert.alert("Error", "User or chat not available");
+  const handleSubmit = async () => {
+    if (!inputText.trim() || !user) {
+      Alert.alert("Error", "Please enter a message.");
       return;
     }
 
+    setIsSending(true);
     try {
-      setIsSending(true);
-      await sendNewMessage({
-        content: "",
+      let chatId = currentChat?.id;
+      if (!chatId) {
+        if (selectedHouseIds.length === 0 || !userHouseId) {
+          Alert.alert("Error", "No house selected or user house not found.");
+          setIsSending(false);
+          return;
+        }
+
+        const targetHouse = houses.find((house: House) => house.id === userHouseId);
+        if (!targetHouse) {
+          Alert.alert("Error", "Selected house not found.");
+          setIsSending(false);
+          return;
+        }
+
+        const houseUserIds = targetHouse.users?.map((user: User) => user.id) || [];
+        const allParticipantIds = [user.id, ...houseUserIds].filter(
+          (id: number, index: number, self: number[]) =>
+            id > 0 && self.indexOf(id) === index
+        ).sort();
+        if (allParticipantIds.length < 2) {
+          Alert.alert("Error", "No valid participants found for the chat.");
+          setIsSending(false);
+          return;
+        }
+
+        const payload: CreateChatPayload = {
+          participantIds: allParticipantIds,
+          houseIds: selectedHouseIds,
+          isGroup: true,
+        };
+        console.log("Creating chat with payload:", payload);
+
+        const newChat = await createNewChat(payload);
+        if (!newChat || !newChat.id) {
+          console.warn("Failed to create new chat or chat lacks id:", newChat);
+          Alert.alert("Error", "Failed to create chat. Please try again.");
+          setIsSending(false);
+          return;
+        }
+        chatId = newChat.id;
+      }
+
+      const result = await sendNewMessage({
+        content: inputText.trim(),
         senderId: user.id,
-        chatId: currentChat.id,
-        image: imageUrl,
+        chatId: chatId!,
+        image: "",
       });
+      if (result?.error) {
+        Alert.alert("Error", `Failed to send message: ${result.error}`);
+      } else {
+        setInputText("");
+        scrollViewRef.current?.scrollToEnd({ animated: true });
+      }
     } catch (error: any) {
-      console.error(
-        "Failed to send message with image:",
-        error.response?.data || error.message
-      );
-      Alert.alert(
-        "Error",
-        `Failed to send message: ${error.response?.data?.error || error.message}`
-      );
+      console.error("Failed to send message:", error.message);
+      Alert.alert("Error", `Failed to send message: ${error.message}`);
     } finally {
       setIsSending(false);
     }
   };
 
   const getChatName = () => {
-    if (currentChat?.name) return currentChat.name;
-    if (currentChat?.users && currentChat.users.length === 2) {
+    if (!currentChat && selectedHouseIds.length > 0) {
+      const house = getHouseById(selectedHouseIds[0]);
+      return house ? house.name : "New Group Chat";
+    }
+    if (!currentChat) return "Loading Chat...";
+    if (currentChat.name) return currentChat.name;
+    if (currentChat.users && currentChat.users.length === 2) {
       const otherUser = currentChat.users
         .map((u: { user: User }) => u.user)
         .find((u: User) => u.id !== user?.id);
       if (otherUser) return otherUser.name;
     }
-    if (currentChat?.isGroup) {
+    if (currentChat.isGroup) {
       if (currentChat.houseId) {
         const house = getHouseById(currentChat.houseId);
         if (house) return house.name;
@@ -234,27 +321,17 @@ export default function ChatRoomScreen() {
     return "New Chat";
   };
 
-  const isLoading =
-    chatLoading || isCreatingChat || (initializationAttempted && !currentChat);
-
-  if (isLoading) {
-    console.log("Loading or creating chat...");
-    return (
-      <ThemedView style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={primaryColor} />
-        <ThemedText>Setting up chat...</ThemedText>
-      </ThemedView>
-    );
-  }
+  const isLoading = chatLoading && !currentChat;
 
   return (
-    <>
-      <SimpleHeader title={getChatName()} onBack={() => navigation.back()} />
     <ThemedView style={styles.container}>
+      <View style={{ width: "100%" }}>
+        <SimpleHeader title={getChatName()} onBack={() => navigation.back()} />
+      </View>
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
+        behavior={Platform.OS === "ios" ? "padding" : "padding"}
         style={styles.keyboardAvoid}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 20} // Adjust for header and status bar
+        keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 20}
       >
         <ScrollView
           ref={scrollViewRef}
@@ -262,7 +339,11 @@ export default function ChatRoomScreen() {
           style={styles.innerContainer}
           keyboardShouldPersistTaps="handled"
         >
-          {!currentChat?.messages || currentChat.messages.length === 0 ? (
+          {isLoading ? (
+            <ThemedView style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color={primaryColor} />
+            </ThemedView>
+          ) : !currentChat?.messages || currentChat.messages.length === 0 ? (
             <ThemedText type="default" style={styles.noMessagesText}>
               No messages yet. Start the conversation!
             </ThemedText>
@@ -290,7 +371,7 @@ export default function ChatRoomScreen() {
             </View>
             <Button
               type="icon-default"
-              icon={require('@/assets/icons/send.png')}
+              icon={require("@/assets/icons/send.png")}
               onPress={handleSubmit}
               disabled={isSending || !inputText.trim()}
               loading={isSending}
@@ -299,7 +380,6 @@ export default function ChatRoomScreen() {
         )}
       </KeyboardAvoidingView>
     </ThemedView>
-    </>
   );
 }
 
@@ -401,7 +481,7 @@ const styles = StyleSheet.create({
   },
   keyboardAvoid: {
     flex: 1,
-    width: "100%"
+    width: "100%",
   },
   innerContainer: {
     flex: 1,
@@ -410,10 +490,10 @@ const styles = StyleSheet.create({
     paddingVertical: 20,
   },
   scrollContent: {
-    alignItems: 'flex-start',
-    width: '100%',
+    alignItems: "flex-start",
+    width: "100%",
     flexGrow: 1,
-    paddingBottom: 50, 
+    paddingBottom: 50,
   },
   ctaContainer: {
     position: "absolute",
@@ -464,5 +544,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     gap: 16,
+  },
+  button: {
+    margin: 10,
   },
 });

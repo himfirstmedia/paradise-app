@@ -6,6 +6,7 @@ import { ThemedView } from "@/components/ThemedView";
 import { Avatar } from "@/components/ui/Avatar";
 import { useReduxMembers } from "@/hooks/useReduxMembers";
 import { useThemeColor } from "@/hooks/useThemeColor";
+import { User } from "@/redux/slices/userSlice";
 import { Task } from "@/types/task";
 import { useRouter } from "expo-router";
 import React, { useMemo, useState } from "react";
@@ -70,7 +71,7 @@ export default function TeamsScreen() {
     });
 
     // Process all members
-    members.forEach((member) => {
+    members.forEach((member: User) => {
       // Get the house enum from member's house name
       const houseEnum = member.house?.name
         ? member.house.name.toUpperCase().replace(/ /g, "_")
@@ -124,7 +125,7 @@ export default function TeamsScreen() {
 
   const nonAdminMembers = useMemo(() => {
     return members.filter(
-      (member) => member.role !== "SUPER_ADMIN" && member.role !== "DIRECTOR"
+      (member: User) => member.role !== "SUPER_ADMIN" && member.role !== "DIRECTOR"
     );
   }, [members]);
 
@@ -141,7 +142,7 @@ export default function TeamsScreen() {
       alignItems: "center",
       gap: isLargeScreen ? 50 : 0,
       marginTop: isLargeScreen ? 20 : 5,
-      minHeight: isLargeScreen ? "80%" : "40%",
+      minHeight: isLargeScreen ? "80%" : "35%",
     },
     containerPadding: {
       paddingHorizontal: isLargeScreen ? 150 : isMediumScreen ? 40 : 15,
@@ -153,8 +154,8 @@ export default function TeamsScreen() {
   });
 
   const chartSizes = {
-    height: isLargeScreen ? 320 : isMediumScreen ? 220 : 160,
-    radius: isLargeScreen ? 150 : isMediumScreen ? 80 : 80,
+    height: isLargeScreen ? 320 : isMediumScreen ? 210 : 140,
+    radius: isLargeScreen ? 150 : isMediumScreen ? 80 : 75,
     innerRadius: isLargeScreen ? 100 : isMediumScreen ? 40 : 50,
   };
 

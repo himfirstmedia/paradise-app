@@ -1,4 +1,3 @@
-// redux/slices/chatSlice.ts
 import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from '@/utils/api';
@@ -26,7 +25,6 @@ export const loadChats = createAsyncThunk(
     try {
       const cached = await AsyncStorage.getItem(StorageParams.CACHED_CHATS);
       const cachedParsed: Chat[] = cached ? JSON.parse(cached) : [];
-
       const res = await api.get(`/chats/user/${userId}`);
       const latest: Chat[] = res.data;
 
@@ -34,10 +32,14 @@ export const loadChats = createAsyncThunk(
         await AsyncStorage.setItem(StorageParams.CACHED_CHATS, JSON.stringify(latest));
         return latest;
       }
-
       return cachedParsed;
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to load chats.');
+      console.error('loadChats error:', {
+        message: error.message,
+        status: error.response?.status,
+        data: error.response?.data,
+      });
+      return rejectWithValue(error.response?.data?.error || error.response?.data?.message || 'Failed to load chats.');
     }
   }
 );
@@ -48,9 +50,19 @@ export const createChat = createAsyncThunk(
   async (payload: CreateChatPayload, { rejectWithValue }) => {
     try {
       const response = await api.post('/chats', payload);
+      if (!response.data || !response.data.id) {
+        console.error('Invalid chat response:', response.data);
+        return rejectWithValue('Invalid chat response: missing id');
+      }
+      console.log('createChat success:', response.data);
       return response.data;
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to create chat.');
+      console.error('createChat error:', {
+        message: error.message,
+        status: error.response?.status,
+        data: error.response?.data,
+      });
+      return rejectWithValue(error.response?.data?.error || error.response?.data?.message || 'Failed to create chat.');
     }
   }
 );
@@ -62,18 +74,21 @@ export const sendMessage = createAsyncThunk(
     try {
       const state = getState() as { chat: ChatState };
       const currentChat = state.chat.currentChat;
-      
       if (!currentChat) {
         throw new Error('No active chat');
       }
-
       const response = await api.post('/chats/message', {
         ...payload,
-        chatId: currentChat.id
+        chatId: currentChat.id,
       });
       return response.data;
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to send message.');
+      console.error('sendMessage error:', {
+        message: error.message,
+        status: error.response?.status,
+        data: error.response?.data,
+      });
+      return rejectWithValue(error.response?.data?.error || error.response?.data?.message || 'Failed to send message.');
     }
   }
 );
@@ -86,7 +101,12 @@ export const getChat = createAsyncThunk(
       const response = await api.get(`/chats/${chatId}`);
       return response.data;
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to get chat.');
+      console.error('getChat error:', {
+        message: error.message,
+        status: error.response?.status,
+        data: error.response?.data,
+      });
+      return rejectWithValue(error.response?.data?.error || error.response?.data?.message || 'Failed to get chat.');
     }
   }
 );
@@ -99,10 +119,15 @@ export const getMessages = createAsyncThunk(
       const response = await api.get(`/chats/${chatId}/messages`);
       return {
         chatId,
-        messages: response.data
+        messages: response.data,
       };
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to get messages.');
+      console.error('getMessages error:', {
+        message: error.message,
+        status: error.response?.status,
+        data: error.response?.data,
+      });
+      return rejectWithValue(error.response?.data?.error || error.response?.data?.message || 'Failed to get messages.');
     }
   }
 );
@@ -111,12 +136,9 @@ const chatSlice = createSlice({
   name: 'chat',
   initialState,
   reducers: {
-    // Set the current active chat
     setCurrentChat: (state, action: PayloadAction<Chat | null>) => {
       state.currentChat = action.payload;
     },
-    
-    // Clear chat state
     clearChatState: () => initialState,
   },
   extraReducers: (builder) => {
@@ -134,15 +156,13 @@ const chatSlice = createSlice({
         state.chatsStatus = 'failed';
         state.error = action.payload as string;
       })
-      
       // Create Chat
-.addCase(createChat.pending, (state) => {
+      .addCase(createChat.pending, (state) => {
         state.chatsStatus = 'loading';
         state.error = null;
       })
       .addCase(createChat.fulfilled, (state, action) => {
         state.chatsStatus = 'succeeded';
-        // Prevent duplicate chat additions
         const exists = state.chats.some(c => c.id === action.payload.id);
         if (!exists) {
           state.chats = [action.payload, ...state.chats];
@@ -153,39 +173,46 @@ const chatSlice = createSlice({
         state.chatsStatus = 'failed';
         state.error = action.payload as string;
       })
-      
       // Send Message
       .addCase(sendMessage.fulfilled, (state, action) => {
-        // We're handling optimistic updates in reducers
-        // This just ensures the request completed successfully
+        // Optimistic update handled in getMessages
       })
       .addCase(sendMessage.rejected, (state, action) => {
         state.error = action.payload as string;
       })
-      
       // Get Chat
       .addCase(getChat.pending, (state) => {
         state.chatsStatus = 'loading';
         state.error = null;
       })
-    
+      .addCase(getChat.fulfilled, (state, action) => {
+        state.chatsStatus = 'succeeded';
+        const exists = state.chats.some(c => c.id === action.payload.id);
+        if (!exists) {
+          state.chats = [action.payload, ...state.chats];
+        } else {
+          state.chats = state.chats.map(c =>
+            c.id === action.payload.id ? action.payload : c
+          );
+        }
+        state.currentChat = action.payload;
+      })
       .addCase(getChat.rejected, (state, action) => {
         state.chatsStatus = 'failed';
         state.error = action.payload as string;
       })
-      
       // Get Messages
       .addCase(getMessages.fulfilled, (state, action) => {
         const { chatId, messages } = action.payload;
-        
         if (state.currentChat?.id === chatId) {
           state.currentChat.messages = messages;
         }
-        
-        // Update the chat in the chats list
-        state.chats = state.chats.map(chat => 
+        state.chats = state.chats.map(chat =>
           chat.id === chatId ? { ...chat, messages } : chat
         );
+      })
+      .addCase(getMessages.rejected, (state, action) => {
+        state.error = action.payload as string;
       });
   },
 });

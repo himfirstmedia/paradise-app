@@ -20,21 +20,23 @@ export function GroupChatCard({ chat }: GroupChatCardProps) {
   const lastMessageTime = lastMessage?.createdAt || chat.updatedAt;
   const lastSenderName = lastMessage?.sender?.name;
 
-  console.log("Message: ", lastMessage);
-  
+  console.log("Chat last message:", lastMessage?.content || "No messages");
 
   return (
     <Pressable
       style={{ width: "100%" }}
       onPress={() => {
-        navigation.push({ pathname: "/chat-room", params: { id: chat.id } });
+        navigation.push({
+          pathname: "/chat-room",
+          params: { chatId: chat.id.toString(), houseId: chat.houseId?.toString() },
+        });
       }}
     >
       <ThemedView style={[styles.container, { backgroundColor: bgColor }]}>
         <View style={styles.row}>
           <UserAvatar
             size={60}
-            user={{ name: chat.name || null || undefined }}
+            user={{ name: chat.name || undefined }}
           />
           <View style={styles.column}>
             <View style={[styles.row, { justifyContent: "space-between" }]}>

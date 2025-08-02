@@ -8,7 +8,7 @@ export interface User {
   phone: string;
   gender: "MALE" | "FEMALE" | "OTHER";
   role: "SUPER_ADMIN" | "ADMIN" | "DIRECTOR" | "RESIDENT_MANAGER" | "FACILITY_MANAGER" | "RESIDENT" | "INDIVIDUAL";
-  houseId?: number | null;
+  houseId?: number;
   house?: any | null;
   city: string;
   state: string;
@@ -41,6 +41,7 @@ const initialState: AuthState = {
   expoPushToken: null,
 };
 
+// 🔐 Login Thunk (NO token logic here)
 export const login = createAsyncThunk(
   'auth/login',
   async (
@@ -50,9 +51,7 @@ export const login = createAsyncThunk(
     try {
       const response = await api.post('/users/login', { email, password });
       if (response.data && response.data.id) {
-        return {
-          user: response.data,
-        };
+        return { user: response.data };
       }
       return rejectWithValue('Invalid login response');
     } catch (error: any) {
@@ -61,6 +60,7 @@ export const login = createAsyncThunk(
   }
 );
 
+// ✅ Validate push token thunk
 export const validatePushToken = createAsyncThunk(
   'auth/validatePushToken',
   async (_, { rejectWithValue, getState }) => {
@@ -85,22 +85,22 @@ export const validatePushToken = createAsyncThunk(
   }
 );
 
+// 🔐 Logout
 export const logoutAsync = createAsyncThunk(
   'auth/logout',
   async (_, { rejectWithValue }) => {
-    // Now just return true. Purging is handled externally.
     return true;
   }
 );
 
-
+// 🧠 Slice logic
 const authSlice = createSlice({
   name: 'auth',
   initialState,
   reducers: {
     setUser(state, action: PayloadAction<{ user: User; expoPushToken?: string }>) {
       state.user = action.payload.user;
-      state.expoPushToken = action.payload.expoPushToken || state.expoPushToken;
+      state.expoPushToken = action.payload.expoPushToken || null;
       state.isAuthenticated = true;
       state.error = null;
     },
@@ -165,6 +165,9 @@ const authSlice = createSlice({
   },
 });
 
+// 🎯 Export actions
 export const { setUser, logout, updateUser, setPushToken } = authSlice.actions;
 export default authSlice.reducer;
+
+// 🧠 Selector
 export const selectCurrentUser = (state: { auth: AuthState }) => state.auth.user;

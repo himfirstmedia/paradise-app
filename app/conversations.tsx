@@ -5,26 +5,29 @@ import { ThemedView } from "@/components/ThemedView";
 import {
   StyleSheet,
   ScrollView,
-  View,
   ActivityIndicator,
   RefreshControl,
+  View,
 } from "react-native";
 import { useReduxAuth } from "@/hooks/useReduxAuth";
 import { useReduxChats } from "@/hooks/useReduxChats";
 import { useRouter } from "expo-router";
 import { Button } from "@/components/ui/Button";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import * as Notifications from "expo-notifications";
+import { Chat } from "@/types/chat";
 
 export default function ConversationsScreen() {
   const primaryColor = useThemeColor({}, "selection");
   const { user } = useReduxAuth();
   const role = user?.role;
   const router = useRouter();
-
   const isManager = role === "FACILITY_MANAGER" || role === "RESIDENT_MANAGER";
-  const [refreshing, setRefreshing] = useState(false);
   const { chats, loading, reloadChats } = useReduxChats();
+  const [refreshing, setRefreshing] = useState(false);
+
+  const notificationListener = useRef<Notifications.EventSubscription | undefined>(undefined);
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -32,15 +35,36 @@ export default function ConversationsScreen() {
     setRefreshing(false);
   };
 
+  useEffect(() => {
+    notificationListener.current = Notifications.addNotificationResponseReceivedListener(
+      (response) => {
+        const chatId = Number(response.notification.request.content.data?.chatId);
+        console.log("Notification response tapped:", { chatId });
+        if (chatId && !isNaN(chatId)) {
+          const validChat = chats.find((chat) => chat.id === chatId);
+          if (validChat) {
+            router.push({ pathname: "/chat-room", params: { chatId: String(chatId) } });
+          } else {
+            console.warn("Chat not found for chatId:", chatId);
+          }
+        }
+      }
+    );
+    return () => {
+      notificationListener.current?.remove();
+    };
+  }, [router, chats]);
+
   console.log("Chats before filtering: ", chats);
-  const filteredChats = chats.filter((chat) => {
+ const filteredChats = chats.filter((chat): chat is Chat => {
     if (!chat || !chat.id) {
       console.warn("Invalid chat found:", chat);
       return false;
     }
     if (isManager) return true;
     const userHouseIds = user?.house ? [user.house.id] : [];
-    const inUserHouses = chat.houseId && userHouseIds.includes(chat.houseId);
+    // Ensure inUserHouses is always boolean
+    const inUserHouses = chat.houseId != null && userHouseIds.includes(chat.houseId);
     return !chat.isGroup || (chat.isGroup && inUserHouses);
   });
   console.log("Filtered chats: ", filteredChats);
@@ -83,7 +107,7 @@ export default function ConversationsScreen() {
             />
           </View>
         ) : filteredChats.length > 0 ? (
-          filteredChats.map((chat) =>
+          filteredChats.map((chat: any) =>
             chat && chat.id ? (
               chat.isGroup ? (
                 <GroupChatCard key={chat.id} chat={chat} />

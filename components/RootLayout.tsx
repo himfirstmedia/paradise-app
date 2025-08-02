@@ -7,13 +7,13 @@ import { useFonts } from "expo-font";
 import { Stack, useRouter } from "expo-router";
 import { SimpleHeader } from "@/components/SimpleHeader";
 import { UpdateHeader } from "@/components/UpdateHeader";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { View, StatusBar } from "react-native";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { Colors } from "@/constants/Colors";
 import * as SplashScreen from "expo-splash-screen";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
-import { setPushToken, validatePushToken } from "@/redux/slices/authSlice";
+import { setPushToken } from "@/redux/slices/authSlice";
 import {
   UseSetupPushNotifications,
   registerNotificationListeners,
@@ -34,68 +34,55 @@ SplashScreen.preventAutoHideAsync();
 export default function RootLayout() {
   const colorScheme = useColorScheme() ?? "light";
   const [appIsReady, setAppIsReady] = useState(false);
-  const isAuthenticated = useAppSelector(
-    (state) => state.auth?.isAuthenticated ?? false
-  );
-  const user = useAppSelector((state) => state.auth?.user ?? null);
-
+  const isAuthenticated = useAppSelector((state) => state.auth?.isAuthenticated ?? false);
+  const userId = useAppSelector((state) => state.auth?.user?.id ?? null);
   const dispatch = useAppDispatch();
   const router = useRouter();
-
+  const tokenSavedRef = useRef(false);
   const initializeNotifications = UseSetupPushNotifications();
+
   const [fontsLoaded] = useFonts({
     SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
   });
 
-  // App initialization
   useEffect(() => {
-    async function prepareApp() {
-      if (!fontsLoaded) return;
+    if (!fontsLoaded || !isAuthenticated || !userId || tokenSavedRef.current) return;
 
-      if (isAuthenticated && user?.id) {
-        try {
-          await dispatch(validatePushToken()).unwrap();
-        } catch (error) {
-          console.warn("Push token validation failed:", error);
+    async function prepare() {
+      try {
+        const token = await initializeNotifications(true);
+        if (token) {
+          dispatch(setPushToken(token));
+          console.log("✅ Push token initialized:", token);
+          tokenSavedRef.current = true;
         }
+      } catch (error) {
+        console.warn("❌ Notification setup failed:", error);
+      } finally {
+        setAppIsReady(true);
       }
-
-      setAppIsReady(true);
     }
 
-    prepareApp();
-  }, [fontsLoaded, isAuthenticated, user, dispatch]);
+    prepare();
+  }, [fontsLoaded, isAuthenticated, userId, dispatch, initializeNotifications]);
 
-  // Notification setup for authenticated users
   useEffect(() => {
-    if (!appIsReady || !isAuthenticated || !user?.id) return;
-
-    initializeNotifications(true).then((token) => {
-      if (token) {
-        dispatch(setPushToken(token));
-        console.log("Push token initialized:", token);
-      }
-    });
+    if (!appIsReady) return;
 
     const unsubscribe = registerNotificationListeners(
       (notification) => {
-        console.log("Notification received:", notification);
+        console.log("📥 Notification received:", notification);
       },
       (response) => {
         const taskId = response.notification.request.content.data?.taskId;
-        if (taskId) router.push(`/task-detail?id=${taskId}`);
+        if (taskId) {
+          router.push(`/task-detail?id=${taskId}`);
+        }
       }
     );
 
     return () => unsubscribe();
-  }, [
-    appIsReady,
-    isAuthenticated,
-    user,
-    router,
-    initializeNotifications,
-    dispatch,
-  ]);
+  }, [appIsReady, router]);
 
   const onLayoutRootView = useCallback(() => {
     if (appIsReady) SplashScreen.hideAsync();

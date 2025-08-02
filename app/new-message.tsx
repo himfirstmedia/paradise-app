@@ -9,21 +9,19 @@ import { ThemedCheckbox } from "@/components/ThemedInput";
 import { useReduxAuth } from "@/hooks/useReduxAuth";
 import { useReduxHouse } from "@/hooks/useReduxHouse";
 import { useRouter } from "expo-router";
-
 import { useThemeColor } from "@/hooks/useThemeColor";
+import { House } from "@/types/house";
 
 export default function NewMessageScreen() {
   const router = useRouter();
   const { user } = useReduxAuth();
   const { houses, loading: housesLoading } = useReduxHouse();
-
   const [selectedHouses, setSelectedHouses] = useState<string[]>([]);
   const tintColor = useThemeColor({}, "tint");
   const [isProceeding, setIsProceeding] = useState(false);
 
-  
   const userHouse = user?.houseId
-    ? houses.filter(house => house.id === user.houseId)
+    ? houses.filter((house: House) => house.id === user.houseId)
     : [];
 
   const toggleHouse = (houseId: string) => {
@@ -35,9 +33,9 @@ export default function NewMessageScreen() {
   };
 
   const handleProceed = () => {
-    if (isProceeding) return;
+    if (isProceeding || selectedHouses.length === 0) return;
     setIsProceeding(true);
-
+    console.log("Navigating to ChatRoomScreen with houseIds:", selectedHouses);
     router.replace({
       pathname: "/chat-room",
       params: {
@@ -49,21 +47,19 @@ export default function NewMessageScreen() {
   const totalSelected = selectedHouses.length;
 
   return (
-    <>
-      <ThemedView style={styles.container}>
-        <ScrollView
-          style={styles.scrollContainer}
-          showsVerticalScrollIndicator={false}
-        >
-          {/* Houses Section */}
-          <ThemedText type="subtitle" style={styles.sectionHeader}>
-            Houses
-          </ThemedText>
+    <ThemedView style={styles.container}>
+      <ScrollView
+        style={styles.scrollContainer}
+        showsVerticalScrollIndicator={false}
+      >
+        <ThemedText type="subtitle" style={styles.sectionHeader}>
+          Houses
+        </ThemedText>
 
-          {housesLoading ? (
-          <ThemedText>Loading...</ThemedText>
+        {housesLoading ? (
+          <ThemedText>Loading houses...</ThemedText>
         ) : userHouse.length > 0 ? (
-          userHouse.map((house) => (
+          userHouse.map((house: House) => (
             <RecipientItem
               key={`house-${house.id}`}
               id={house.id.toString()}
@@ -75,25 +71,22 @@ export default function NewMessageScreen() {
           ))
         ) : (
           <ThemedText style={styles.emptyText}>
-            {user?.houseId 
-              ? "Your house information is not available" 
+            {user?.houseId
+              ? "Your house information is not available"
               : "You don't belong to any house"}
           </ThemedText>
         )}
+      </ScrollView>
 
-        </ScrollView>
-
-        {/* Proceed Button */}
-        <View style={styles.buttonContainer}>
-          <Button
-            title={`Message Selected (${totalSelected})`}
-            onPress={handleProceed}
-            disabled={totalSelected === 0 || isProceeding}
-            style={totalSelected > 0 ? { backgroundColor: tintColor } : {}}
-          />
-        </View>
-      </ThemedView>
-    </>
+      <View style={styles.buttonContainer}>
+        <Button
+          title={`Message Selected (${totalSelected})`}
+          onPress={handleProceed}
+          disabled={totalSelected === 0 || isProceeding}
+          style={totalSelected > 0 ? { backgroundColor: tintColor } : {}}
+        />
+      </View>
+    </ThemedView>
   );
 }
 
@@ -137,7 +130,6 @@ function RecipientItem({
           )}
         </View>
       </View>
-
       <ThemedCheckbox
         checked={isSelected}
         onChange={() => onSelect(id)}

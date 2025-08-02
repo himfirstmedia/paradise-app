@@ -1,7 +1,6 @@
 import React from "react";
 import {
   ActivityIndicator,
-  Button,
   Platform,
   RefreshControl,
   ScrollView,
@@ -20,7 +19,6 @@ import { useThemeColor } from "@/hooks/useThemeColor";
 import { useReduxAuth } from "@/hooks/useReduxAuth";
 import { useReduxScripture } from "@/hooks/useReduxScripture";
 import { useReduxTasks } from "@/hooks/useReduxTasks";
-import { UseSetupPushNotifications } from "@/utils/notificationHandler";
 
 function getGreeting() {
   const hour = new Date().getHours();
@@ -86,20 +84,7 @@ export default function HomeScreen() {
     },
   });
 
-  const TestNotificationPermission = () => {
-    const initializeNotifications = UseSetupPushNotifications();
-    const requestPermission = async () => {
-      const token = await initializeNotifications(false);
-      console.log("Notification setup result:", token);
-    };
-
-    return (
-      <Button
-        title="Request Notification Permission"
-        onPress={requestPermission}
-      />
-    );
-  };
+  
 
   return (
     <ThemedView style={styles.container}>
@@ -184,7 +169,6 @@ export default function HomeScreen() {
             ) : null}
           </View>
 
-          <TestNotificationPermission />
 
           <View style={{ marginTop: "1%" }}>
             {tasksLoading ? (
