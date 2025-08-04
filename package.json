@@ -53,9 +53,8 @@
     "react-native-dotenv": "^3.4.11",
     "react-native-gesture-handler": "~2.24.0",
     "react-native-gifted-charts": "^1.4.61",
-    "react-native-keyboard-aware-scroll-view": "^0.9.5",
     "react-native-modal-datetime-picker": "^18.0.0",
-    "react-native-reanimated": "^3.6.2",
+    "react-native-reanimated": "~3.17.4",
     "react-native-safe-area-context": "5.4.0",
     "react-native-screens": "~4.11.1",
     "react-native-svg": "15.11.2",
@@ -67,8 +66,8 @@
     "victory-native": "^41.17.4"
   },
   "devDependencies": {
-    "@react-native-community/cli": "latest",
     "@babel/core": "^7.25.2",
+    "@react-native-community/cli": "latest",
     "@types/date-fns": "^2.5.3",
     "@types/react": "~19.0.10",
     "eslint": "^9.25.0",
@@ -77,5 +76,17 @@
     "expo-module-scripts": "^4.1.7",
     "typescript": "~5.8.3"
   },
-  "private": true
+  "private": true,
+  "expo": {
+    "doctor": {
+      "reactNativeDirectoryCheck": {
+        "exclude": [
+          "redux-persist",
+          "firebase",
+          "react-native-worklets"
+        ],
+        "listUnknownPackages": false
+      }
+    }
+  }
 }

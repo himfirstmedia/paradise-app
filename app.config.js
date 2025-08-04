@@ -10,18 +10,22 @@ export default {
     scheme: "paradiseapp",
     userInterfaceStyle: "automatic",
     newArchEnabled: true,
+
     ios: {
       supportsTablet: true,
       bundleIdentifier: "com.himfirstapps.ParadiseApp",
       infoPlist: {
         ITSAppUsesNonExemptEncryption: false,
       },
-      permissions: ["INTERNET", "NOTIFICATIONS"],
       icon: {
         dark: "./assets/images/ios-dark.png",
         light: "./assets/images/ios-light.png",
       },
+      config: {
+        usesNonExemptEncryption: false,
+      },
     },
+
     android: {
       adaptiveIcon: {
         foregroundImage: "./assets/images/adaptive-icon.png",
@@ -39,11 +43,13 @@ export default {
         "POST_NOTIFICATIONS",
       ],
     },
+
     web: {
       bundler: "metro",
       output: "static",
       favicon: "./assets/images/favicon.png",
     },
+
     plugins: [
       "expo-router",
       [
@@ -62,7 +68,13 @@ export default {
         },
       ],
       "expo-web-browser",
-      "expo-notifications",
+      [
+        "expo-notifications",
+        {
+          icon: "./assets/images/adaptive-icon.png", 
+          color: "#ffffff", 
+        },
+      ],
       [
         "expo-camera",
         {
@@ -73,9 +85,11 @@ export default {
         },
       ],
     ],
+
     experiments: {
       typedRoutes: true,
     },
+
     extra: {
       router: {},
       BASE_URL: process.env.EXPO_PUBLIC_BASE_URL,
