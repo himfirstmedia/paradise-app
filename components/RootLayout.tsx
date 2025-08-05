@@ -88,12 +88,12 @@ export default function RootLayout() {
     if (appIsReady) SplashScreen.hideAsync();
   }, [appIsReady]);
 
-  if (!appIsReady) return null;
+  // if (!appIsReady) return null;
 
   return (
     <View
       style={{ flex: 1, backgroundColor: Colors[colorScheme].background }}
-      onLayout={onLayoutRootView}
+      // onLayout={onLayoutRootView}
     >
       <StatusBar
         barStyle={colorScheme === "dark" ? "light-content" : "dark-content"}

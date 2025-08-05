@@ -1,101 +1,92 @@
-import "dotenv/config";
-
 export default {
-  expo: {
-    name: "Paradise",
-    slug: "Paradise-App",
-    version: "1.0.0",
-    orientation: "portrait",
-    icon: "./assets/images/adaptive-icon.png",
-    scheme: "paradiseapp",
-    userInterfaceStyle: "automatic",
-    newArchEnabled: true,
-
-    ios: {
-      supportsTablet: true,
-      bundleIdentifier: "com.himfirstapps.ParadiseApp",
-      infoPlist: {
-        ITSAppUsesNonExemptEncryption: false,
+  "expo": {
+    "name": "Paradise",
+    "slug": "Paradise-App",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/adaptive-icon.png",
+    "scheme": "paradiseapp",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.himfirstapps.ParadiseApp",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
       },
-      icon: {
-        dark: "./assets/images/ios-dark.png",
-        light: "./assets/images/ios-light.png",
+      "icon": {
+        "dark": "./assets/images/ios-dark.png",
+        "light": "./assets/images/ios-light.png"
       },
-      config: {
-        usesNonExemptEncryption: false,
-      },
+      "config": {
+        "usesNonExemptEncryption": false
+      }
     },
-
-    android: {
-      adaptiveIcon: {
-        foregroundImage: "./assets/images/adaptive-icon.png",
-        backgroundColor: "#ffffff",
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
       },
-      edgeToEdgeEnabled: true,
-      package: "com.himfirstapps.ParadiseApp",
-      permissions: [
+      "edgeToEdgeEnabled": true,
+      "package": "com.himfirstapps.ParadiseApp",
+      "permissions": [
         "INTERNET",
         "NOTIFICATIONS",
         "CAMERA",
         "READ_EXTERNAL_STORAGE",
         "WRITE_EXTERNAL_STORAGE",
         "FOREGROUND_SERVICE",
-        "POST_NOTIFICATIONS",
-      ],
+        "POST_NOTIFICATIONS"
+      ]
     },
-
-    web: {
-      bundler: "metro",
-      output: "static",
-      favicon: "./assets/images/favicon.png",
+    "web": {
+      "bundler": "metro",
+      "output": "static",
+      "favicon": "./assets/images/favicon.png"
     },
-
-    plugins: [
+    "plugins": [
       "expo-router",
       [
         "expo-splash-screen",
         {
-          image: "./assets/images/splash-icon-light.png",
-          imageWidth: 150,
-          resizeMode: "contain",
-          backgroundColor: "#ffffff",
-          dark: {
-            image: "./assets/images/splash-icon-light.png",
-            imageWidth: 150,
-            resizeMode: "contain",
-            backgroundColor: "#151718",
-          },
-        },
+          "image": "./assets/images/splash-icon-light.png",
+          "imageWidth": 150,
+          "resizeMode": "contain",
+          "backgroundColor": "#ffffff",
+          "dark": {
+            "image": "./assets/images/splash-icon-light.png",
+            "imageWidth": 150,
+            "resizeMode": "contain",
+            "backgroundColor": "#151718"
+          }
+        }
       ],
       "expo-web-browser",
       [
         "expo-notifications",
         {
-          icon: "./assets/images/adaptive-icon.png", 
-          color: "#ffffff", 
-        },
+          "icon": "./assets/images/adaptive-icon.png",
+          "color": "#ffffff"
+        }
       ],
       [
         "expo-camera",
         {
-          cameraPermission: "Allow $(PRODUCT_NAME) to access your camera",
-          microphonePermission:
-            "Allow $(PRODUCT_NAME) to access your microphone",
-          recordAudioAndroid: true,
-        },
-      ],
+          "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera",
+          "microphonePermission": "Allow $(PRODUCT_NAME) to access your microphone",
+          "recordAudioAndroid": true
+        }
+      ]
     ],
-
-    experiments: {
-      typedRoutes: true,
+    "experiments": {
+      "typedRoutes": true
     },
-
-    extra: {
-      router: {},
-      BASE_URL: process.env.EXPO_PUBLIC_BASE_URL,
-      eas: {
-        projectId: "1c4bcd8c-d599-43cc-8cae-decc1a455423",
-      },
-    },
-  },
-};
+    "extra": {
+      "router": {},
+      "BASE_URL": "https://paradise-backend-production.up.railway.app/api/v1",
+      "eas": {
+        "projectId": "1c4bcd8c-d599-43cc-8cae-decc1a455423"
+      }
+    }
+  }
+}
