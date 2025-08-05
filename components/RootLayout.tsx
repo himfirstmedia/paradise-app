@@ -46,15 +46,17 @@ export default function RootLayout() {
   });
 
   useEffect(() => {
-    if (!fontsLoaded || !isAuthenticated || !userId || tokenSavedRef.current) return;
+    if (!fontsLoaded) return;
 
     async function prepare() {
       try {
-        const token = await initializeNotifications(true);
-        if (token) {
-          dispatch(setPushToken(token));
-          console.log("✅ Push token initialized:", token);
-          tokenSavedRef.current = true;
+        if (isAuthenticated && userId && !tokenSavedRef.current) {
+          const token = await initializeNotifications(true);
+          if (token) {
+            dispatch(setPushToken(token));
+            console.log("✅ Push token initialized:", token);
+            tokenSavedRef.current = true;
+          }
         }
       } catch (error) {
         console.warn("❌ Notification setup failed:", error);
@@ -88,12 +90,12 @@ export default function RootLayout() {
     if (appIsReady) SplashScreen.hideAsync();
   }, [appIsReady]);
 
-  // if (!appIsReady) return null;
+  if (!appIsReady) return null;
 
   return (
     <View
       style={{ flex: 1, backgroundColor: Colors[colorScheme].background }}
-      // onLayout={onLayoutRootView}
+      onLayout={onLayoutRootView}
     >
       <StatusBar
         barStyle={colorScheme === "dark" ? "light-content" : "dark-content"}
