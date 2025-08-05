@@ -59,7 +59,6 @@
     "react-native-svg": "15.11.2",
     "react-native-web": "~0.20.0",
     "react-native-webview": "13.13.5",
-    "react-native-worklets": "^0.4.1",
     "react-redux": "^9.2.0",
     "redux-persist": "^6.0.0",
     "victory-native": "^41.17.4"
@@ -81,8 +80,7 @@
       "reactNativeDirectoryCheck": {
         "exclude": [
           "redux-persist",
-          "firebase",
-          "react-native-worklets"
+          "firebase"
         ],
         "listUnknownPackages": false
       }
