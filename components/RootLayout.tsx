@@ -46,15 +46,17 @@ export default function RootLayout() {
   });
 
   useEffect(() => {
-    if (!fontsLoaded || !isAuthenticated || !userId || tokenSavedRef.current) return;
+    if (!fontsLoaded) return;
 
     async function prepare() {
       try {
-        const token = await initializeNotifications(true);
-        if (token) {
-          dispatch(setPushToken(token));
-          console.log("✅ Push token initialized:", token);
-          tokenSavedRef.current = true;
+        if (isAuthenticated && userId && !tokenSavedRef.current) {
+          const token = await initializeNotifications(true);
+          if (token) {
+            dispatch(setPushToken(token));
+            console.log("✅ Push token initialized:", token);
+            tokenSavedRef.current = true;
+          }
         }
       } catch (error) {
         console.warn("❌ Notification setup failed:", error);
