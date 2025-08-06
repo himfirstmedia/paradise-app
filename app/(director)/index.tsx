@@ -76,7 +76,7 @@ export default function HomeScreen() {
     scriptureSection: {
       marginBottom: isLargeScreen ? 15 : 20,
       marginTop: isLargeScreen ? 10 : 5,
-      maxHeight: isLargeScreen ? 200 : 140,
+      maxHeight: isLargeScreen ? 220 : 200,
     },
     taskSection: {
       marginTop: isLargeScreen ? 10 : 5,

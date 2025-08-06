@@ -8,6 +8,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   View,
+  Dimensions,
 } from "react-native";
 import { ThemedText } from "./ThemedText";
 import { ThemedView } from "./ThemedView";
@@ -20,6 +21,12 @@ type ScriptureCardProps = {
   imageSource?: any;
   iconSource?: any;
 };
+
+const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+
+// iPhone 16 has a 6.1" screen with higher resolution
+const isLargeScreen = screenWidth >= 393; // iPhone 16 width
+const isExtraLargeScreen = screenWidth >= 430; // iPhone 16 Plus/Pro Max
 
 export function ScriptureCard({
   verse,
@@ -35,47 +42,106 @@ export function ScriptureCard({
 
   const isIOS = Platform.OS === "ios";
 
+  // Responsive sizing
+  const getResponsiveSize = () => {
+    if (isExtraLargeScreen) {
+      return {
+        iconSize: 48,
+        cardPadding: 24,
+        gap: 18,
+        borderRadius: 24,
+        closeButtonSize: 28,
+        modalPadding: 32,
+      };
+    } else if (isLargeScreen) {
+      return {
+        iconSize: 44,
+        cardPadding: 22,
+        gap: 16,
+        borderRadius: 22,
+        closeButtonSize: 26,
+        modalPadding: 28,
+      };
+    } else {
+      return {
+        iconSize: 40,
+        cardPadding: 20,
+        gap: 15,
+        borderRadius: 20,
+        closeButtonSize: 24,
+        modalPadding: 25,
+      };
+    }
+  };
+
+  const responsiveSize = getResponsiveSize();
+
   const cardContent = (
     <>
-      <View style={styles.row}>
+      <View style={[styles.row, { gap: responsiveSize.gap }]}>
         <Image
           source={iconSource}
           style={{
-            width: 40,
-            height: 40,
+            width: responsiveSize.iconSize,
+            height: responsiveSize.iconSize,
             tintColor: textColor,
           }}
         />
 
-        <View style={{ flexDirection: "column" }}>
+        <View style={{ flexDirection: "column", flex: 1 }}>
           <ThemedText
             type="defaultSemiBold"
-            style={{
-              opacity: 0.8,
-              color: textColor,
-            }}
+            style={[
+              styles.verseOfDay,
+              {
+                opacity: 0.8,
+                color: textColor,
+                fontSize: isLargeScreen ? 14 : 13,
+              }
+            ]}
           >
             VERSE OF THE DAY
           </ThemedText>
           <ThemedText
             type="defaultSemiBold"
-            style={{
-              color: textColor,
-            }}
+            style={[
+              styles.verseReference,
+              {
+                color: textColor,
+                fontSize: isExtraLargeScreen ? 18 : isLargeScreen ? 17 : 16,
+              }
+            ]}
           >
             {book} {verse} {version}
           </ThemedText>
         </View>
       </View>
       {modalVisible ? (
-        <ThemedText type="title" style={{ color: textColor }}>
+        <ThemedText 
+          type="title" 
+          style={[
+            styles.scriptureText,
+            { 
+              color: textColor,
+              fontSize: isExtraLargeScreen ? 28 : isLargeScreen ? 26 : 24,
+              lineHeight: isExtraLargeScreen ? 36 : isLargeScreen ? 34 : 32,
+            }
+          ]}
+        >
           {scripture}
         </ThemedText>
       ) : (
         <ThemedText
           type="default"
           numberOfLines={2}
-          style={{ color: textColor }}
+          style={[
+            styles.scripturePreview,
+            { 
+              color: textColor,
+              fontSize: isExtraLargeScreen ? 17 : isLargeScreen ? 16 : 15,
+              lineHeight: isExtraLargeScreen ? 24 : isLargeScreen ? 23 : 22,
+            }
+          ]}
         >
           {scripture}
         </ThemedText>
@@ -85,8 +151,32 @@ export function ScriptureCard({
 
   const IOSStyles = StyleSheet.create({
     verticalPadding: {
-      paddingVertical: isIOS ? 100 : 40,
+      paddingVertical: isIOS ? (isLargeScreen ? 120 : 100) : (isLargeScreen ? 50 : 40),
     }
+  });
+
+  const responsiveStyles = StyleSheet.create({
+    card: {
+      minHeight: isExtraLargeScreen ? "22%" : isLargeScreen ? "21%" : "20%",
+      maxHeight: isExtraLargeScreen ? 230 : isLargeScreen ? 165 : 150,
+      borderRadius: responsiveSize.borderRadius,
+    },
+    innerCard: {
+      paddingVertical: isLargeScreen ? 12 : 10,
+      paddingHorizontal: responsiveSize.cardPadding,
+      gap: isLargeScreen ? 10 : 8,
+    },
+    modalContent: {
+      padding: responsiveSize.modalPadding,
+    },
+    modalInnerCard: {
+      gap: isExtraLargeScreen ? 20 : isLargeScreen ? 18 : 16,
+      marginBottom: isLargeScreen ? "25%" : "30%",
+    },
+    closeButton: {
+      marginBottom: isLargeScreen ? 12 : 10,
+      padding: isLargeScreen ? 10 : 8,
+    },
   });
 
   return (
@@ -95,8 +185,8 @@ export function ScriptureCard({
         onPress={() => setModalVisible(true)}
         activeOpacity={0.8}
       >
-        <View style={[styles.card, { borderColor: textColor }]}>
-          <View style={styles.innerCard}>{cardContent}</View>
+        <View style={[styles.card, responsiveStyles.card, { borderColor: textColor }]}>
+          <View style={[styles.innerCard, responsiveStyles.innerCard]}>{cardContent}</View>
         </View>
       </TouchableOpacity>
       <Modal
@@ -106,21 +196,25 @@ export function ScriptureCard({
         onRequestClose={() => setModalVisible(false)}
       >
         <View style={[styles.modalOverlay]}>
-          <ThemedView style={[styles.modalContent, IOSStyles.verticalPadding]}>
+          <ThemedView style={[styles.modalContent, responsiveStyles.modalContent, IOSStyles.verticalPadding]}>
             <Pressable
               style={[
                 styles.closeButton,
+                responsiveStyles.closeButton,
                 { backgroundColor: modalVisible ? backBtnColor : "#FFFFFF" },
               ]}
               onPress={() => setModalVisible(false)}
             >
               <Image
                 source={require("../assets/icons/dismiss.png")}
-                style={{ height: 24, width: 24 }}
+                style={{ 
+                  height: responsiveSize.closeButtonSize, 
+                  width: responsiveSize.closeButtonSize 
+                }}
               />
             </Pressable>
 
-            <ThemedView style={styles.modalInnerCard}>{cardContent}</ThemedView>
+            <ThemedView style={[styles.modalInnerCard, responsiveStyles.modalInnerCard]}>{cardContent}</ThemedView>
           </ThemedView>
         </View>
       </Modal>
@@ -130,23 +224,28 @@ export function ScriptureCard({
 
 const styles = StyleSheet.create({
   card: {
-    minHeight: "20%",
-    maxHeight: 150,
     width: "100%",
     borderWidth: 1,
-    borderRadius: 20,
     paddingVertical: 10
   },
   innerCard: {
-    paddingVertical: 10,
-    paddingHorizontal: 20,
     flexDirection: "column",
-    gap: 8,
   },
   row: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 15,
+  },
+  verseOfDay: {
+    letterSpacing: 0.5,
+  },
+  verseReference: {
+    marginTop: 2,
+  },
+  scriptureText: {
+    textAlign: "left",
+  },
+  scripturePreview: {
+    marginTop: 4,
   },
   modalOverlay: {
     flex: 1,
@@ -155,7 +254,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   modalContent: {
-    padding: 25,
     height: "100%",
     width: "100%",
     alignItems: "center",
@@ -166,13 +264,9 @@ const styles = StyleSheet.create({
     width: "100%",
     justifyContent: "center",
     alignItems: "flex-start",
-    gap: 16,
-    marginBottom: "30%",
   },
   closeButton: {
     alignSelf: "flex-start",
-    marginBottom: 10,
-    padding: 8,
     borderRadius: 999,
   },
 });

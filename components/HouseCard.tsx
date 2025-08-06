@@ -50,6 +50,13 @@ function getFriendlyHouseName(name: string) {
   return map[name.trim()] || name;
 }
 
+
+const { width: screenWidth } = Dimensions.get('window');
+
+// iPhone 16 has a 6.1" screen with higher resolution
+const isLargeScreen = screenWidth >= 393; // iPhone 16 width
+const isExtraLargeScreen = screenWidth >= 430; 
+
 export function HouseCard({ houses, style }: HouseCardProps) {
   const bgColor = useThemeColor({}, "input");
   const textColor = useThemeColor({}, "text");
@@ -161,6 +168,65 @@ export function HouseCard({ houses, style }: HouseCardProps) {
     });
   };
 
+const getResponsiveSize = () => {
+    if (isExtraLargeScreen) {
+      return {
+        buttonHeight: 130,
+        borderRadius: 18,
+        paddingHorizontal: 20,
+        gap: 8,
+        marginBottom: 15,
+        titleMarginBottom: 14,
+        occupancyFontSize: 16,
+        abbreviationFontSize: 15,
+      };
+    } else if (isLargeScreen) {
+      return {
+        buttonHeight: 98,
+        borderRadius: 16,
+        paddingHorizontal: 18,
+        gap: 6,
+        marginBottom: 12,
+        titleMarginBottom: 12,
+        occupancyFontSize: 15,
+        abbreviationFontSize: 14,
+      };
+    } else {
+      return {
+        buttonHeight: 90,
+        borderRadius: 15,
+        paddingHorizontal: 15,
+        gap: 5,
+        marginBottom: 10,
+        titleMarginBottom: 10,
+        occupancyFontSize: 14,
+        abbreviationFontSize: 13,
+      };
+    }
+  };
+
+  const responsiveSize = getResponsiveSize();
+
+  const responsiveStyles = StyleSheet.create({
+    container: {
+      marginBottom: responsiveSize.marginBottom + 10,
+    },
+    houseButtons: {
+      gap: responsiveSize.gap,
+    },
+    button: {
+      borderRadius: responsiveSize.borderRadius,
+      paddingHorizontal: responsiveSize.paddingHorizontal,
+      height: responsiveSize.buttonHeight,
+      marginBottom: responsiveSize.gap,
+      paddingVertical: isLargeScreen ? 15 : 12,
+    },
+    titleMargin: {
+      marginBottom: responsiveSize.titleMarginBottom,
+    },
+  });
+  
+
   return (
     <ThemedView style={[styles.container, style]}>
       <ThemedView style={[styles.row, { marginBottom: 15 }]}>
@@ -179,7 +245,7 @@ export function HouseCard({ houses, style }: HouseCardProps) {
         {displayedHouses.map((house) => (
           <ThemedView
             key={house.id}
-            style={[styles.row, styles.button, { backgroundColor: bgColor }]}
+            style={[styles.row, styles.button, responsiveStyles.button, { backgroundColor: bgColor }]}
           >
             <Pressable onPress={() => handleView(house)}>
               <ThemedText type="subtitle">
@@ -259,6 +325,8 @@ export function HouseSelectCard({ houses, style }: HouseCardProps) {
   const bgColor = useThemeColor({}, "input");
   const navigation = useRouter();
 
+  
+
   if (!houses || houses.length === 0) return null;
 
   const handleView = (houseId: number) => {
@@ -268,26 +336,112 @@ export function HouseSelectCard({ houses, style }: HouseCardProps) {
     });
   };
 
+  // Responsive sizing
+  const getResponsiveSize = () => {
+    if (isExtraLargeScreen) {
+      return {
+        buttonHeight: 130,
+        borderRadius: 18,
+        paddingHorizontal: 20,
+        gap: 8,
+        marginBottom: 15,
+        titleMarginBottom: 14,
+        occupancyFontSize: 16,
+        abbreviationFontSize: 15,
+      };
+    } else if (isLargeScreen) {
+      return {
+        buttonHeight: 98,
+        borderRadius: 16,
+        paddingHorizontal: 18,
+        gap: 6,
+        marginBottom: 12,
+        titleMarginBottom: 12,
+        occupancyFontSize: 15,
+        abbreviationFontSize: 14,
+      };
+    } else {
+      return {
+        buttonHeight: 90,
+        borderRadius: 15,
+        paddingHorizontal: 15,
+        gap: 5,
+        marginBottom: 10,
+        titleMarginBottom: 10,
+        occupancyFontSize: 14,
+        abbreviationFontSize: 13,
+      };
+    }
+  };
+
+  const responsiveSize = getResponsiveSize();
+
+  const responsiveStyles = StyleSheet.create({
+    container: {
+      marginBottom: responsiveSize.marginBottom + 10,
+    },
+    houseButtons: {
+      gap: responsiveSize.gap,
+    },
+    button: {
+      borderRadius: responsiveSize.borderRadius,
+      paddingHorizontal: responsiveSize.paddingHorizontal,
+      height: responsiveSize.buttonHeight,
+      marginBottom: responsiveSize.gap,
+      paddingVertical: isLargeScreen ? 15 : 12,
+    },
+    titleMargin: {
+      marginBottom: responsiveSize.titleMarginBottom,
+    },
+  });
+
   return (
-    <ThemedView style={[styles.container, style]}>
-      <ThemedText type="subtitle" style={{ marginBottom: 10 }}>
+    <ThemedView style={[styles.container, responsiveStyles.container, style]}>
+      <ThemedText 
+        type="subtitle" 
+        style={[
+          responsiveStyles.titleMargin,
+          {
+            fontSize: isExtraLargeScreen ? 20 : isLargeScreen ? 19 : 18,
+          }
+        ]}
+      >
         Current Houses
       </ThemedText>
-      <ThemedView style={styles.houseButtons}>
+      <ThemedView style={[styles.houseButtons, responsiveStyles.houseButtons]}>
         {houses.map((house) => (
           <Pressable
             key={house.id}
-            style={[styles.button, { backgroundColor: bgColor }]}
+            style={[styles.button, responsiveStyles.button, { backgroundColor: bgColor }]}
             onPress={() => handleView(house.id)}
           >
-            <View>
-              <ThemedText type="subtitle">
+            <View style={styles.houseInfo}>
+              <ThemedText 
+                type="subtitle"
+                style={{
+                  fontSize: isExtraLargeScreen ? 18 : isLargeScreen ? 17 : 16,
+                  marginBottom: isLargeScreen ? 4 : 2,
+                }}
+              >
                 {getFriendlyHouseName(house.name)}
               </ThemedText>
-              <ThemedText type="defaultSemiBold" style={{ color: "#888" }}>
+              <ThemedText 
+                type="defaultSemiBold" 
+                style={{ 
+                  color: "#888",
+                  fontSize: responsiveSize.abbreviationFontSize,
+                  marginBottom: isLargeScreen ? 6 : 4,
+                }}
+              >
                 ({house.abbreviation})
               </ThemedText>
-              <ThemedText type="defaultSemiBold" style={{ fontSize: 14 }}>
+              <ThemedText 
+                type="defaultSemiBold" 
+                style={{ 
+                  fontSize: responsiveSize.occupancyFontSize,
+                  opacity: 0.9,
+                }}
+              >
                 {house.users.length} / {house.capacity} Occupied
               </ThemedText>
             </View>
@@ -314,12 +468,15 @@ const styles = StyleSheet.create({
   button: {
     borderRadius: 15,
     paddingHorizontal: 15,
-    height: 90,
     marginBottom: 5,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     position: "relative",
+  },
+  houseInfo: {
+    flex: 1,
+    justifyContent: "center",
   },
   optionBtn: {
     position: "absolute",

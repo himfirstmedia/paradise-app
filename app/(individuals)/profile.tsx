@@ -203,7 +203,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   headerCard: {
-    height: 200,
+    height: 220,
     width: "100%",
     borderBottomEndRadius: 20,
     borderBottomStartRadius: 20,
