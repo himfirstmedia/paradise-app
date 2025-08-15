@@ -1,4 +1,5 @@
 import {
+  ThemedDatePicker,
   ThemedDropdown,
   ThemedEmailInput,
   ThemedTextInput,
@@ -28,16 +29,13 @@ interface UserFormData {
   name: string;
   email: string;
   gender: string;
-  city: string;
-  state: string;
-  zipCode: string;
   phone: string;
   role: string;
   houseId: number | null;
   image: string | null;
-  joinedDate: string | null;
-  leavingDate: string | null;
   password: string;
+  periodStart?: string;
+  periodEnd?: string;
 }
 
 interface HouseData {
@@ -60,11 +58,7 @@ export default function EditProfileScreen() {
   const { members, reload: reloadMembers } = useReduxMembers();
 
   const userRole = currentUser?.role ?? "";
-  const isPrivileged = [
-    "RESIDENT_MANAGER",
-    "FACILITY_MANAGER",
-    "DIRECTOR",
-  ].includes(userRole);
+  const isPrivileged = ["MANAGER", "DIRECTOR"].includes(userRole);
 
   // Get user ID from params
   const paramId = Array.isArray(params.id) ? params.id[0] : params.id;
@@ -78,16 +72,13 @@ export default function EditProfileScreen() {
     name: "",
     email: "",
     gender: "",
-    city: "",
-    state: "",
-    zipCode: "",
     phone: "",
     role: "",
     houseId: null,
     image: null,
-    joinedDate: null,
-    leavingDate: null,
     password: "",
+    periodStart: "",
+    periodEnd: "",
   });
 
   const [loading, setLoading] = useState(true);
@@ -102,21 +93,20 @@ export default function EditProfileScreen() {
   useEffect(() => {
     if (!isMountedRef.current) return;
 
+    console.log("Member Data: ", member);
+
     if (member) {
       setFormData({
         id: member.id,
         name: member.name ?? "",
         email: member.email ?? "",
         gender: member.gender ?? "",
-        city: member.city ?? "",
-        state: member.state ?? "",
-        zipCode: member.zipCode ?? "",
         phone: member.phone ?? "",
         role: member.role ?? "",
         houseId: member.houseId || null,
         image: member.image || null,
-        joinedDate: member.joinedDate || null,
-        leavingDate: member.leavingDate || null,
+        periodStart: member.periodStart || "",
+        periodEnd: member.periodEnd || "",
         password: "",
       });
       setLoading(false);
@@ -126,15 +116,12 @@ export default function EditProfileScreen() {
         name: currentUser.name ?? "",
         email: currentUser.email ?? "",
         gender: currentUser.gender ?? "",
-        city: currentUser.city ?? "",
-        state: currentUser.state ?? "",
-        zipCode: currentUser.zipCode ?? "",
         phone: currentUser.phone ?? "",
         role: currentUser.role ?? "",
         houseId: currentUser.houseId || null,
         image: currentUser.image || null,
-        joinedDate: currentUser.joinedDate || null,
-        leavingDate: currentUser.leavingDate || null,
+        periodStart: currentUser.periodStart || "",
+        periodEnd: currentUser.periodEnd || "",
         password: "",
       });
       setLoading(false);
@@ -148,16 +135,16 @@ export default function EditProfileScreen() {
     setFormData((prev) => ({ ...prev, email: value }));
   const handleGenderChange = (value: string) =>
     setFormData((prev) => ({ ...prev, gender: value }));
-  const handleCityChange = (value: string) =>
-    setFormData((prev) => ({ ...prev, city: value }));
-  const handleStateChange = (value: string) =>
-    setFormData((prev) => ({ ...prev, state: value }));
-  const handleZipCodeChange = (value: string) =>
-    setFormData((prev) => ({ ...prev, zipCode: value }));
   const handlePhoneChange = (value: string) =>
     setFormData((prev) => ({ ...prev, phone: value }));
   const handleHouseChange = (value: number | null) => {
     setFormData((prev) => ({ ...prev, houseId: value }));
+  };
+  const handlePeriodStartChange = (value: string) => {
+    setFormData((prev) => ({ ...prev, periodStart: value }));
+  };
+  const handlePeriodEndChange = (value: string) => {
+    setFormData((prev) => ({ ...prev, periodEnd: value }));
   };
 
   const handleUpdate = useCallback(async () => {
@@ -180,25 +167,17 @@ export default function EditProfileScreen() {
         ["MALE", "FEMALE", "OTHER"].includes(val);
 
       const isValidRole = (val: string): val is User["role"] =>
-        [
-          "SUPER_ADMIN",
-          "ADMIN",
-          "DIRECTOR",
-          "RESIDENT_MANAGER",
-          "FACILITY_MANAGER",
-          "RESIDENT",
-          "INDIVIDUAL",
-        ].includes(val);
+        ["SUPER_ADMIN", "DIRECTOR", "MANAGER", "RESIDENT"].includes(val);
 
       if (currentUser?.id === formData.id) {
         updateCurrentUser({
-          ...formData,
-          id: formData.id ?? undefined,
+          // ...formData,
+          id: formData.id,
           gender: isValidGender(formData.gender) ? formData.gender : undefined,
           role: isValidRole(formData.role) ? formData.role : undefined,
           image: formData.image ?? undefined,
-          joinedDate: formData.joinedDate ?? undefined,
-          leavingDate: formData.leavingDate ?? undefined,
+          periodStart: formData.periodStart ?? undefined,
+          periodEnd: formData.periodEnd ?? undefined,
         });
       }
 
@@ -304,52 +283,21 @@ export default function EditProfileScreen() {
               </ThemedText>
               <ThemedDropdown
                 placeholder="Select house"
-                items={houseOptions.map((h) => h.label)}
+                items={houseOptions.map((h: { label: string }) => h.label)}
                 value={
-                  houseOptions.find((h) => h.value === formData.houseId)
-                    ?.label || ""
+                  houseOptions.find(
+                    (h: { value: number }) => h.value === formData.houseId
+                  )?.label || ""
                 }
                 onSelect={(label) => {
-                  const found = houseOptions.find((h) => h.label === label);
+                  const found = houseOptions.find(
+                    (h: { label: string }) => h.label === label
+                  );
                   handleHouseChange(found?.value || null);
                 }}
               />
             </ThemedView>
           )}
-
-          <ThemedView style={styles.row}>
-            <ThemedView style={{ width: "45%" }}>
-              <ThemedText type="default">
-                City <Dot />
-              </ThemedText>
-              <ThemedTextInput
-                placeholder="Enter city"
-                value={formData.city}
-                onChangeText={handleCityChange}
-              />
-            </ThemedView>
-            <ThemedView style={{ width: "45%" }}>
-              <ThemedText type="default">
-                State <Dot />
-              </ThemedText>
-              <ThemedTextInput
-                placeholder="Enter state"
-                value={formData.state}
-                onChangeText={handleStateChange}
-              />
-            </ThemedView>
-          </ThemedView>
-
-          <ThemedView style={styles.inputField}>
-            <ThemedText type="default">
-              Zip Code <Dot />
-            </ThemedText>
-            <ThemedTextInput
-              placeholder="Enter zip code"
-              value={formData.zipCode}
-              onChangeText={handleZipCodeChange}
-            />
-          </ThemedView>
 
           <ThemedView style={styles.inputField}>
             <ThemedText type="default">
@@ -361,6 +309,40 @@ export default function EditProfileScreen() {
               onChangeText={handlePhoneChange}
             />
           </ThemedView>
+
+          {isPrivileged && (
+            <ThemedView style={styles.row}>
+              <ThemedView style={{ width: "48%" }}>
+                <ThemedView style={styles.inputField}>
+                  <ThemedText type="default">
+                    Period Start <Dot />
+                  </ThemedText>
+                  <ThemedDatePicker
+                    placeholder="Select start date"
+                    value={formData.periodStart}
+                    onChangeText={(text) => {
+                      handlePeriodStartChange(text);
+                    }}
+                  />
+                </ThemedView>
+              </ThemedView>
+
+              <ThemedView style={{ width: "48%" }}>
+                <ThemedView style={styles.inputField}>
+                  <ThemedText type="default">
+                    Period End <Dot />
+                  </ThemedText>
+                  <ThemedDatePicker
+                    placeholder="Select end date"
+                    value={formData.periodEnd}
+                    onChangeText={(text) => {
+                      handlePeriodEndChange(text);
+                    }}
+                  />
+                </ThemedView>
+              </ThemedView>
+            </ThemedView>
+          )}
 
           <ThemedView style={{ marginTop: 20, width: "100%" }}>
             <Button

@@ -22,12 +22,7 @@ import { useThemeColor } from "@/hooks/useThemeColor";
 import { UserAvatar } from "@/components/ui/UserAvatar";
 import { useReduxChats } from "@/hooks/useReduxChats";
 import { useReduxHouse } from "@/hooks/useReduxHouse";
-
-interface House {
-  id: number;
-  name: string;
-  users?: User[];
-}
+import type { House } from "@/redux/slices/houseSlice";
 
 export default function ChatRoomScreen() {
   const navigation = useRouter();
@@ -46,26 +41,26 @@ export default function ChatRoomScreen() {
   } = useReduxChats();
   const { houses } = useReduxHouse();
 
-  const userHouse = houses.find((house: House) =>
-    house.users?.some((u: User) => u.id === user?.id)
+  const userHouse = houses.find((house) =>
+    house.users?.some((u) => u.id === user?.id)
   );
   const userHouseId = userHouse?.id;
 
   const [inputText, setInputText] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [selectedHouseIds, setSelectedHouseIds] = useState<number[]>([]);
-  const [hasFetchedMessages, setHasFetchedMessages] = useState(false); // Prevent duplicate fetchMessages
+  const [hasFetchedMessages, setHasFetchedMessages] = useState(false);
 
   const scrollViewRef = useRef<ScrollView>(null);
 
   function getHouseById(id: number): House | null {
-    return houses.find((h: House) => h.id === id) || null;
+    return houses.find((h) => h.id === id) || null;
   }
 
   const canSendMessage =
-    user?.role === "RESIDENT_MANAGER" || user?.role === "FACILITY_MANAGER";
+    user?.role === "DIRECTOR" || user?.role === "MANAGER";
 
-  // Initialize selectedHouseIds from params
+
   useEffect(() => {
     if (params.houseIds) {
       const houseIds = String(params.houseIds)
@@ -82,7 +77,7 @@ export default function ChatRoomScreen() {
     const houseChats = chats.filter(
       (chat) => chat.houseId !== undefined && selectedHouseIds.includes(chat.houseId)
     );
-    const houseUserIds = userHouse?.users?.map((user: User) => user.id) || [];
+    const houseUserIds = userHouse?.users?.map((user) => user.id) || [];
     const allParticipantIds = [user?.id || -1, ...houseUserIds].filter(
       (id: number, index: number, self: number[]) =>
         id > 0 && self.indexOf(id) === index
@@ -175,14 +170,14 @@ export default function ChatRoomScreen() {
           return;
         }
 
-        const targetHouse = houses.find((house: House) => house.id === userHouseId);
+        const targetHouse = houses.find((house) => house.id === userHouseId);
         if (!targetHouse) {
           Alert.alert("Error", "Selected house not found.");
           setIsSending(false);
           return;
         }
 
-        const houseUserIds = targetHouse.users?.map((user: User) => user.id) || [];
+        const houseUserIds = targetHouse.users?.map((user) => user.id) || [];
         const allParticipantIds = [user.id, ...houseUserIds].filter(
           (id: number, index: number, self: number[]) =>
             id > 0 && self.indexOf(id) === index
@@ -243,14 +238,14 @@ export default function ChatRoomScreen() {
           return;
         }
 
-        const targetHouse = houses.find((house: House) => house.id === userHouseId);
+        const targetHouse = houses.find((house) => house.id === userHouseId);
         if (!targetHouse) {
           Alert.alert("Error", "Selected house not found.");
           setIsSending(false);
           return;
         }
 
-        const houseUserIds = targetHouse.users?.map((user: User) => user.id) || [];
+        const houseUserIds = targetHouse.users?.map((user) => user.id) || [];
         const allParticipantIds = [user.id, ...houseUserIds].filter(
           (id: number, index: number, self: number[]) =>
             id > 0 && self.indexOf(id) === index
@@ -431,7 +426,7 @@ function MessageBubble({ message, isCurrentUser }: MessageBubbleProps) {
       )}
 
       {message.content?.trim().length > 0 && (
-        <ThemedText type="default" style={styles.messageText}>
+        <ThemedText type="default" style={[styles.messageText, {color: "#fff"}]}>
           {message.content}
         </ThemedText>
       )}

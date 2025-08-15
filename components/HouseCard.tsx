@@ -23,13 +23,6 @@ export interface House {
   abbreviation: string;
   capacity: number;
   users: { id: number }[];
-  workPeriod?: {
-    id: number;
-    name: string;
-    startDate: string;
-    endDate: string;
-    carryOverEnabled: boolean;
-  };
 }
 
 interface HouseCardProps {
@@ -131,8 +124,6 @@ export function HouseCard({ houses, style }: HouseCardProps) {
         name: house.name,
         abbreviation: house.abbreviation,
         capacity: house.capacity.toString(),
-        workPeriodStart: house.workPeriod?.startDate,
-        workPeriodEnd: house.workPeriod?.endDate,
       },
     });
   };
@@ -182,7 +173,7 @@ const getResponsiveSize = () => {
       };
     } else if (isLargeScreen) {
       return {
-        buttonHeight: 98,
+        buttonHeight: 100,
         borderRadius: 16,
         paddingHorizontal: 18,
         gap: 6,
@@ -351,7 +342,7 @@ export function HouseSelectCard({ houses, style }: HouseCardProps) {
       };
     } else if (isLargeScreen) {
       return {
-        buttonHeight: 98,
+        buttonHeight: 100,
         borderRadius: 16,
         paddingHorizontal: 18,
         gap: 6,
@@ -420,7 +411,7 @@ export function HouseSelectCard({ houses, style }: HouseCardProps) {
                 type="subtitle"
                 style={{
                   fontSize: isExtraLargeScreen ? 18 : isLargeScreen ? 17 : 16,
-                  marginBottom: isLargeScreen ? 4 : 2,
+                  marginBottom: isLargeScreen ? 2 : 2,
                 }}
               >
                 {getFriendlyHouseName(house.name)}
@@ -430,7 +421,7 @@ export function HouseSelectCard({ houses, style }: HouseCardProps) {
                 style={{ 
                   color: "#888",
                   fontSize: responsiveSize.abbreviationFontSize,
-                  marginBottom: isLargeScreen ? 6 : 4,
+                  marginBottom: isLargeScreen ? 2 : 4,
                 }}
               >
                 ({house.abbreviation})

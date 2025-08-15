@@ -7,15 +7,13 @@ export interface User {
   email: string;
   phone: string;
   gender: "MALE" | "FEMALE" | "OTHER";
-  role: "SUPER_ADMIN" | "ADMIN" | "DIRECTOR" | "RESIDENT_MANAGER" | "FACILITY_MANAGER" | "RESIDENT" | "INDIVIDUAL";
+  role: "SUPER_ADMIN" | "DIRECTOR" | "MANAGER" | "RESIDENT";
   houseId?: number;
   house?: any | null;
   city: string;
   state: string;
   zipCode: string;
   image?: string;
-  joinedDate: string;
-  leavingDate?: string;
   task: any[];
   currentChore?: {
     id: number;
@@ -23,6 +21,8 @@ export interface User {
   };
   currentChoreId?: number;
   expoPushToken?: string;
+  periodStart?: string;
+  periodEnd?: string;
 }
 
 interface AuthState {

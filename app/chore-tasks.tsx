@@ -2,12 +2,11 @@ import { ChoreTaskCard } from "@/components/ChoreTaskCard";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { useReduxAuth } from "@/hooks/useReduxAuth";
-import { useReduxChores } from "@/hooks/useReduxChores";
+import { useReduxChores, useReduxTasks } from "@/hooks/useReduxChores";
 import { useReduxHouse } from "@/hooks/useReduxHouse";
 import { useReduxMembers } from "@/hooks/useReduxMembers";
-import { useReduxTasks } from "@/hooks/useReduxTasks";
 import { useLocalSearchParams } from "expo-router";
-import { StyleSheet, ScrollView, View } from "react-native";
+import { ScrollView, StyleSheet, View } from "react-native";
 
 export default function ChoreTasksScreen() {
   const { user } = useReduxAuth();

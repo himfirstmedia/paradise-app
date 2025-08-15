@@ -15,15 +15,14 @@ import { ThemedView } from "@/components/ThemedView";
 import { Avatar } from "@/components/ui/Avatar";
 import { useThemeColor } from "@/hooks/useThemeColor";
 
-import { useReduxAuth } from "@/hooks/useReduxAuth";
-import { useReduxScripture } from "@/hooks/useReduxScripture";
-import { useReduxTasks } from "@/hooks/useReduxTasks";
+import { PrimaryChoreCard } from "@/components/PrimaryChoreCard";
 import { StatusSummaryCard } from "@/components/StatusSummaryCard";
-import { useRouter } from "expo-router";
 import { Button } from "@/components/ui/Button";
-import { useTaskSummary } from "@/hooks/useTaskSummary";
-import { ChoreCard } from "@/components/ChoreCard";
+import { useChoreSummary } from "@/hooks/useChoreSummary";
+import { useReduxAuth } from "@/hooks/useReduxAuth";
 import { useReduxChores } from "@/hooks/useReduxChores";
+import { useReduxScripture } from "@/hooks/useReduxScripture";
+import { useRouter } from "expo-router";
 
 function getGreeting() {
   const hour = new Date().getHours();
@@ -45,15 +44,9 @@ export default function HomeScreen() {
   const userHouse = user?.house?.name;
   const [refreshing, setRefreshing] = React.useState(false);
 
-  const { chores, reload: ReloadChores } = useReduxChores({ onlyCurrentUser: true });
-  const { summary, summaryLoading } = useTaskSummary();
-  const {
-    tasks,
-    loading: tasksLoading,
-    reload: ReloadTasks,
-  } = useReduxTasks({
-    onlyCurrentUser: true,
-  });
+  const { chores, reload: ReloadChores, loading: choresLoading } = useReduxChores({ onlyCurrentUser: true });
+  const { summary, summaryLoading } = useChoreSummary();
+
   const {
     scriptures,
     loading: scriptureLoading,
@@ -64,7 +57,6 @@ export default function HomeScreen() {
 
   const handleRefresh = async () => {
     setRefreshing(true);
-    await ReloadTasks();
     await ReloadChores();
     await ReloadScripture();
     setRefreshing(false);
@@ -221,13 +213,13 @@ export default function HomeScreen() {
           </View>
 
           <View style={{ marginTop: "1%" }}>
-            {tasksLoading ? (
+            {choresLoading ? (
               <ActivityIndicator
                 size="large"
                 color={primaryColor}
                 style={{ marginTop: "5%" }}
               />
-            ) : tasks.length === 0 ? (
+            ) : chores.length === 0 ? (
               <ThemedText
                 type="default"
                 style={{
@@ -240,7 +232,7 @@ export default function HomeScreen() {
               </ThemedText>
             ) : (
               <>
-                <ChoreCard chore={chores[0]} />
+                <PrimaryChoreCard chores={chores} />
 
                 {summaryLoading || !summary ? (
                   <ActivityIndicator
@@ -249,7 +241,7 @@ export default function HomeScreen() {
                     style={{ marginTop: "5%" }}
                   />
                 ) : (
-                  <StatusSummaryCard summary={summary} />
+                  <StatusSummaryCard summary={summary} background={primaryColor}/>
                 )}
               </>
             )}

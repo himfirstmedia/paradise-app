@@ -125,7 +125,7 @@ export default function Reports() {
       </View>
 
       <ThemedText type="title" style={[styles.title, { marginTop: 30 }]}>
-        Individual Reports
+        Residents Report
       </ThemedText>
 
       <Pressable
@@ -137,7 +137,7 @@ export default function Reports() {
         onPress={() =>
           navigation.push({
             pathname: "/report-details",
-            params: { type: "individuals" },
+            params: { type: "residents" },
           })
         }
       >

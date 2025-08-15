@@ -1,4 +1,4 @@
-import { Task } from "@/redux/slices/taskSlice";
+import { Task } from "@/redux/slices/choreSlice";
 import { User as Member } from "@/redux/slices/userSlice";
 
 export function useHouseReduxTasksByStatus(members: Member[], houseName: string) {

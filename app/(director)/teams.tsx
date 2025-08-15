@@ -4,10 +4,11 @@ import { MemberCard } from "@/components/MemberCard";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { Avatar } from "@/components/ui/Avatar";
+import { useReduxHouse } from "@/hooks/useReduxHouse";
 import { useReduxMembers } from "@/hooks/useReduxMembers";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { User } from "@/redux/slices/userSlice";
-import { Task } from "@/types/task";
+import { Chore } from "@/types/chore";
 import { useRouter } from "expo-router";
 import React, { useMemo, useState } from "react";
 import {
@@ -22,16 +23,12 @@ import {
   View,
 } from "react-native";
 
-const houses = [
-  { label: "LLW House", enum: "LILLIE_LOUISE_WOERMER_HOUSE" },
-  { label: "CE House", enum: "CAROLYN_ECKMAN_HOUSE" },
-];
-
 export default function TeamsScreen() {
   const primaryColor = useThemeColor({}, "selection");
   const completed = useThemeColor({}, "completed");
   const pending = useThemeColor({}, "pending");
   const overdue = useThemeColor({}, "overdue");
+  const { houses } = useReduxHouse();
   const navigation = useRouter();
   const [refreshing, setRefreshing] = useState(false);
   const { members, loading, reload } = useReduxMembers();
@@ -46,58 +43,58 @@ export default function TeamsScreen() {
     setRefreshing(false);
   };
 
-
-  const houseReduxTaskstats = useMemo(() => {
+  const houseReduxChorestats = useMemo(() => {
     const stats: Record<
       string,
       {
         pending: number;
         completed: number;
         overdue: number;
-        totalTasks: number;
+        totalChores: number;
         completionPercent: number;
       }
     > = {};
 
     // Initialize stats for all houses
     houses.forEach((house) => {
-      stats[house.enum] = {
+      stats[house.id] = {
         pending: 0,
         completed: 0,
         overdue: 0,
-        totalTasks: 0,
+        totalChores: 0,
         completionPercent: 0,
       };
     });
 
     // Process all members
     members.forEach((member: User) => {
-      // Get the house enum from member's house name
-      const houseEnum = member.house?.name
-        ? member.house.name.toUpperCase().replace(/ /g, "_")
-        : null;
+      // Get the house ID from member's house
+      const houseId = member.house?.id;
 
       // Skip if no house or house not in our list
-      if (!houseEnum || !stats[houseEnum]) return;
+      if (!houseId || !stats[houseId]) return;
 
-      const houseStat = stats[houseEnum];
+      const houseStat = stats[houseId];
 
-      // Process each task for this member
-      member.task?.forEach((task: Task) => {
-        // Only count tasks with valid progress states
-        if (["PENDING", "COMPLETED", "OVERDUE"].includes(task.progress || "")) {
-          switch (task.progress) {
-            case "PENDING":
-              houseStat.pending++;
-              break;
-            case "COMPLETED":
-              houseStat.completed++;
-              break;
-            case "OVERDUE":
-              houseStat.overdue++;
-              break;
-          }
-          houseStat.totalTasks++;
+      // Process each chore for this member
+      member.chore?.forEach((chore: Chore) => {
+        // Count all chores regardless of status
+        houseStat.totalChores++;
+
+        console.log("House Stats: ", houseStat.totalChores++);
+        
+
+        switch (chore.status) {
+          case "APPROVED":
+            houseStat.completed++;
+            break;
+          case "REJECTED":
+            houseStat.overdue++;
+            break;
+          case "PENDING":
+          default:
+            houseStat.pending++;
+            break;
         }
       });
     });
@@ -105,27 +102,28 @@ export default function TeamsScreen() {
     // Calculate percentages
     Object.values(stats).forEach((stat) => {
       stat.completionPercent =
-        stat.totalTasks > 0
-          ? Math.round((stat.completed / stat.totalTasks) * 100)
+        stat.totalChores > 0
+          ? Math.round((stat.completed / stat.totalChores) * 100)
           : 0;
     });
 
     return stats;
-  }, [members]);
+  }, [members, houses]);
 
   // Helper to get stats for a house
-  const getHouseStats = (houseEnum: string) =>
-    houseReduxTaskstats[houseEnum] || {
+  const getHouseStats = (houseId: number) =>
+    houseReduxChorestats[houseId] || {
       pending: 0,
       completed: 0,
       overdue: 0,
-      totalTasks: 0,
+      totalChores: 0,
       completionPercent: 0,
     };
 
   const nonAdminMembers = useMemo(() => {
     return members.filter(
-      (member: User) => member.role !== "SUPER_ADMIN" && member.role !== "DIRECTOR"
+      (member: User) =>
+        member.role !== "SUPER_ADMIN" && member.role !== "DIRECTOR"
     );
   }, [members]);
 
@@ -177,6 +175,7 @@ export default function TeamsScreen() {
             paddingBottom: "40%",
           }}
           style={styles.innerContainer}
+          showsVerticalScrollIndicator={false}
         >
           <ThemedView
             style={[
@@ -211,10 +210,10 @@ export default function TeamsScreen() {
               ]}
             >
               {houses.map((house) => {
-                const stats = getHouseStats(house.enum);
+                const stats = getHouseStats(house.id);
                 return (
                   <HalfDonutChart
-                    key={house.enum}
+                    key={house.id}
                     data={[
                       {
                         value: stats.completed,
@@ -230,7 +229,7 @@ export default function TeamsScreen() {
                     showGradient={false}
                     strokeColor={primaryColor}
                     strokeWidth={5}
-                    legendTitle={`${house.label} Progress`}
+                    legendTitle={`${house.abbreviation} Progress`}
                     legendContainerStyle={{ marginTop: 10 }}
                     legendTitleStyle={{ color: "#fff", fontSize: 20 }}
                     legendTextStyle={{ color: "#fff", fontSize: 14 }}
@@ -244,7 +243,7 @@ export default function TeamsScreen() {
                             color: "#FFFFFF",
                           }}
                         >
-                          {stats.totalTasks === 0
+                          {stats.totalChores === 0
                             ? "0%"
                             : `${stats.completionPercent}%`}
                         </ThemedText>
@@ -287,7 +286,7 @@ export default function TeamsScreen() {
 
         <Pressable
           style={[
-            styles.taskCTAbtn,
+            styles.choreCTAbtn,
             { backgroundColor: primaryColor },
             responsiveStyles.ctaButton,
           ]}
@@ -341,7 +340,7 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
   },
 
-  taskCTAbtn: {
+  choreCTAbtn: {
     height: 60,
     width: 60,
     borderRadius: 30,

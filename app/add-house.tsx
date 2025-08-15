@@ -51,8 +51,6 @@ export default function AddHouseScreen() {
         houseName: "",
         abbreviation: "",
         capacity: "",
-        workPeriodStart: "",
-        workPeriodEnd: "",
       }}
       onSubmit={handleSubmit}
       loading={loading}

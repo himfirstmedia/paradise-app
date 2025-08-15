@@ -2,9 +2,9 @@ import { ThemedDropdown, ThemedTextArea } from "@/components/ThemedInput";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { Button } from "@/components/ui/Button";
-import { useReduxTasks } from "@/hooks/useReduxTasks";
-import api from "@/utils/api";
 import { useReduxAuth } from "@/hooks/useReduxAuth";
+import { useReduxTasks } from "@/hooks/useReduxChores";
+import api from "@/utils/api";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import {

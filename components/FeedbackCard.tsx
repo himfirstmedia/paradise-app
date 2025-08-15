@@ -1,7 +1,8 @@
-import { Feedback } from "@/redux/slices/feedbackSlice";
+import { useReduxTasks } from "@/hooks/useReduxChores";
 import { useReduxMembers } from "@/hooks/useReduxMembers";
-import { useReduxTasks } from "@/hooks/useReduxTasks";
 import { useThemeColor } from "@/hooks/useThemeColor";
+import { Feedback } from "@/redux/slices/feedbackSlice";
+import api from "@/utils/api";
 import { Image } from "expo-image";
 import React, { useState } from "react";
 import {
@@ -16,7 +17,6 @@ import {
 import { ThemedText } from "./ThemedText";
 import { ThemedView } from "./ThemedView";
 import { Button } from "./ui/Button";
-import api from "@/utils/api";
 
 interface FeedbackCardProps {
   feedbacks: Feedback[];

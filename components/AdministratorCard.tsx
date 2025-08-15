@@ -1,4 +1,4 @@
-import {User as Member} from "@/redux/slices/userSlice"
+import { User as Member } from "@/redux/slices/userSlice";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
@@ -7,7 +7,7 @@ import { Pressable, StyleSheet } from "react-native";
 import { ThemedText } from "./ThemedText";
 import { ThemedView } from "./ThemedView";
 
-export type AdminRoleType = "RESIDENT_MANAGER" | "FACILITY_MANAGER";
+export type AdminRoleType = "MANAGER";
 
 interface AdministratorCardProps {
   members: Member[];
@@ -15,9 +15,24 @@ interface AdministratorCardProps {
 
 // Static labels based on admin role type
 const ADMIN_ROLE_LABELS: Record<AdminRoleType, string> = {
-  RESIDENT_MANAGER: "Resident Managers",
-  FACILITY_MANAGER: "Facility Managers",
+  MANAGER: "Managers",
 };
+
+function serializeMemberToParams(member: Member) {
+  return {
+    id: member.id.toString(),
+    name: member.name,
+    firstname: member.firstname ?? "",
+    lastname: member.lastname ?? "",
+    email: member.email,
+    phone: member.phone,
+    gender: member.gender,
+    role: member.role,
+    house: member.house ? member.house.name : "",
+    chores: JSON.stringify(member.chore ?? []),
+  };
+}
+
 
 export function AdministratorCard({ members }: AdministratorCardProps) {
   const bgColor = useThemeColor({}, "input");
@@ -26,14 +41,10 @@ export function AdministratorCard({ members }: AdministratorCardProps) {
 
   // Group admins by role type
   const groupedAdmins: Record<AdminRoleType, Member[]> = {
-    RESIDENT_MANAGER: [],
-    FACILITY_MANAGER: [],
+    MANAGER: [],
   };
   members.forEach((member) => {
-    if (
-      member.role === "RESIDENT_MANAGER" ||
-      member.role === "FACILITY_MANAGER"
-    ) {
+    if (member.role === "MANAGER") {
       groupedAdmins[member.role].push(member);
     }
   });
@@ -79,17 +90,11 @@ export function AdministratorCard({ members }: AdministratorCardProps) {
                   onPress={() =>
                     navigation.push({
                       pathname: "/member-detail",
-                      params: {
-                        ...admin,
-                        house: admin.house ? admin.house.name : null, // Pass house as string or null
-                        task: JSON.stringify(admin.task ?? []),
-                      },
+                       params: serializeMemberToParams(admin),
                     })
                   }
                 >
-                  <ThemedText type="default">
-                    {admin.name}
-                  </ThemedText>
+                  <ThemedText type="default">{admin.name}</ThemedText>
                   <Image
                     source={require("../assets/icons/chevron-right.png")}
                     style={{ height: 20, width: 20 }}

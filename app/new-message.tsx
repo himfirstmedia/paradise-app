@@ -1,5 +1,4 @@
-// screens/NewMessageScreen.tsx
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { StyleSheet, ScrollView, View, Pressable } from "react-native";
 import { ThemedView } from "@/components/ThemedView";
 import { ThemedText } from "@/components/ThemedText";
@@ -8,21 +7,50 @@ import { UserAvatar } from "@/components/ui/UserAvatar";
 import { ThemedCheckbox } from "@/components/ThemedInput";
 import { useReduxAuth } from "@/hooks/useReduxAuth";
 import { useReduxHouse } from "@/hooks/useReduxHouse";
+import { useReduxMembers } from "@/hooks/useReduxMembers";
 import { useRouter } from "expo-router";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { House } from "@/types/house";
+import { User } from "@/redux/slices/userSlice";
 
 export default function NewMessageScreen() {
   const router = useRouter();
-  const { user } = useReduxAuth();
+  const { user: currentUser } = useReduxAuth();
   const { houses, loading: housesLoading } = useReduxHouse();
+  const { members, loading: membersLoading } = useReduxMembers();
   const [selectedHouses, setSelectedHouses] = useState<string[]>([]);
+  const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
   const tintColor = useThemeColor({}, "tint");
   const [isProceeding, setIsProceeding] = useState(false);
 
-  const userHouse = user?.houseId
-    ? houses.filter((house: House) => house.id === user.houseId)
-    : [];
+  const isDirector = currentUser?.role === "DIRECTOR" || currentUser?.role === "SUPER_ADMIN";
+
+  const currentHouse = useMemo(() => {
+    if (!currentUser?.houseId) return null;
+    return houses.find(house => house.id === currentUser.houseId);
+  }, [currentUser, houses]);
+
+
+  const visibleMembers = useMemo(() => {
+    if (isDirector) {
+      return members.filter(member => 
+        member.role === "RESIDENT" || member.role === "MANAGER"
+      );
+    } else if (currentHouse) {
+      return members.filter(
+        member => 
+          member.role === "RESIDENT" && 
+          member.house?.id === currentHouse.id
+      );
+    }
+    return [];
+  }, [members, isDirector, currentHouse]);
+
+  const visibleHouses = useMemo(() => {
+    if (isDirector) return houses;
+    if (currentHouse) return [currentHouse];
+    return [];
+  }, [houses, isDirector, currentHouse]);
 
   const toggleHouse = (houseId: string) => {
     setSelectedHouses((prev) =>
@@ -32,19 +60,28 @@ export default function NewMessageScreen() {
     );
   };
 
+  const toggleMember = (memberId: string) => {
+    setSelectedMembers((prev) =>
+      prev.includes(memberId)
+        ? prev.filter((item) => item !== memberId)
+        : [...prev, memberId]
+    );
+  };
+
   const handleProceed = () => {
-    if (isProceeding || selectedHouses.length === 0) return;
+    if (isProceeding || (selectedHouses.length === 0 && selectedMembers.length === 0)) return;
     setIsProceeding(true);
-    console.log("Navigating to ChatRoomScreen with houseIds:", selectedHouses);
+    
     router.replace({
       pathname: "/chat-room",
       params: {
         houseIds: selectedHouses.join(","),
+        memberIds: selectedMembers.join(","),
       },
     });
   };
 
-  const totalSelected = selectedHouses.length;
+  const totalSelected = selectedHouses.length + selectedMembers.length;
 
   return (
     <ThemedView style={styles.container}>
@@ -52,35 +89,68 @@ export default function NewMessageScreen() {
         style={styles.scrollContainer}
         showsVerticalScrollIndicator={false}
       >
+        {/* Houses Section */}
+        {(isDirector || currentHouse) && (
+          <>
+            <ThemedText type="subtitle" style={styles.sectionHeader}>
+              Houses
+            </ThemedText>
+            
+            {housesLoading ? (
+              <ThemedText>Loading houses...</ThemedText>
+            ) : visibleHouses.length > 0 ? (
+              visibleHouses.map((house: House) => (
+                <RecipientItem
+                  key={`house-${house.id}`}
+                  id={house.id.toString()}
+                  name={house.name}
+                  isSelected={selectedHouses.includes(house.id.toString())}
+                  onSelect={() => toggleHouse(house.id.toString())}
+                  isGroup={true}
+                />
+              ))
+            ) : (
+              <ThemedText style={styles.emptyText}>
+                {isDirector
+                  ? "There are no houses available"
+                  : "Your house information is not available"}
+              </ThemedText>
+            )}
+          </>
+        )}
+
+        {/* Members Section */}
         <ThemedText type="subtitle" style={styles.sectionHeader}>
-          Houses
+          Members
         </ThemedText>
 
-        {housesLoading ? (
-          <ThemedText>Loading houses...</ThemedText>
-        ) : userHouse.length > 0 ? (
-          userHouse.map((house: House) => (
+        {membersLoading ? (
+          <ThemedText>Loading members...</ThemedText>
+        ) : visibleMembers.length > 0 ? (
+          visibleMembers.map((member: User) => (
             <RecipientItem
-              key={`house-${house.id}`}
-              id={house.id.toString()}
-              name={house.name}
-              isSelected={selectedHouses.includes(house.id.toString())}
-              onSelect={() => toggleHouse(house.id.toString())}
-              isGroup={true}
+              key={`member-${member.id}`}
+              id={member.id.toString()}
+              name={member.name}
+              isSelected={selectedMembers.includes(member.id.toString())}
+              onSelect={() => toggleMember(member.id.toString())}
+              isGroup={false}
             />
           ))
         ) : (
           <ThemedText style={styles.emptyText}>
-            {user?.houseId
-              ? "Your house information is not available"
-              : "You don't belong to any house"}
+            {isDirector
+              ? "There are no residents or managers available"
+              : currentHouse
+                ? "There are no residents in your house yet"
+                : "You're not assigned to a house"}
           </ThemedText>
         )}
       </ScrollView>
 
       <View style={styles.buttonContainer}>
         <Button
-          title={`Message Selected (${totalSelected})`}
+          title={`Participant Selected (${totalSelected})`}
           onPress={handleProceed}
           disabled={totalSelected === 0 || isProceeding}
           style={totalSelected > 0 ? { backgroundColor: tintColor } : {}}

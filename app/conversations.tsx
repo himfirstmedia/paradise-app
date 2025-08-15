@@ -23,7 +23,7 @@ export default function ConversationsScreen() {
   const { user } = useReduxAuth();
   const role = user?.role;
   const router = useRouter();
-  const isManager = role === "FACILITY_MANAGER" || role === "RESIDENT_MANAGER";
+  const isManager = role === "DIRECTOR" || role === "MANAGER";
   const { chats, loading, reloadChats } = useReduxChats();
   const [refreshing, setRefreshing] = useState(false);
 

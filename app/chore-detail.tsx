@@ -1,12 +1,11 @@
-import { TaskCard } from "@/components/TaskCard";
+import { TaskCard } from "@/components/ChoreCard";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
-import { useReduxChores } from "@/hooks/useReduxChores";
-import { useReduxTasks } from "@/hooks/useReduxTasks";
+import { useReduxChores, useReduxTasks } from "@/hooks/useReduxChores";
 import { Chore } from "@/types/chore";
 import { Task } from "@/types/task";
 import { useLocalSearchParams } from "expo-router";
-import { StyleSheet, ScrollView, Platform } from "react-native";
+import { Platform, ScrollView, StyleSheet } from "react-native";
 
 export default function ChoreDetailScreen() {
   const { id } = useLocalSearchParams();

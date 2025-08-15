@@ -2,7 +2,7 @@ import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from '@/utils/api';
 import StorageParams from '@/constants/StorageParams';
-import { Task } from '@/types/task';
+import { Chore } from '@/types/chore';
 
 export interface User {
   id: number;
@@ -12,22 +12,19 @@ export interface User {
   email: string;
   phone: string;
   gender: "MALE" | "FEMALE" | "OTHER";
-  role: "SUPER_ADMIN" | "ADMIN" | "DIRECTOR" | "RESIDENT_MANAGER" | "FACILITY_MANAGER" | "RESIDENT" | "INDIVIDUAL";
+  role: "SUPER_ADMIN" | "DIRECTOR" | "MANAGER" | "RESIDENT";
   houseId?: number | null;
   house?: any | null;
-  city: string;
-  state: string;
-  zipCode: string;
   image?: string;
-  joinedDate: string;
-  leavingDate?: string;
-  task: Task[];
+  chore: Chore[];
   currentChoreId?: number;
   currentChore?: {
     id: number;
     name: string;
   }
   expoPushToken?: string;
+  periodStart?: string;
+  periodEnd?: string;
 }
 
 interface UserState {

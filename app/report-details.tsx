@@ -1,13 +1,16 @@
+import { ChoreCard } from "@/components/ChoreCard";
 import { HalfDonutChart } from "@/components/HalfDonutChart";
 import { MemberCard } from "@/components/MemberCard";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { useReduxMembers } from "@/hooks/useReduxMembers";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import * as Print from "expo-print";
-import * as Sharing from "expo-sharing";
+import { Chore } from "@/redux/slices/choreSlice";
+import { User } from "@/redux/slices/userSlice";
 import * as FileSystem from "expo-file-system";
+import * as Print from "expo-print";
 import { useLocalSearchParams } from "expo-router";
+import * as Sharing from "expo-sharing";
 import { useMemo, useState } from "react";
 import {
   ActivityIndicator,
@@ -20,17 +23,14 @@ import {
   useWindowDimensions,
   View,
 } from "react-native";
-import { Task } from "@/redux/slices/taskSlice";
-import { TaskCard } from "@/components/TaskCard";
-import { User } from "@/redux/slices/userSlice";
 
 function normalizeHouseName(name: string | null): string {
-  if (!name) return "INDIVIDUAL";
+  if (!name) return "RESIDENTS";
   return name.trim().replace(/\s+/g, "_").toUpperCase();
 }
 
 function getHouseDisplayName(houseValue: string | null): string {
-  return houseValue?.trim() || "Individual";
+  return houseValue?.trim() || "Residents";
 }
 
 export default function ReportDetails() {
@@ -62,17 +62,17 @@ export default function ReportDetails() {
   };
 
   // Memoized filtered members and report data
-  const { filteredMembers, reportTitle, taskStats } = useMemo(() => {
+  const { filteredMembers, reportTitle, choreStats } = useMemo(() => {
     let filtered: any[] = [];
     let title = "Report";
-    let stats = { pending: 0, completed: 0, overdue: 0, totalTasks: 0 };
+    let stats = { pending: 0, completed: 0, overdue: 0, totalChores: 0 };
 
     // Fallback for direct access
     if (!houseParam && !typeParam && !houseIdParam) {
       return {
         filteredMembers: [],
         reportTitle: "Invalid Report",
-        taskStats: stats,
+        choreStats: stats,
       };
     }
 
@@ -89,20 +89,20 @@ export default function ReportDetails() {
         const memberHouse = member.house?.name || "";
         return normalizeHouseName(memberHouse) === normalizedParam;
       });
-    } else if (typeParam === "individuals") {
-      title = "Individuals Report";
+    } else if (typeParam === "residents") {
+      title = "Residents Report";
       filtered = members.filter((member: User) => !member.house);
     }
 
-    // Calculate task stats
+    // Calculate chore stats
     filtered.forEach((member) => {
-      member.task?.forEach((task: Task) => {
+      member.chore?.forEach((chore: Chore) => {
         if (
-          task.progress &&
-          ["PENDING", "COMPLETED", "OVERDUE"].includes(task.progress)
+          chore.progress &&
+          ["PENDING", "COMPLETED", "OVERDUE"].includes(chore.progress)
         ) {
-          stats.totalTasks++;
-          switch (task.progress) {
+          stats.totalChores++;
+          switch (chore.progress) {
             case "PENDING":
               stats.pending++;
               break;
@@ -117,32 +117,32 @@ export default function ReportDetails() {
       });
     });
 
-    return { filteredMembers: filtered, reportTitle: title, taskStats: stats };
+    return { filteredMembers: filtered, reportTitle: title, choreStats: stats };
   }, [members, houseParam, typeParam, houseIdParam, houseNameParam]);
 
-  const filteredTasks = useMemo(() => {
+  const filteredChores = useMemo(() => {
   if (!filteredMembers) return [];
 
   return filteredMembers.reduce((acc, member) => {
-    if (member.task && member.task.length > 0) {
-      const tasksWithMember = member.task
-        .filter((task: Task) => task.progress !== "COMPLETED") // Filter out completed tasks
-        .map((task: Task) => ({
-          ...task,
+    if (member.chore && member.chore.length > 0) {
+      const choresWithMember = member.chore
+        .filter((chore: Chore) => chore.progress !== "COMPLETED") // Filter out completed chores
+        .map((chore: Chore) => ({
+          ...chore,
           memberName: member.name,
           memberId: member.id,
         }));
-      return [...acc, ...tasksWithMember];
+      return [...acc, ...choresWithMember];
     }
     return acc;
-  }, [] as Task[]);
+  }, [] as Chore[]);
 }, [filteredMembers]);
 
   const completionPercent = useMemo(() => {
-    return taskStats.totalTasks > 0
-      ? Math.round((taskStats.completed / taskStats.totalTasks) * 100)
+    return choreStats.totalChores > 0
+      ? Math.round((choreStats.completed / choreStats.totalChores) * 100)
       : 0;
-  }, [taskStats]);
+  }, [choreStats]);
 
   const generatePDF = async () => {
     setIsGeneratingPDF(true);
@@ -180,7 +180,7 @@ export default function ReportDetails() {
           font-weight: bold;
         }
 
-        .task-container {
+        .chore-container {
           display: flex;
           flex-wrap: wrap;
           gap: 10px;
@@ -188,7 +188,7 @@ export default function ReportDetails() {
           margin-bottom: 20px;
         }
 
-        .task-card {
+        .chore-card {
           border: 1px solid #ccc;
           border-radius: 4px;
           padding: 10px;
@@ -197,7 +197,7 @@ export default function ReportDetails() {
           box-sizing: border-box;
         }
 
-        .task-card p {
+        .chore-card p {
           margin: 4px 0;
         }
 
@@ -214,9 +214,9 @@ export default function ReportDetails() {
       <h1>${reportTitle}</h1>
 
       <div class="summary">
-        <p><strong>Pending Tasks:</strong> ${taskStats.pending}</p>
-        <p><strong>Completed Tasks:</strong> ${taskStats.completed}</p>
-        <p><strong>Overdue Tasks:</strong> ${taskStats.overdue}</p>
+        <p><strong>Pending Chores:</strong> ${choreStats.pending}</p>
+        <p><strong>Completed Chores:</strong> ${choreStats.completed}</p>
+        <p><strong>Overdue Chores:</strong> ${choreStats.overdue}</p>
       </div>
 
       ${filteredMembers
@@ -254,23 +254,23 @@ export default function ReportDetails() {
           </table>
 
           ${
-            member.task?.length
+            member.chore?.length
               ? `
-              <div class="task-container">
-                ${member.task
+              <div class="chore-container">
+                ${member.chore
                   .map(
-                    (task: Task) => `
-                    <div class="task-card">
-                      <p><strong>Task Name:</strong> ${task.name || "N/A"}</p>
-                      <p><strong>Description:</strong> ${task.description || ""}</p>
-                      <p><strong>Status:</strong> ${task.progress || ""}</p>
+                    (chore: Chore) => `
+                    <div class="chore-card">
+                      <p><strong>Chore Name:</strong> ${chore.name || "N/A"}</p>
+                      <p><strong>Description:</strong> ${chore.description || ""}</p>
+                      <p><strong>Status:</strong> ${chore.progress || ""}</p>
                     </div>
                   `
                   )
                   .join("")}
               </div>
             `
-              : "<p>No tasks assigned</p>"
+              : "<p>No chores assigned</p>"
           }
         </div>
       `
@@ -318,7 +318,7 @@ export default function ReportDetails() {
       marginTop: isLargeScreen ? 10 : 5,
       maxHeight: isLargeScreen ? 200 : 100,
     },
-    taskSection: {
+    choreSection: {
       marginTop: isLargeScreen ? 10 : 5,
     },
   });
@@ -353,16 +353,16 @@ export default function ReportDetails() {
 
         <ThemedView style={styles.statsContainer}>
           <ThemedView style={styles.statRow}>
-            <ThemedText type="defaultSemiBold">Pending Tasks:</ThemedText>
-            <ThemedText type="default">{taskStats.pending}</ThemedText>
+            <ThemedText type="defaultSemiBold">Pending Chores:</ThemedText>
+            <ThemedText type="default">{choreStats.pending}</ThemedText>
           </ThemedView>
           <ThemedView style={styles.statRow}>
-            <ThemedText type="defaultSemiBold">Completed Tasks:</ThemedText>
-            <ThemedText type="default">{taskStats.completed}</ThemedText>
+            <ThemedText type="defaultSemiBold">Completed Chores:</ThemedText>
+            <ThemedText type="default">{choreStats.completed}</ThemedText>
           </ThemedView>
           <ThemedView style={styles.statRow}>
-            <ThemedText type="defaultSemiBold">Overdue Tasks:</ThemedText>
-            <ThemedText type="default">{taskStats.overdue}</ThemedText>
+            <ThemedText type="defaultSemiBold">Overdue Chores:</ThemedText>
+            <ThemedText type="default">{choreStats.overdue}</ThemedText>
           </ThemedView>
         </ThemedView>
 
@@ -372,17 +372,17 @@ export default function ReportDetails() {
           <HalfDonutChart
             data={[
               {
-                value: taskStats.completed,
+                value: choreStats.completed,
                 color: completedColor,
                 text: "Completed",
               },
               {
-                value: taskStats.pending,
+                value: choreStats.pending,
                 color: pendingColor,
                 text: "Pending",
               },
               {
-                value: taskStats.overdue,
+                value: choreStats.overdue,
                 color: overdueColor,
                 text: "Overdue",
               },
@@ -396,7 +396,7 @@ export default function ReportDetails() {
             legendTitle="House Progress"
             centerLabelComponent={() => (
               <ThemedText type="title" style={styles.chartCenterText}>
-                {taskStats.totalTasks === 0 ? "0%" : `${completionPercent}%`}
+                {choreStats.totalChores === 0 ? "0%" : `${completionPercent}%`}
               </ThemedText>
             )}
             legendContainerStyle={styles.legendContainer}
@@ -411,7 +411,7 @@ export default function ReportDetails() {
           ) : (
             <>
               <MemberCard members={filteredMembers} />
-              <TaskCard tasks={filteredTasks} />
+              <ChoreCard chores={filteredChores} />
             </>
           )}
         </ThemedView>

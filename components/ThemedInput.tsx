@@ -193,6 +193,7 @@ export function ThemedTextArea({
             height: height === null ? 200 : height,
             textAlignVertical: "top",
             color: textColor,
+            fontSize: 16,
           },
           type === "default" ? styles.default : undefined,
           type === "floating" ? styles.floating : undefined,
@@ -570,10 +571,13 @@ export function ThemedDatePicker({
   const [showPicker, setShowPicker] = useState(false);
   const [error, setError] = useState<string | null>(errorMessage ?? null);
 
+  const parsedValue = value ? new Date(value) : null;
+
   const handleConfirm = (selectedDate: Date) => {
     setShowPicker(false);
     setDate(selectedDate);
     setError(null);
+    // Send ISO string back to parent
     if (onChangeText) onChangeText(selectedDate.toISOString());
   };
 
@@ -606,9 +610,9 @@ export function ThemedDatePicker({
         >
           <ThemedText
             type="default"
-            style={{ color: date ? textColor : placeholderColor }}
+             style={{ color: parsedValue ? textColor : placeholderColor }}
           >
-            {date ? format(date, "dd-MM-yyyy") : placeholder}
+            {parsedValue ? format(parsedValue, "MM-dd-yyyy") : placeholder}
           </ThemedText>
           <Image
             source={require("@/assets/icons/date.png")}

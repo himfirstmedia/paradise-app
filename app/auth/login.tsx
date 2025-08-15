@@ -19,10 +19,9 @@ import { useAppSelector } from "@/redux/hooks";
 
 type AppRoutes =
   | "/(director)"
-  | "/(resident-manager)"
+  | "/(managers)"
   | "/(facility-manager)"
   | "/(residents)"
-  | "/(individuals)"
   | "/auth/login";
 
 export default function LoginScreen() {
@@ -34,7 +33,7 @@ export default function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [checked, setChecked] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false); // Prevent double clicks
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { signin, loading } = useReduxAuth();
   const { width } = useWindowDimensions();
 
@@ -59,10 +58,9 @@ export default function LoginScreen() {
     const roleRoutes: Record<string, AppRoutes> = {
       SUPER_ADMIN: "/(director)",
       DIRECTOR: "/(director)",
-      RESIDENT_MANAGER: "/(resident-manager)",
+      MANAGER: "/(managers)",
       FACILITY_MANAGER: "/(facility-manager)",
       RESIDENT: "/(residents)",
-      INDIVIDUAL: "/(individuals)",
     };
 
     const route = roleRoutes[user.role] || "/auth/login";

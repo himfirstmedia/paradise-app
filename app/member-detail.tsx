@@ -1,45 +1,30 @@
 import { Alert } from "@/components/Alert";
+import { PrimaryChoreCard } from "@/components/PrimaryChoreCard";
+import { StatusSummaryCard } from "@/components/StatusSummaryCard";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { FloatingButton } from "@/components/ui/FloatingButton";
-import { UserAvatar } from "@/components/ui/UserAvatar";
-import { useReduxTasks } from "@/hooks/useReduxTasks";
+import { useChoreSummary } from "@/hooks/useChoreSummary";
+import { useReduxChores } from "@/hooks/useReduxChores";
+import { useReduxHouse } from "@/hooks/useReduxHouse";
+import { useReduxMembers } from "@/hooks/useReduxMembers";
 import { useThemeColor } from "@/hooks/useThemeColor";
+import { User } from "@/redux/slices/userSlice";
+import { House } from "@/types/house";
+import api from "@/utils/api";
+import { format } from "date-fns";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   ActivityIndicator,
   Platform,
+  Alert as Prompt,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   useWindowDimensions,
   View,
-  Alert as Prompt,
-  RefreshControl,
 } from "react-native";
-import { useReduxHouse } from "@/hooks/useReduxHouse";
-import { useReduxMembers } from "@/hooks/useReduxMembers";
-import api from "@/utils/api";
-import { useReduxAuth } from "@/hooks/useReduxAuth";
-import { StatusSummaryCard } from "@/components/StatusSummaryCard";
-import { ChoreCard } from "@/components/ChoreCard";
-import { useTaskSummary } from "@/hooks/useTaskSummary";
-import { useReduxChores } from "@/hooks/useReduxChores";
-import { format } from "date-fns";
-import { House } from "@/types/house";
-
-function getFriendlyHouseName(house?: string | null) {
-  if (!house) return "";
-  const map: Record<string, string> = {
-    LILLIE_LOUISE_WOERMER_HOUSE: "LILLIE LOUISE WOERMER HOUSE",
-    CAROLYN_ECKMAN_HOUSE: "CAROLYN ECKMAN HOUSE",
-    "LLW House": "LLW House",
-    "CE House": "CE House",
-    Administration: "Administration",
-    ADIMINISTRATION: "Administration",
-  };
-  return map[house.trim()] || house;
-}
 
 export default function MemberDetailScreen() {
   const primaryColor = useThemeColor({}, "selection");
@@ -52,34 +37,28 @@ export default function MemberDetailScreen() {
   const isMediumScreen = Platform.OS === "web" && width >= 768;
 
   const bgColor = useThemeColor({}, "background");
+  // const inputColor = useThemeColor({}, "input");
   const navigation = useRouter();
   const [alertMessage, setAlertMessage] = useState("");
-  const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
 
-  const { tasks, reload: reloadTasks, loading: tasksLoading } = useReduxTasks();
-  const { summary, summaryLoading } = useTaskSummary();
+  const { summary, summaryLoading } = useChoreSummary();
   const { houses } = useReduxHouse();
   const { members, reload } = useReduxMembers();
-  const { user } = useReduxAuth();
-  const { chores } = useReduxChores();
 
-  const userTasks = tasks.filter((task) => task.userId === Number(userId));
+  const {
+    chores,
+    reload: reloadChores,
+    loading: choresLoading,
+  } = useReduxChores();
 
-  const taskWithChore = userTasks.find((task) => task.choreId != null);
+  const userChores = chores.filter((chore) => chore.userId === Number(userId));
 
-  const primaryChore = chores.find(
-    (chore) => chore.id === taskWithChore?.choreId
-  );
-
-  useEffect(() => {
-    setCurrentUserRole(user?.role ?? null);
-  }, [user]);
+  console.log("Primary Chores:", userChores);
 
   const handleRefresh = async () => {
     setRefreshing(true);
-    await reloadTasks();
-    await reload();
+    await reloadChores();
     setRefreshing(false);
   };
 
@@ -91,25 +70,7 @@ export default function MemberDetailScreen() {
     );
   }
 
-  const member = members.find((m) => m.id === Number(userId));
-
-  let periodStart = "";
-  let periodEnd = "";
-
-  if (member?.houseId && houses.length > 0) {
-    const userHouse = houses.find((h: House) => h.id === member.houseId);
-
-    if (userHouse?.workPeriod?.startDate && userHouse?.workPeriod?.endDate) {
-      periodStart = format(
-        new Date(userHouse.workPeriod.startDate),
-        "MMMM d, yyyy"
-      );
-      periodEnd = format(
-        new Date(userHouse.workPeriod.endDate),
-        "MMMM d, yyyy"
-      );
-    }
-  }
+  const member = members.find((m: User) => m.id === Number(userId));
 
   if (!member) {
     return (
@@ -119,42 +80,15 @@ export default function MemberDetailScreen() {
     );
   }
 
-  const {
-    id,
-    firstname,
-    lastname,
-    name,
-    houseId,
-    role,
-    phone,
-    email,
-    joinedDate,
-    leavingDate,
-  } = member;
+  const { id, firstname, lastname, name, role, periodStart, periodEnd } =
+    member;
 
-  // Fixed: Handle all types of house IDs consistently
-  const getHouseNameById = (id: number | string | null) => {
-    if (id === null || id === undefined) return "";
-
-    // Convert to string for consistent comparison
-    const idStr = String(id);
-    const foundHouse = houses.find(
-      (house) =>
-        house.id !== null &&
-        house.id !== undefined &&
-        String(house.id) === idStr
-    );
-
-    return foundHouse ? foundHouse.name : "";
-  };
+  console.log("Member Detail:", member);
 
   // Fixed: Simplify house display logic
-  const houseDisplayName =
-    houseId !== null && houseId !== undefined
-      ? getHouseNameById(houseId)
-      : getFriendlyHouseName(houseId ? String(houseId) : null);
-
-  const showEditDelete = currentUserRole !== "FACILITY_MANAGER";
+  const houseDisplayName = member?.houseId
+    ? houses.find((h: House) => h.id === member.houseId)?.name ?? "Not Assigned"
+    : "Not Assigned";
 
   const handleDeleteMember = async () => {
     try {
@@ -211,20 +145,6 @@ export default function MemberDetailScreen() {
         <ThemedText type="title" style={{ marginBottom: 20 }}>
           Resident Information
         </ThemedText>
-        <View style={[styles.row, { marginBottom: 30 }]}>
-          <UserAvatar
-            size={100}
-            user={{ name: Array.isArray(name) ? name[0] : name, image: "" }}
-          />
-          <View>
-            <ThemedText type="title" style={{ marginBottom: "1%" }}>
-              {name}
-            </ThemedText>
-
-            <ThemedText type="default">{phone}</ThemedText>
-            <ThemedText type="default">{email}</ThemedText>
-          </View>
-        </View>
 
         <View style={styles.row}>
           <ThemedText type="defaultSemiBold">First Name:</ThemedText>
@@ -235,59 +155,38 @@ export default function MemberDetailScreen() {
           <ThemedText type="default">{lastname}</ThemedText>
         </View>
 
-        {role !== "INDIVIDUAL" && periodStart && periodEnd && (
-          <View style={{ marginVertical: 10 }}>
-            <View style={styles.row}>
-              <ThemedText type="defaultSemiBold">Period Start:</ThemedText>
-              <ThemedText type="default">{periodStart}</ThemedText>
-            </View>
-            <View style={styles.row}>
-              <ThemedText type="defaultSemiBold">Period End:</ThemedText>
-              <ThemedText type="default">{periodEnd}</ThemedText>
-            </View>
-          </View>
-        )}
-
-        {role !== "INDIVIDUAL" && (
+        <View style={{ marginVertical: 10 }}>
           <View style={styles.row}>
-            <ThemedText type="defaultSemiBold">House:</ThemedText>
-            <ThemedText type="default">{houseDisplayName}</ThemedText>
+            <ThemedText type="defaultSemiBold">Period Start:</ThemedText>
+            <ThemedText type="default">
+              {periodStart ? format(new Date(periodStart), "MM/dd/yyyy") : "—"}
+            </ThemedText>
           </View>
-        )}
-        {/* <View style={styles.row}>
-          <ThemedText type="defaultSemiBold">Member Type:</ThemedText>
-          <ThemedText type="default">{role}</ThemedText>
-        </View> */}
+          <View style={styles.row}>
+            <ThemedText type="defaultSemiBold">Period End:</ThemedText>
+            <ThemedText type="default">
+              {periodEnd ? format(new Date(periodEnd), "MM/dd/yyyy") : "—"}
+            </ThemedText>
+          </View>
+        </View>
 
-        {role === "INDIVIDUAL" && (
-          <>
-            <View style={styles.row}>
-              <ThemedText type="defaultSemiBold">Joined On:</ThemedText>
-              <ThemedText type="default">
-                {joinedDate
-                  ? new Date(joinedDate as string).toLocaleDateString()
-                  : ""}
-              </ThemedText>
-            </View>
-            <View style={styles.row}>
-              <ThemedText type="defaultSemiBold">Leaving On:</ThemedText>
-              <ThemedText type="default">
-                {leavingDate
-                  ? new Date(leavingDate as string).toLocaleDateString()
-                  : ""}
-              </ThemedText>
-            </View>
-          </>
-        )}
+        <View style={styles.row}>
+          <ThemedText type="defaultSemiBold">House:</ThemedText>
+          <ThemedText type="default">{houseDisplayName}</ThemedText>
+        </View>
+        <View style={styles.row}>
+          <ThemedText type="defaultSemiBold">Role:</ThemedText>
+          <ThemedText type="default">{role}</ThemedText>
+        </View>
 
         <View style={{ marginTop: 20, width: "100%" }}>
-          {tasksLoading ? (
+          {choresLoading ? (
             <ActivityIndicator
               size="large"
               color={primaryColor}
               style={{ marginTop: "5%" }}
             />
-          ) : tasks.length === 0 ? (
+          ) : chores.length === 0 ? (
             <ThemedText
               type="default"
               style={{
@@ -296,11 +195,13 @@ export default function MemberDetailScreen() {
                 color: "#888",
               }}
             >
-              You have no tasks assigned yet.
+              You have no chores assigned yet.
             </ThemedText>
           ) : (
             <>
-              {primaryChore && <ChoreCard chore={primaryChore} />}
+              {userChores && userChores.length > 0 && (
+                <PrimaryChoreCard chores={userChores} />
+              )}
 
               {summaryLoading ? (
                 <ActivityIndicator
@@ -311,16 +212,18 @@ export default function MemberDetailScreen() {
               ) : !summary ? (
                 <StatusSummaryCard
                   summary={{
-                    previousBalance: "0 hrs",
-                    weekStatus: "0/0 hrs",
-                    monthStatus: "0/0 hrs",
-                    currentPeriod: "0/0 hrs",
-                    currentBalance: "0 hrs",
+                    beginningBalance: "0",
+                    weekStatus: "0/0",
+                    monthStatus: "0/0",
+                    periodStatus: "0/0",
+                    currentPeriod: "0/0",
+                    currentBalance: "0",
                     daysRemaining: 0,
                   }}
+                  background="input"
                 />
               ) : (
-                <StatusSummaryCard summary={summary} />
+                <StatusSummaryCard summary={summary} background="input" />
               )}
             </>
           )}
@@ -330,44 +233,40 @@ export default function MemberDetailScreen() {
       <FloatingButton
         type="icon-rounded"
         childrenButtons={[
-          ...(showEditDelete
-            ? [
-                {
-                  label: "Delete Member",
-                  icon: require("@/assets/icons/delete.png"),
-                  onPress: () => {
-                    Prompt.alert(
-                      "Delete Member",
-                      `Are you sure you want to remove ${name} from the system? This action cannot be undone.`,
-                      [
-                        { text: "Cancel", style: "cancel" },
-                        {
-                          text: "Delete",
-                          onPress: handleDeleteMember,
-                          style: "destructive",
-                        },
-                      ],
-                      { cancelable: true }
-                    );
+          {
+            label: "Delete Member",
+            icon: require("@/assets/icons/delete.png"),
+            onPress: () => {
+              Prompt.alert(
+                "Delete Member",
+                `Are you sure you want to remove ${name} from the system? This action cannot be undone.`,
+                [
+                  { text: "Cancel", style: "cancel" },
+                  {
+                    text: "Delete",
+                    onPress: handleDeleteMember,
+                    style: "destructive",
                   },
-                },
-                {
-                  label: "Edit Profile",
-                  icon: require("@/assets/icons/edit-info.png"),
-                  onPress: () =>
-                    navigation.push({
-                      pathname: "/edit-profile",
-                      params: { id: id },
-                    }),
-                },
-              ]
-            : []),
+                ],
+                { cancelable: true }
+              );
+            },
+          },
+          {
+            label: "Edit Profile",
+            icon: require("@/assets/icons/edit-info.png"),
+            onPress: () =>
+              navigation.push({
+                pathname: "/edit-profile",
+                params: { id: id },
+              }),
+          },
           {
             label: "Assign Task",
             icon: require("@/assets/icons/assign.png"),
             onPress: () =>
               navigation.push({
-                pathname: "/assign-task",
+                pathname: "/assign-chore",
                 params: {
                   memberName: name,
                 },

@@ -10,7 +10,6 @@ import { ThemedView } from "@/components/ThemedView";
 import { Button } from "@/components/ui/Button";
 import { useReduxAuth } from "@/hooks/useReduxAuth";
 import { useReduxChores } from "@/hooks/useReduxChores";
-import { useReduxTasks } from "@/hooks/useReduxTasks";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import api from "@/utils/api";
 import { useRouter } from "expo-router";
@@ -59,7 +58,7 @@ export default function AddTaskScreen() {
   const [description, setDescription] = useState("");
   const [loading, setLoading] = useState(false);
   const [primary, setPrimary] = useState(false);
-  const { reload: taskReload } = useReduxTasks();
+  const { reload: taskReload } = useReduxChores();
 
   const { width } = useWindowDimensions();
 

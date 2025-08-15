@@ -1,3 +1,4 @@
+
 export default {
   "expo": {
     "name": "Paradise",
@@ -83,7 +84,8 @@ export default {
     },
     "extra": {
       "router": {},
-      "BASE_URL": "https://paradise-backend-production.up.railway.app/api/v1",
+      // "BASE_URL": "https://paradise-backend-production.up.railway.app/api/v1",
+      "BASE_URL": process.env.BASE_URL,
       "eas": {
         "projectId": "1c4bcd8c-d599-43cc-8cae-decc1a455423"
       }

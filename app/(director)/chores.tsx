@@ -1,23 +1,26 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-import React, { useState } from "react";
 import {
   ActivityIndicator,
+  Image,
   Platform,
+  Pressable,
   RefreshControl,
   ScrollView,
   StyleSheet,
   useWindowDimensions,
-  View,
+  View
 } from "react-native";
 
+import { ChoreCard } from "@/components/ChoreCard";
 import { HalfDonutChart } from "@/components/HalfDonutChart";
-import { TaskCard } from "@/components/TaskCard";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { Avatar } from "@/components/ui/Avatar";
-import { useReduxTasks } from "@/hooks/useReduxTasks";
 import { useThemeColor } from "@/hooks/useThemeColor";
+import { Chore } from "@/redux/slices/choreSlice";
 import { useRouter } from "expo-router";
+
+import { useReduxChores } from "@/hooks/useReduxChores";
+import { useState } from "react";
 
 export default function TabTwoScreen() {
   const primaryColor = useThemeColor({}, "selection");
@@ -25,20 +28,9 @@ export default function TabTwoScreen() {
   const pendingColor = useThemeColor({}, "pending");
   const overdueColor = useThemeColor({}, "overdue");
   const navigation = useRouter();
-
-  const { width } = useWindowDimensions();
-
-  const isLargeScreen = Platform.OS === "web" && width >= 1024;
-  const isMediumScreen = Platform.OS === "web" && width >= 768;
-
   const [refreshing, setRefreshing] = useState(false);
-  const {
-    tasks,
-    loading: tasksLoading,
-    reload,
-  } = useReduxTasks({
-    onlyCurrentUser: true,
-  });
+  const { loading: tasksLoading, chores, reload } = useReduxChores();
+  const { width } = useWindowDimensions();
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -46,15 +38,18 @@ export default function TabTwoScreen() {
     setRefreshing(false);
   };
 
+  const isLargeScreen = Platform.OS === "web" && width >= 1024;
+  const isMediumScreen = Platform.OS === "web" && width >= 768;
+
   let pending = 0,
     completed = 0,
     overdue = 0,
     totalTasks = 0;
-  tasks.forEach((task) => {
+  chores.forEach((chore: Chore) => {
     totalTasks++;
-    if (task.progress === "PENDING") pending++;
-    else if (task.progress === "COMPLETED") completed++;
-    else if (task.progress === "OVERDUE") overdue++;
+    if (chore.status === "PENDING") pending++;
+    else if (chore.status === "APPROVED") completed++;
+    else if (chore.status === "REJECTED") overdue++;
   });
 
   const completionPercent =
@@ -105,9 +100,10 @@ export default function TabTwoScreen() {
           contentContainerStyle={{
             alignItems: "center",
             width: "100%",
-            flex: 1,
+            paddingBottom: "30%",
           }}
           style={styles.innerContainer}
+          showsVerticalScrollIndicator={false}
         >
           <ThemedView
             style={[
@@ -166,28 +162,47 @@ export default function TabTwoScreen() {
           <ThemedView
             style={[styles.subContainer, responsiveStyles.containerPadding]}
           >
-            {tasksLoading ? (
-              <ActivityIndicator
-                size="large"
-                color={primaryColor}
-                style={{ marginTop: "5%" }}
-              />
-            ) : tasks.length === 0 ? (
-              <ThemedText
-                type="default"
-                style={{
-                  textAlign: "center",
-                  marginTop: 24,
-                  color: "#888",
-                }}
-              >
-                You have no tasks assigned yet.
-              </ThemedText>
-            ) : (
-              <TaskCard tasks={tasks} />
-            )}
+            <View style={{ marginTop: "1%" }}>
+              {tasksLoading ? (
+                <ActivityIndicator
+                  size="large"
+                  color={primaryColor}
+                  style={{ marginTop: "5%" }}
+                />
+              ) : chores.length === 0 ? (
+                <ThemedText
+                  type="default"
+                  style={{
+                    textAlign: "center",
+                    marginTop: 24,
+                    color: "#888",
+                  }}
+                >
+                  There are no chores available yet.
+                </ThemedText>
+              ) : (
+                <ChoreCard
+                  chores={chores.map((chore) => ({
+                    ...chore,
+                    status: chore.status ?? "PENDING",
+                  }))}
+                />
+              )}
+            </View>
           </ThemedView>
         </ScrollView>
+
+        <Pressable
+          style={[styles.taskCTAbtn, { backgroundColor: primaryColor }, responsiveStyles.ctaButton]}
+          onPress={() => {
+            navigation.push("/add-chore");
+          }}
+        >
+          <Image
+            source={require("@/assets/icons/add.png")}
+            style={styles.icon}
+          />
+        </Pressable>
       </ThemedView>
     </>
   );
@@ -225,14 +240,29 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
   },
-  chartContainer: {
-    height: "80%",
-    width: "100%",
-  },
+
   chartKey: {
-    borderWidth: 1,
     height: "10%",
     width: "100%",
     marginTop: "5%",
+  },
+  taskCTA: {
+    // borderWidth: 1,
+  },
+  taskCTAbtn: {
+    height: 60,
+    width: 60,
+    borderRadius: 30,
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    position: "absolute",
+    bottom: "10%",
+    right: "5%",
+  },
+  icon: {
+    height: 25,
+    width: 25,
+    tintColor: "#FFFFFF",
   },
 });

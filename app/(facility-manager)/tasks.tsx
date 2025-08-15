@@ -9,17 +9,17 @@ import {
   View,
 } from "react-native";
 
+import { TaskCard } from "@/components/ChoreCard";
 import { HalfDonutChart } from "@/components/HalfDonutChart";
-import { TaskCard } from "@/components/TaskCard";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { Avatar } from "@/components/ui/Avatar";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { useRouter } from "expo-router";
 
-import { useReduxTasks } from "@/hooks/useReduxTasks";
-import { useReduxAuth } from "@/hooks/useReduxAuth";
 import { FloatingButton } from "@/components/ui/FloatingButton";
+import { useReduxAuth } from "@/hooks/useReduxAuth";
+import { useReduxTasks } from "@/hooks/useReduxChores";
 
 export default function TabTwoScreen() {
   const primaryColor = useThemeColor({}, "selection");

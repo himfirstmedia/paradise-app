@@ -6,7 +6,6 @@ import Animated, {
   LinearTransition,
 } from "react-native-reanimated";
 import { useThemeColor } from "@/hooks/useThemeColor";
-// import { Image } from "expo-image";
 
 const AnimatedTouchableOpacity =
   Animated.createAnimatedComponent(TouchableOpacity);
@@ -16,6 +15,7 @@ const SECONDARY_COLOR = "#fff";
 const ICONS: Record<string, any> = {
   index: require("@/assets/icons/home.png"),
   tasks: require("@/assets/icons/task.png"),
+  chores: require("@/assets/icons/task.png"),
   teams: require("@/assets/icons/team.png"),
   profile: require("@/assets/icons/profile.png"),
 };

@@ -20,6 +20,7 @@ import { useReduxScripture } from "@/hooks/useReduxScripture";
 import { useRouter } from "expo-router";
 import { useReduxHouse } from "@/hooks/useReduxHouse";
 import { HouseSelectCard } from "@/components/HouseCard";
+import { Button } from "@/components/ui/Button";
 
 function getGreeting() {
   const hour = new Date().getHours();
@@ -41,7 +42,11 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = React.useState(false);
   const { houses, loading, reload: ReloadHouses } = useReduxHouse();
 
-  const { scriptures, loading: scriptureLoading, reload: ReloadScripture } = useReduxScripture();
+  const {
+    scriptures,
+    loading: scriptureLoading,
+    reload: ReloadScripture,
+  } = useReduxScripture();
 
   const latestScripture = scriptures.length > 0 ? scriptures[0] : null;
 
@@ -57,6 +62,15 @@ export default function HomeScreen() {
       router.replace("/auth/login");
     }
   }, [isAuthenticated, router]);
+
+  const getFormattedDate = () => {
+    const now = new Date();
+    return now.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  };
 
   const fontSizes = {
     title: isLargeScreen ? 36 : isMediumScreen ? 28 : 22,
@@ -119,20 +133,51 @@ export default function HomeScreen() {
                   fontSize: fontSizes.subtitle,
                 }}
               >
-                {getGreeting()}
-                {userName}
+                {getFormattedDate()}
               </ThemedText>
             </ThemedView>
-            <Avatar />
+            <ThemedView
+              style={[
+                {
+                  backgroundColor: primaryColor,
+                  justifyContent: "flex-end",
+                  alignItems: "center",
+                  flexDirection: "row",
+                  width: 100,
+                },
+              ]}
+            >
+              <Button
+                type="icon-rounded"
+                icon={require("@/assets/icons/chat.png")}
+                iconStyle={{ height: 30, width: 30 }}
+                onPress={() => {
+                  router.push("/conversations");
+                }}
+                style={{ width: 50, marginRight: 10 }}
+              />
+              <Avatar />
+            </ThemedView>
           </ThemedView>
 
           <View style={{ marginTop: 10, gap: 12 }}>
             <ThemedText
-              type="title"
+              type="subtitle"
+              style={{
+                fontWeight: "600",
+                color: "#FFFFFF",
+                fontSize: fontSizes.title,
+              }}
+            >
+              {getGreeting()}
+              {userName}
+            </ThemedText>
+            <ThemedText
+              type="subtitle"
               style={{
                 width: "100%",
                 color: "#FFFFFF",
-                fontSize: fontSizes.title,
+                fontSize: fontSizes.subtitle,
               }}
             >
               Welcome to Paradise App.

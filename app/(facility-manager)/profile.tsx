@@ -40,11 +40,6 @@ const ACTION_BUTTONS: ActionButton[] = [
     route: "../comments-manager",
   },
   {
-    icon: require("../../assets/icons/assign.png"),
-    label: "Manage Tasks",
-    route: "../task-manager",
-  },
-  {
     icon: require("../../assets/icons/add-task.png"),
     label: "Manage Chores",
     route: "../chore-manager",

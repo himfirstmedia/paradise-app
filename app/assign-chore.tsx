@@ -1,4 +1,5 @@
 import {
+  ThemedCheckbox,
   ThemedDropdown,
   ThemedTextArea,
   ThemedTextInput,
@@ -7,13 +8,12 @@ import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { Button } from "@/components/ui/Button";
 import { useReduxAuth } from "@/hooks/useReduxAuth";
+import { useReduxChores } from "@/hooks/useReduxChores";
 import { useReduxMembers } from "@/hooks/useReduxMembers";
-import { useReduxTasks } from "@/hooks/useReduxTasks";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { Task } from "@/types/task";
 import api from "@/utils/api";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -24,7 +24,7 @@ import {
   useWindowDimensions,
 } from "react-native";
 
-export default function AssignTaskScreen() {
+export default function AssignChoreScreen() {
   const primaryColor = useThemeColor({}, "selection");
   const { width } = useWindowDimensions();
 
@@ -34,24 +34,52 @@ export default function AssignTaskScreen() {
   const preselectedMember =
     typeof params.memberName === "string" ? params.memberName : "";
   const { members, reload: reloadMembers } = useReduxMembers();
-  const { tasks, loading: tasksLoading, reload: reloadTasks } = useReduxTasks();
+  const {
+    chores,
+    loading: choresLoading,
+    reload: reloadChores,
+  } = useReduxChores();
   const [selectedMember, setSelectedMember] =
     useState<string>(preselectedMember);
-  const [selectedTask, setSelectedTask] = useState<string>("");
+  const [selectedChoreId, setSelectedChoreId] = useState<number>();
   const [instruction, setInstruction] = useState<string>("");
+  const [isPrimary, setIsPrimary] = useState<boolean>(false);
   const [loading, setLoading] = useState(false);
   const navigation = useRouter();
-  const { user } = useReduxAuth();
+  const { user: currentUser } = useReduxAuth();
 
-  const isFacilityManager = user?.role === "FACILITY_MANAGER";
+  const isDirector =
+    currentUser?.role === "DIRECTOR" || currentUser?.role === "SUPER_ADMIN";
 
-  const visibleTasks = isFacilityManager
-    ? tasks.filter((task: Task) => task.progress === "PENDING")
-    : tasks;
+  const visibleChores = useMemo(() => {
+    if (isDirector) {
+      return chores.filter(
+        (chore) => chore.house?.abbreviation === "LLW House"
+      );
+    }
 
-  const handleTaskAssignment = async () => {
-    if (!selectedMember || !selectedTask) {
-      Alert.alert("Missing Fields", "Please select a member and a task.");
+    // Managers see only chores in their house
+    if (currentUser?.houseId) {
+      return chores.filter(
+        (chore) =>
+          chore.houseId === currentUser.houseId && chore.status === "PENDING"
+      );
+    }
+
+    // Other users see all chores (or empty if preferred)
+    return chores;
+  }, [chores, currentUser, isDirector]);
+
+   const choreOptions = useMemo(() => {
+    return visibleChores.map(chore => ({
+      label: chore.name,
+      value: chore.id.toString(),
+    }));
+  }, [visibleChores]);
+
+  const handleChoreAssignment = async () => {
+    if (!selectedMember || !selectedChoreId) {
+      Alert.alert("Missing Fields", "Please select a member and a chore.");
       return;
     }
     setLoading(true);
@@ -59,30 +87,30 @@ export default function AssignTaskScreen() {
       const member = members.find((m) => m.name === selectedMember);
       if (!member) throw new Error("Selected member not found.");
 
-      
-
-      const task = tasks.find((t) => t.name === selectedTask);
-      if (!task) throw new Error("Selected task not found.");
+      const chore = chores.find((t) => t.id === selectedChoreId);
+      if (!chore) throw new Error("Selected chore not found.");
 
       const payload = {
         userId: member.id,
         instruction,
+        isPrimary,
       };
 
-      await api.put(`/tasks/${task.id}`, payload);
+      await api.put(`/chores/${chore.id}`, payload);
 
-      setSelectedTask("");
+      setSelectedChoreId(undefined);
       setSelectedMember("");
       setInstruction("");
+      setIsPrimary(false);
 
       reloadMembers();
-      reloadTasks();
+      reloadChores();
 
       navigation.back();
     } catch (error: any) {
       Alert.alert(
         "Error",
-        error?.response?.data?.message || "Failed to assign task."
+        error?.response?.data?.message || "Failed to assign chore."
       );
     } finally {
       setLoading(false);
@@ -104,7 +132,7 @@ export default function AssignTaskScreen() {
       marginTop: isLargeScreen ? 10 : 5,
       maxHeight: isLargeScreen ? 200 : 100,
     },
-    taskSection: {
+    choreSection: {
       marginTop: isLargeScreen ? 10 : 5,
     },
   });
@@ -126,7 +154,7 @@ export default function AssignTaskScreen() {
           keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 40}
         >
           <ThemedText type="title" style={{ marginBottom: 30, marginTop: 15 }}>
-            Assign Task
+            Assign Resident Chore
           </ThemedText>
 
           <ThemedView style={styles.inputField}>
@@ -140,22 +168,21 @@ export default function AssignTaskScreen() {
           </ThemedView>
 
           <ThemedView style={styles.inputField}>
-            <ThemedText type="default">Task</ThemedText>
-            {tasksLoading ? (
+            <ThemedText type="default">Chore</ThemedText>
+            {choresLoading ? (
               <ActivityIndicator size="small" color={primaryColor} />
             ) : (
               <>
                 <ThemedDropdown
                   placeholder={
-                    visibleTasks.length === 0
-                      ? "No tasks available"
-                      : "Select Task"
+                    choreOptions.length === 0
+                      ? "No chores available"
+                      : "Select Chore"
                   }
-                  value={selectedTask}
-                  onSelect={setSelectedTask}
-                  items={visibleTasks.map((task) => task.name)}
+                  value={selectedChoreId?.toString() || ""}
+                  onSelect={(value) => setSelectedChoreId(parseInt(value, 10))}
+                  items={choreOptions.map((option) => option.label)}
                   multiSelect={false}
-                  // disabled={visibleTasks.length === 0}
                 />
               </>
             )}
@@ -171,9 +198,17 @@ export default function AssignTaskScreen() {
             />
           </ThemedView>
 
+          <ThemedView style={[styles.inputField, { marginBottom: 20 }]}>
+            <ThemedCheckbox
+              label="Select if chore is primary"
+              checked={isPrimary}
+              onChange={setIsPrimary}
+            />
+          </ThemedView>
+
           <Button
-            onPress={handleTaskAssignment}
-            title="Assign Task"
+            onPress={handleChoreAssignment}
+            title="Assign Chore"
             loading={loading}
           />
         </KeyboardAvoidingView>

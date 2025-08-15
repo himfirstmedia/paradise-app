@@ -36,11 +36,6 @@ const ACTION_BUTTONS: ActionButton[] = [
     label: "Change Password",
     route: "/change-password",
   },
-  {
-    icon: require("../../assets/icons/comments.png"),
-    label: "Share Feedback",
-    route: "../comments",
-  },
 ];
 
 export default function TabThreeScreen() {

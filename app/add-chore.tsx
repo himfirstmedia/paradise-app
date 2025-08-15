@@ -46,26 +46,25 @@ export default function AddChoreScreen() {
 
   const navigation = useRouter();
 
-  const allowedRoles = ["DIRECTOR", "SUPER_ADMIN"];
+  const showHouseDropdown =
+    user?.role === "DIRECTOR" || user?.role === "MANAGER" || user?.role === "SUPER_ADMIN" ;
 
-  const filteredHouseOptions: HouseOption[] = allowedRoles.includes(
-    user?.role ?? ""
-  )
-    ? (houses?.map((h: House) => ({
+  const filteredHouseOptions: HouseOption[] = showHouseDropdown
+    ? houses?.map((h: House) => ({
         label: h.abbreviation,
         value: h.id.toString(),
-      })) ?? [])
-    : (houses
+      })) ?? []
+    : houses
         ?.filter((h: House) => h.id === user?.houseId)
         .map((h: House) => ({
           label: h.abbreviation,
           value: h.id.toString(),
-        })) ?? []);
+        })) ?? [];
 
   const handleChoreCreation = async () => {
     const newErrors: Record<string, string> = {};
 
-    if (!choreName) newErrors.choreName = "Primary chore name is required.";
+    if (!choreName) newErrors.choreName = "Chore name is required.";
     if (!house) newErrors.house = "House is required.";
     if (!description) newErrors.description = "Chore Description is required.";
 
@@ -77,8 +76,9 @@ export default function AddChoreScreen() {
         name: choreName,
         house,
         description,
+        status: "PENDING",
       });
-      Alert.alert("Success", "Primary chore created successfully!");
+      Alert.alert("Success", "Chore created successfully!");
       setChoreName("");
       setHouse("");
       setDescription("");
@@ -134,15 +134,15 @@ export default function AddChoreScreen() {
           keyboardShouldPersistTaps="handled"
         >
           <ThemedText type="title" style={{ marginBottom: 15 }}>
-            Add Primary Chore
+            Add New Chore
           </ThemedText>
 
           <ThemedView style={styles.inputField}>
             <ThemedText type="default">
-              Primary Chore Name <Dot />
+              Chore Name <Dot />
             </ThemedText>
             <ThemedTextInput
-              placeholder="Enter primary chore name"
+              placeholder="Enter chore name"
               value={choreName}
               onChangeText={(text) => {
                 setChoreName(text);
@@ -153,28 +153,30 @@ export default function AddChoreScreen() {
             />
           </ThemedView>
 
-          <ThemedView style={styles.inputField}>
-            <ThemedText type="default">
-              House <Dot />
-            </ThemedText>
-            <ThemedDropdown
-              placeholder="Select House"
-              items={filteredHouseOptions.map((opt) => opt.label)}
-              value={
-                filteredHouseOptions.find((opt) => opt.value === house)
-                  ?.label || ""
-              }
-              onSelect={(label) => {
-                const selected = filteredHouseOptions.find(
-                  (opt) => opt.label === label
-                );
-                setHouse(selected?.value || "");
-                if (errors.house) setErrors((e) => ({ ...e, house: "" }));
-              }}
-              errorMessage={errors.house}
-              multiSelect={false}
-            />
-          </ThemedView>
+          {showHouseDropdown && (
+            <ThemedView style={styles.inputField}>
+              <ThemedText type="default">
+                House <Dot />
+              </ThemedText>
+              <ThemedDropdown
+                placeholder="Select House"
+                items={filteredHouseOptions.map((opt) => opt.label)}
+                value={
+                  filteredHouseOptions.find((opt) => opt.value === house)
+                    ?.label || ""
+                }
+                onSelect={(label) => {
+                  const selected = filteredHouseOptions.find(
+                    (opt) => opt.label === label
+                  );
+                  setHouse(selected?.value || "");
+                  if (errors.house) setErrors((e) => ({ ...e, house: "" }));
+                }}
+                errorMessage={errors.house}
+                multiSelect={false}
+              />
+            </ThemedView>
+          )}
 
           <ThemedView style={styles.inputField}>
             <ThemedText type="default">

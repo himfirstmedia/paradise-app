@@ -69,7 +69,7 @@ export function FloatingButton({
       {childrenButtons.map((btn, idx) => {
             const opacity = animatedValues[idx];
             const translateY = animatedValues[idx].interpolate({
-              inputRange: [0, 2],
+              inputRange: [0, 1],
               outputRange: [20, 0],
             });
 

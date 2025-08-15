@@ -1,15 +1,14 @@
-import { configureStore, combineReducers } from '@reduxjs/toolkit';
-import { persistReducer, persistStore } from 'redux-persist';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { combineReducers, configureStore } from '@reduxjs/toolkit';
+import { persistReducer, persistStore } from 'redux-persist';
 
-import houseReducer from './slices/houseSlice';
-import taskReducer from './slices/taskSlice';
-import choreReducer from './slices/choreSlice';
-import scriptureReducer from './slices/scriptureSlice';
-import userReducer from './slices/userSlice';
-import feedbackReducer from './slices/feedbackSlice';
 import authReducer from './slices/authSlice';
 import chatReducer from './slices/chatSlice';
+import { default as choreReducer, default as taskReducer } from './slices/choreSlice';
+import feedbackReducer from './slices/feedbackSlice';
+import houseReducer from './slices/houseSlice';
+import scriptureReducer from './slices/scriptureSlice';
+import userReducer from './slices/userSlice';
 
 const rootReducer = combineReducers({
   house: houseReducer,

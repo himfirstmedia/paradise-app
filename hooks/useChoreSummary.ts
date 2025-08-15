@@ -1,10 +1,10 @@
 // hooks/useTaskSummary.ts
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import { selectCurrentUser } from "@/redux/slices/authSlice";
-import { loadTaskSummary } from "@/redux/slices/taskSlice";
-import { useEffect, useCallback } from "react";
+import { loadChoreSummary } from "@/redux/slices/choreSlice";
+import { useCallback, useEffect } from "react";
 
-export function useTaskSummary() {
+export function useChoreSummary() {
   const dispatch = useAppDispatch();
   const { summary, summaryStatus, error } = useAppSelector((state) => state.task);
   const currentUser = useAppSelector(selectCurrentUser);
@@ -12,7 +12,7 @@ export function useTaskSummary() {
   
   const loadSummary = useCallback(() => {
     if (currentUser?.id) {
-      dispatch(loadTaskSummary(currentUser.id));
+      dispatch(loadChoreSummary(currentUser.id));
     }
   }, [dispatch, currentUser?.id]);
 
@@ -26,7 +26,7 @@ export function useTaskSummary() {
 
   const reload = useCallback(() => {
     if (currentUser?.id) {
-      dispatch(loadTaskSummary(currentUser.id));
+      dispatch(loadChoreSummary(currentUser.id));
     }
   }, [dispatch, currentUser?.id]);
 

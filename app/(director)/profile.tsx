@@ -34,11 +34,11 @@ const ACTION_BUTTONS: ActionButton[] = [
     label: "Change Password",
     route: "/change-password",
   },
-  {
-    icon: require("../../assets/icons/comments.png"),
-    label: "Comments / Suggestions",
-    route: "../comments-manager",
-  },
+  // {
+  //   icon: require("../../assets/icons/comments.png"),
+  //   label: "Comments / Suggestions",
+  //   route: "../comments-manager",
+  // },
   {
     icon: require("../../assets/icons/scripture.png"),
     label: "Manage Scriptures",
@@ -53,11 +53,6 @@ const ACTION_BUTTONS: ActionButton[] = [
     icon: require("../../assets/icons/members.png"),
     label: "Manage Members",
     route: "../members",
-  },
-  {
-    icon: require("../../assets/icons/assign.png"),
-    label: "Manage Tasks",
-    route: "../task-manager",
   },
   {
     icon: require("../../assets/icons/add-task.png"),

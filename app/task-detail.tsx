@@ -2,9 +2,10 @@ import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { Button } from "@/components/ui/Button";
 import { useReduxAuth } from "@/hooks/useReduxAuth";
-import { useReduxTasks } from "@/hooks/useReduxTasks";
+import { useReduxTasks } from "@/hooks/useReduxChores";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import api from "@/utils/api";
+import { Camera, CameraView } from "expo-camera";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import {
@@ -16,7 +17,6 @@ import {
   StyleSheet,
   View,
 } from "react-native";
-import { Camera, CameraView } from "expo-camera";
 
 import * as MediaLibrary from "expo-media-library";
 // import * as FileSystem from "expo-file-system";

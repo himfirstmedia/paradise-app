@@ -34,8 +34,12 @@ SplashScreen.preventAutoHideAsync();
 export default function RootLayout() {
   const colorScheme = useColorScheme() ?? "light";
   const [appIsReady, setAppIsReady] = useState(false);
-  const isAuthenticated = useAppSelector((state) => state.auth?.isAuthenticated ?? false);
+
+  const isAuthenticated = useAppSelector(
+    (state) => state.auth?.isAuthenticated ?? false
+  );
   const userId = useAppSelector((state) => state.auth?.user?.id ?? null);
+
   const dispatch = useAppDispatch();
   const router = useRouter();
   const tokenSavedRef = useRef(false);
@@ -45,29 +49,44 @@ export default function RootLayout() {
     SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
   });
 
+  // 1️⃣ Prepare app (fonts, splash)
   useEffect(() => {
     if (!fontsLoaded) return;
 
-    async function prepare() {
+    async function prepareApp() {
       try {
-        if (isAuthenticated && userId && !tokenSavedRef.current) {
-          const token = await initializeNotifications(true);
-          if (token) {
-            dispatch(setPushToken(token));
-            console.log("✅ Push token initialized:", token);
-            tokenSavedRef.current = true;
-          }
-        }
+        // Any other one-time app setup goes here
       } catch (error) {
-        console.warn("❌ Notification setup failed:", error);
+        console.warn("❌ App preparation failed:", error);
       } finally {
-        setAppIsReady(true);
+        setAppIsReady(true); // ✅ only once
       }
     }
 
-    prepare();
-  }, [fontsLoaded, isAuthenticated, userId, dispatch, initializeNotifications]);
+    prepareApp();
+  }, [fontsLoaded]);
 
+  // 2️⃣ Initialize push notifications when user logs in
+  useEffect(() => {
+    if (!isAuthenticated || !userId || tokenSavedRef.current) return;
+
+    async function setupPushToken() {
+      try {
+        const token = await initializeNotifications(true);
+        if (token) {
+          dispatch(setPushToken(token));
+          console.log("✅ Push token initialized:", token);
+          tokenSavedRef.current = true;
+        }
+      } catch (error) {
+        console.warn("❌ Notification setup failed:", error);
+      }
+    }
+
+    setupPushToken();
+  }, [isAuthenticated, userId, dispatch, initializeNotifications]);
+
+  // 3️⃣ Register notification listeners after app is ready
   useEffect(() => {
     if (!appIsReady) return;
 
@@ -86,6 +105,7 @@ export default function RootLayout() {
     return () => unsubscribe();
   }, [appIsReady, router]);
 
+  // Splash screen handler
   const onLayoutRootView = useCallback(() => {
     if (appIsReady) SplashScreen.hideAsync();
   }, [appIsReady]);
@@ -104,10 +124,9 @@ export default function RootLayout() {
       <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
         <Stack>
           <Stack.Screen name="auth" options={{ headerShown: false }} />
-          <Stack.Screen name="(individuals)" options={{ headerShown: false }} />
           <Stack.Screen name="(director)" options={{ headerShown: false }} />
           <Stack.Screen
-            name="(resident-manager)"
+            name="(managers)"
             options={{ headerShown: false }}
           />
           <Stack.Screen
@@ -132,8 +151,8 @@ export default function RootLayout() {
             options={{ header: () => <SimpleHeader title="Create Chore" /> }}
           />
           <Stack.Screen
-            name="assign-task"
-            options={{ header: () => <SimpleHeader title="Assign Task" /> }}
+            name="assign-chore"
+            options={{ header: () => <SimpleHeader title="Assign Chore" /> }}
           />
           <Stack.Screen
             name="add-member"
@@ -164,10 +183,6 @@ export default function RootLayout() {
           <Stack.Screen
             name="members"
             options={{ header: () => <SimpleHeader title="Members" /> }}
-          />
-          <Stack.Screen
-            name="task-manager"
-            options={{ header: () => <SimpleHeader title="Manage Tasks" /> }}
           />
           <Stack.Screen
             name="chore-manager"

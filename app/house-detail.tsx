@@ -1,24 +1,24 @@
 import { AdministratorCard } from "@/components/AdministratorCard";
+import { ChoreCard } from "@/components/ChoreCard";
 import { MemberCard } from "@/components/MemberCard";
-import { TaskCard } from "@/components/TaskCard";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { FloatingButton } from "@/components/ui/FloatingButton";
 import { useReduxAuth } from "@/hooks/useReduxAuth";
+import { useReduxChores } from "@/hooks/useReduxChores";
 import { useReduxHouse } from "@/hooks/useReduxHouse";
 import { useReduxMembers } from "@/hooks/useReduxMembers";
-import { useReduxTasks } from "@/hooks/useReduxTasks";
+import { useThemeColor } from "@/hooks/useThemeColor";
+import { User } from "@/redux/slices/userSlice";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
+  Platform,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   useWindowDimensions,
-  Platform,
-  RefreshControl,
 } from "react-native";
-import dayjs from "dayjs";
-import { useThemeColor } from "@/hooks/useThemeColor";
 
 // Helper to format house names
 function getFriendlyHouseName(name: string) {
@@ -42,7 +42,7 @@ export default function HouseDetailScreen() {
 
   const { houses } = useReduxHouse();
   const { members, reload } = useReduxMembers();
-  const { tasks } = useReduxTasks();
+  const { chores } = useReduxChores();
 
   const { width } = useWindowDimensions();
 
@@ -68,26 +68,24 @@ export default function HouseDetailScreen() {
   );
 
   const usersInHouse = members.filter(
-    (member) => String(member.houseId) === String(houseId)
+    (member: User) => String(member.houseId) === String(houseId)
   );
 
-  const userIdsInHouse = new Set(usersInHouse.map((u) => u.id));
+  const userIdsInHouse = new Set(usersInHouse.map((u: { id: number }) => u.id));
 
-  const houseTasks = tasks.filter(
-    (task) => task.userId && userIdsInHouse.has(task.userId)
+  const houseChores = chores.filter(
+    (chore) => chore.userId && userIdsInHouse.has(chore.userId)
   );
 
   // Filter members for this house
   const houseReduxMembers = members.filter(
-    (m) => m.house && String(m.house.id) === String(houseId)
+    (m: User) => m.house && String(m.house.id) === String(houseId)
   );
 
   // Split into managers and other members
-  const managers = houseReduxMembers.filter(
-    (m) => m.role === "RESIDENT_MANAGER" || m.role === "FACILITY_MANAGER"
-  );
+  const managers = houseReduxMembers.filter((m: User) => m.role === "MANAGER");
   const otherMembers = houseReduxMembers.filter(
-    (m) => m.role === "RESIDENT" || m.role === "INDIVIDUAL"
+    (m: User) => m.role === "RESIDENT"
   );
 
   if (!house) {
@@ -96,16 +94,6 @@ export default function HouseDetailScreen() {
         <ThemedText type="title">House not found</ThemedText>
       </ThemedView>
     );
-  }
-
-  const startDate = house.workPeriod?.startDate;
-  const endDate = house.workPeriod?.endDate;
-
-  let workPeriodRangeInDays: number | null = null;
-  if (startDate && endDate) {
-    const start = dayjs(startDate);
-    const end = dayjs(endDate);
-    workPeriodRangeInDays = end.diff(start, "day") + 1;
   }
 
   const responsiveStyles = StyleSheet.create({
@@ -152,15 +140,8 @@ export default function HouseDetailScreen() {
           Abbreviation: {house.abbreviation}
         </ThemedText>
 
-        <ThemedText type="defaultSemiBold" style={{ marginBottom: 30 }}>
+        <ThemedText type="defaultSemiBold" style={{ marginBottom: 20 }}>
           Capacity: {house.users.length} / {house.capacity} members
-        </ThemedText>
-
-        <ThemedText type="defaultSemiBold" style={{ marginBottom: 30 }}>
-          Work Period:{" "}
-          {workPeriodRangeInDays !== null
-            ? `${workPeriodRangeInDays} days (${dayjs(startDate).format("MMM D")} - ${dayjs(endDate).format("MMM D, YYYY")})`
-            : "Not set"}
         </ThemedText>
 
         {managers.length > 0 && (
@@ -181,9 +162,14 @@ export default function HouseDetailScreen() {
           </ThemedText>
         )}
 
-        {houseTasks.length > 0 ? (
+        {houseChores.length > 0 ? (
           <ThemedView style={{ marginTop: 20 }}>
-            <TaskCard tasks={houseTasks} />
+            <ChoreCard
+              chores={houseChores.map((chore) => ({
+                ...chore,
+                status: chore.status ?? "PENDING",
+              }))}
+            />
           </ThemedView>
         ) : (
           <ThemedText type="default" style={{ marginTop: 30 }}>

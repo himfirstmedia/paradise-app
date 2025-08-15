@@ -10,12 +10,12 @@ import {
   View,
 } from "react-native";
 
+import { ChoreCard } from "@/components/ChoreCard";
 import { HalfDonutChart } from "@/components/HalfDonutChart";
-import { TaskCard } from "@/components/TaskCard";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { Avatar } from "@/components/ui/Avatar";
-import { useReduxTasks } from "@/hooks/useReduxTasks";
+import { useReduxChores } from "@/hooks/useReduxChores";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { useRouter } from "expo-router";
 
@@ -33,10 +33,10 @@ export default function TabTwoScreen() {
   const isMediumScreen = Platform.OS === "web" && width >= 768;
 
   const {
-    tasks,
-    loading: tasksLoading,
+    chores,
+    loading: choresLoading,
     reload,
-  } = useReduxTasks({
+  } = useReduxChores({
     onlyCurrentUser: true,
   });
 
@@ -47,18 +47,18 @@ export default function TabTwoScreen() {
   };
 
   let pending = 0,
-    completed = 0,
-    overdue = 0,
+    approved = 0,
+    rejected = 0,
     totalTasks = 0;
-  tasks.forEach((task) => {
+  chores.forEach((chore) => {
     totalTasks++;
-    if (task.progress === "PENDING") pending++;
-    else if (task.progress === "COMPLETED") completed++;
-    else if (task.progress === "OVERDUE") overdue++;
+    if (chore.status === "PENDING") pending++;
+    else if (chore.status === "APPROVED") approved++;
+    else if (chore.status === "REJECTED") rejected++;
   });
 
   const completionPercent =
-    totalTasks > 0 ? Math.round((completed / totalTasks) * 100) : 0;
+    totalTasks > 0 ? Math.round((approved / totalTasks) * 100) : 0;
 
   const responsiveStyles = StyleSheet.create({
     headerContainer: {
@@ -131,9 +131,9 @@ export default function TabTwoScreen() {
 
             <HalfDonutChart
               data={[
-                { value: completed, color: completedColor, text: "Completed" },
+                { value: approved, color: completedColor, text: "Approved" },
                 { value: pending, color: pendingColor, text: "Pending" },
-                { value: overdue, color: overdueColor, text: "Overdue" },
+                { value: rejected, color: overdueColor, text: "Rejected" },
               ]}
               height={chartSizes.height}
               radius={chartSizes.radius}
@@ -166,13 +166,13 @@ export default function TabTwoScreen() {
           <ThemedView
             style={[styles.subContainer, responsiveStyles.containerPadding]}
           >
-            {tasksLoading ? (
+            {choresLoading ? (
               <ActivityIndicator
                 size="large"
                 color={primaryColor}
                 style={{ marginTop: "5%" }}
               />
-            ) : tasks.length === 0 ? (
+            ) : chores.length === 0 ? (
               <ThemedText
                 type="default"
                 style={{
@@ -181,10 +181,15 @@ export default function TabTwoScreen() {
                   color: "#888",
                 }}
               >
-                You have no tasks assigned yet.
+                You have no chores assigned yet.
               </ThemedText>
             ) : (
-              <TaskCard tasks={tasks} />
+              <ChoreCard
+                  chores={chores.map((chore) => ({
+                    ...chore,
+                    status: chore.status ?? "PENDING",
+                  }))}
+                />
             )}
           </ThemedView>
         </ScrollView>

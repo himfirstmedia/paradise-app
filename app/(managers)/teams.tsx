@@ -5,6 +5,7 @@ import { ThemedView } from "@/components/ThemedView";
 import { Avatar } from "@/components/ui/Avatar";
 import { useReduxMembers } from "@/hooks/useReduxMembers";
 import { useThemeColor } from "@/hooks/useThemeColor";
+import { Chore } from "@/types/chore";
 import { useRouter } from "expo-router";
 import React, { useMemo, useState } from "react";
 import {
@@ -18,24 +19,29 @@ import {
   View,
   RefreshControl,
 } from "react-native";
-
-const houses = [
-  { label: "LLW House", enum: "LILLIE_LOUISE_WOERMER_HOUSE" },
-  { label: "CE House", enum: "CAROLYN_ECKMAN_HOUSE" },
-];
+import { useReduxAuth } from "@/hooks/useReduxAuth";
+import { useReduxHouse } from "@/hooks/useReduxHouse";
 
 export default function TeamsScreen() {
   const primaryColor = useThemeColor({}, "selection");
-  const completed = useThemeColor({}, "completed");
-  const pending = useThemeColor({}, "pending");
-  const overdue = useThemeColor({}, "overdue");
+  const completedColor = useThemeColor({}, "completed");
+  const pendingColor = useThemeColor({}, "pending");
+  const overdueColor = useThemeColor({}, "overdue");
   const navigation = useRouter();
   const [refreshing, setRefreshing] = useState(false);
   const { members, loading, reload } = useReduxMembers();
+  const { houses } = useReduxHouse(); 
+  const { user: currentUser } = useReduxAuth();
   const { width } = useWindowDimensions();
 
   const isLargeScreen = Platform.OS === "web" && width >= 1024;
   const isMediumScreen = Platform.OS === "web" && width >= 768;
+
+  // Get current user's house
+  const currentHouse = useMemo(() => {
+    if (!currentUser?.houseId) return null;
+    return houses.find(house => house.id === currentUser.houseId);
+  }, [currentUser, houses]);
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -43,76 +49,19 @@ export default function TeamsScreen() {
     setRefreshing(false);
   };
 
-
-  const houseReduxTaskstats = useMemo(() => {
-    const stats: Record<
-      string,
-      {
-        pending: number;
-        completed: number;
-        overdue: number;
-        totalTasks: number;
-        completionPercent: number;
-      }
-    > = {};
-
-    // Initialize stats for all houses
-    houses.forEach((house) => {
-      stats[house.enum] = {
+  // Calculate stats only for current user's house
+  const houseStats = useMemo(() => {
+    if (!currentHouse) {
+      return {
         pending: 0,
         completed: 0,
         overdue: 0,
         totalTasks: 0,
         completionPercent: 0,
       };
-    });
+    }
 
-    // Process all members
-    members.forEach((member) => {
-      // Get the house enum from member's house name
-      const houseEnum = member.house?.name
-        ? member.house.name.toUpperCase().replace(/ /g, "_")
-        : null;
-
-      // Skip if no house or house not in our list
-      if (!houseEnum || !stats[houseEnum]) return;
-
-      const houseStat = stats[houseEnum];
-
-      // Process each task for this member
-      member.task?.forEach((task) => {
-        // Only count tasks with valid progress states
-        if (["PENDING", "COMPLETED", "OVERDUE"].includes(task.progress || "")) {
-          switch (task.progress) {
-            case "PENDING":
-              houseStat.pending++;
-              break;
-            case "COMPLETED":
-              houseStat.completed++;
-              break;
-            case "OVERDUE":
-              houseStat.overdue++;
-              break;
-          }
-          houseStat.totalTasks++;
-        }
-      });
-    });
-
-    // Calculate percentages
-    Object.values(stats).forEach((stat) => {
-      stat.completionPercent =
-        stat.totalTasks > 0
-          ? Math.round((stat.completed / stat.totalTasks) * 100)
-          : 0;
-    });
-
-    return stats;
-  }, [members]);
-
-  // Helper to get stats for a house
-  const getHouseStats = (houseEnum: string) =>
-    houseReduxTaskstats[houseEnum] || {
+    const stats = {
       pending: 0,
       completed: 0,
       overdue: 0,
@@ -120,11 +69,44 @@ export default function TeamsScreen() {
       completionPercent: 0,
     };
 
-  const nonAdminMembers = useMemo(() => {
+    members.forEach((member) => {
+      // Only process members in the current house
+      if (member.house?.id !== currentHouse.id) return;
+
+      member.chore?.forEach((chore: Chore) => {
+        if (["PENDING", "APPROVED", "REJECTED"].includes(chore.status || "")) {
+          switch (chore.status) {
+            case "PENDING":
+              stats.pending++;
+              break;
+            case "APPROVED":
+              stats.completed++;
+              break;
+            case "REJECTED":
+              stats.overdue++;
+              break;
+          }
+          stats.totalTasks++;
+        }
+      });
+    });
+
+    stats.completionPercent =
+      stats.totalTasks > 0
+        ? Math.round((stats.completed / stats.totalTasks) * 100)
+        : 0;
+
+    return stats;
+  }, [members, currentHouse]);
+
+
+  const residentsInCurrentHouse = useMemo(() => {
     return members.filter(
-      (member) => member.role !== "SUPER_ADMIN" && member.role !== "DIRECTOR"
+      (member) => 
+        member.role === "RESIDENT" && 
+        member.house?.id === currentHouse?.id
     );
-  }, [members]);
+  }, [members, currentHouse]);
 
   const responsiveStyles = StyleSheet.create({
     headerContainer: {
@@ -156,7 +138,7 @@ export default function TeamsScreen() {
     innerRadius: isLargeScreen ? 100 : isMediumScreen ? 40 : 50,
   };
 
-  return (
+return (
     <>
       <ThemedView style={styles.container}>
         <ScrollView
@@ -164,8 +146,8 @@ export default function TeamsScreen() {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={handleRefresh}
-              tintColor={primaryColor} // iOS
-              colors={[primaryColor]} // Android
+              tintColor={primaryColor}
+              colors={[primaryColor]}
             />
           }
           contentContainerStyle={{
@@ -207,49 +189,59 @@ export default function TeamsScreen() {
                 { backgroundColor: primaryColor },
               ]}
             >
-              {houses.map((house) => {
-                const stats = getHouseStats(house.enum);
-                return (
-                  <HalfDonutChart
-                    key={house.enum}
-                    data={[
-                      {
-                        value: stats.completed,
-                        color: completed,
-                        text: "Completed",
-                      },
-                      { value: stats.pending, color: pending, text: "Pending" },
-                      { value: stats.overdue, color: overdue, text: "Overdue" },
-                    ]}
-                    height={chartSizes.height}
-                    radius={chartSizes.radius}
-                    innerRadius={chartSizes.innerRadius}
-                    showGradient={false}
-                    strokeColor={primaryColor}
-                    strokeWidth={5}
-                    legendTitle={`${house.label} Progress`}
-                    legendContainerStyle={{ marginTop: 10 }}
-                    legendTitleStyle={{ color: "#fff", fontSize: 20 }}
-                    legendTextStyle={{ color: "#fff", fontSize: 14 }}
-                    centerLabelComponent={() => (
-                      <View>
-                        <ThemedText
-                          type="title"
-                          style={{
-                            fontWeight: "bold",
-                            textAlign: "center",
-                            color: "#FFFFFF",
-                          }}
-                        >
-                          {stats.totalTasks === 0
-                            ? "0%"
-                            : `${stats.completionPercent}%`}
-                        </ThemedText>
-                      </View>
-                    )}
-                  />
-                );
-              })}
+              {currentHouse ? (
+                <HalfDonutChart
+                  data={[
+                    {
+                      value: houseStats.completed,
+                      color: completedColor,
+                      text: "Completed",
+                    },
+                    { 
+                      value: houseStats.pending, 
+                      color: pendingColor, 
+                      text: "Pending" 
+                    },
+                    { 
+                      value: houseStats.overdue, 
+                      color: overdueColor, 
+                      text: "Overdue" 
+                    },
+                  ]}
+                  height={chartSizes.height}
+                  radius={chartSizes.radius}
+                  innerRadius={chartSizes.innerRadius}
+                  showGradient={false}
+                  strokeColor={primaryColor}
+                  strokeWidth={5}
+                  legendTitle={`${currentHouse.abbreviation} Progress`}
+                  legendContainerStyle={{ marginTop: 10 }}
+                  legendTitleStyle={{ color: "#fff", fontSize: 20 }}
+                  legendTextStyle={{ color: "#fff", fontSize: 14 }}
+                  centerLabelComponent={() => (
+                    <View>
+                      <ThemedText
+                        type="title"
+                        style={{
+                          fontWeight: "bold",
+                          textAlign: "center",
+                          color: "#FFFFFF",
+                        }}
+                      >
+                        {houseStats.totalTasks === 0
+                          ? "0%"
+                          : `${houseStats.completionPercent}%`}
+                      </ThemedText>
+                    </View>
+                  )}
+                />
+              ) : (
+                <ThemedText style={{ color: "#fff", textAlign: "center" }}>
+                  {currentUser
+                    ? "You're not assigned to a house yet."
+                    : "Please sign in to view house data"}
+                </ThemedText>
+              )}
             </ThemedView>
           </ThemedView>
 
@@ -262,7 +254,7 @@ export default function TeamsScreen() {
                 color={primaryColor}
                 style={{ marginTop: "5%" }}
               />
-            ) : nonAdminMembers.length === 0 ? (
+            ) : residentsInCurrentHouse.length === 0 ? ( 
               <ThemedText
                 type="default"
                 style={{
@@ -271,11 +263,13 @@ export default function TeamsScreen() {
                   color: "#888",
                 }}
               >
-                There are no members yet.
+                {currentHouse
+                  ? "There are no residents in your house yet."
+                  : "You're not assigned to a house yet."}
               </ThemedText>
             ) : (
               <>
-                <MemberCard members={members} />
+                <MemberCard members={residentsInCurrentHouse} />
               </>
             )}
           </ThemedView>
@@ -317,14 +311,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
   },
   headerCard: {
-    height: 450,
+    // height: 280,
     width: "100%",
     borderBottomEndRadius: 20,
     borderBottomStartRadius: 20,
     paddingHorizontal: 15,
     marginBottom: 15,
     paddingTop: 20,
-    paddingBottom: 20,
+    paddingBottom: 30,
   },
   row: {
     flexDirection: "row",

@@ -1,4 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
+import { useThemeColor } from "@/hooks/useThemeColor";
+import { CameraView } from "expo-camera";
 import React, { useEffect, useRef, useState } from "react";
 import {
   Alert,
@@ -9,27 +11,25 @@ import {
   View,
   ViewStyle,
 } from "react-native";
-import { ThemedText } from "./ThemedText";
-import { ThemedView } from "./ThemedView";
-import { useThemeColor } from "@/hooks/useThemeColor";
 import {
   ThemedCheckbox,
   ThemedDatePicker,
   ThemedTextArea,
   ThemedTimePicker,
 } from "./ThemedInput";
+import { ThemedText } from "./ThemedText";
+import { ThemedView } from "./ThemedView";
 import { Button } from "./ui/Button";
 import { Tooltip } from "./ui/Tooltip";
-import { CameraView } from "expo-camera";
 
-import * as MediaLibrary from "expo-media-library";
-import * as FileSystem from "expo-file-system";
+import { useReduxChores } from "@/hooks/useReduxChores";
+import { Chore } from "@/types/chore";
 import api from "@/utils/api";
-import { useReduxTasks } from "@/hooks/useReduxTasks";
-import { Task } from "@/types/task";
+import * as FileSystem from "expo-file-system";
+import * as MediaLibrary from "expo-media-library";
 
 interface ChoreCardProps {
-  choreTask: Task;
+  choreTask: Chore;
   style?: ViewStyle;
   currentUserRole?: string;
 }
@@ -56,7 +56,7 @@ export function ChoreTaskCard({
   const disabled = !["PENDING", "REJECTED"].includes(choreTask.status);
 
 
-  const { tasks, reload } = useReduxTasks();
+  const { chores, reload } = useReduxChores();
 
   const [errors, setErrors] = useState({
     date: "",

@@ -27,19 +27,9 @@ const ACTION_BUTTONS: ActionButton[] = [
     route: "/change-password",
   },
   {
-    icon: require("../../assets/icons/comments.png"),
-    label: "Feedback",
-    route: "../comments-manager",
-  },
-  {
     icon: require("../../assets/icons/members.png"),
     label: "Manage Members",
     route: "../members",
-  },
-  {
-    icon: require("../../assets/icons/assign.png"),
-    label: "Manage Tasks",
-    route: "../task-manager",
   },
   {
     icon: require("../../assets/icons/add-task.png"),

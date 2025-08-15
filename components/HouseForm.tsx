@@ -1,4 +1,4 @@
-import { ThemedDatePicker, ThemedTextInput } from "@/components/ThemedInput";
+import { ThemedTextInput } from "@/components/ThemedInput";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { Button } from "@/components/ui/Button";
@@ -15,8 +15,6 @@ export interface HouseFormValues {
   houseName: string;
   abbreviation: string;
   capacity: string;
-  workPeriodStart?: string;
-  workPeriodEnd?: string;
 }
 
 export interface HouseFormProps {
@@ -25,8 +23,6 @@ export interface HouseFormProps {
     houseName: string;
     abbreviation: string;
     capacity: string;
-    workPeriodStart?: string;
-    workPeriodEnd?: string;
   };
   onSubmit: (values: HouseFormValues) => void;
   loading: boolean;
@@ -42,12 +38,8 @@ export function HouseForm({
   const [houseName, setHouseName] = useState(initialValues.houseName);
   const [abbreviation, setAbbreviation] = useState(initialValues.abbreviation);
   const [capacity, setCapacity] = useState(initialValues.capacity);
-  const [startDate, setStartDate] = useState<string | undefined>(
-    initialValues.workPeriodStart
-  );
-  const [endDate, setEndDate] = useState<string | undefined>(
-    initialValues.workPeriodEnd
-  );
+
+ 
 
   const { width } = useWindowDimensions();
 
@@ -130,36 +122,6 @@ export function HouseForm({
           </ThemedView>
         </ThemedView>
 
-        <ThemedText type="title" style={{ marginBottom: 10 }}>
-          Work Period
-        </ThemedText>
-
-        <ThemedView style={styles.row}>
-          {/* Work Period Start */}
-          <ThemedView style={[styles.inputField, { width: "48%" }]}>
-            <ThemedText type="default">
-              Period Start <Dot />
-            </ThemedText>
-            <ThemedDatePicker
-              value={startDate}
-              onChangeText={setStartDate}
-              placeholder="Select start date"
-            />
-          </ThemedView>
-
-          {/* Work Period End */}
-          <ThemedView style={[styles.inputField, { width: "48%" }]}>
-            <ThemedText type="default">
-              Period End <Dot />
-            </ThemedText>
-            <ThemedDatePicker
-              value={endDate}
-              onChangeText={setEndDate}
-              placeholder="Select end date"
-            />
-          </ThemedView>
-        </ThemedView>
-
         <Button
           title={mode === "add" ? "Create House" : "Update House"}
           onPress={() => {
@@ -167,8 +129,6 @@ export function HouseForm({
               houseName,
               abbreviation,
               capacity,
-              workPeriodStart: startDate,
-              workPeriodEnd: endDate,
             });
             // console.log(
             //   `🏠 House Info -> Name: ${houseName}, Abbreviation: ${abbreviation}, Capacity: ${capacity}, Work Period Start: ${startDate}, Work Period End: ${endDate}`

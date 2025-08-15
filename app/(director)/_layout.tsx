@@ -38,9 +38,9 @@ export default function TabLayout() {
           }}
         />
         <Tabs.Screen
-          name="tasks"
+          name="chores"
           options={{
-            title: "Tasks",
+            title: "Chores",
           }}
         />
         <Tabs.Screen

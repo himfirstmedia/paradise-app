@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import {
   ActivityIndicator,
   Image,
@@ -11,16 +10,16 @@ import {
   View,
 } from "react-native";
 
+import { ChoreCard } from "@/components/ChoreCard";
 import { HalfDonutChart } from "@/components/HalfDonutChart";
-import { TaskCard } from "@/components/TaskCard";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { Avatar } from "@/components/ui/Avatar";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { useRouter } from "expo-router";
-import { Task } from "@/redux/slices/taskSlice";
 
-import { useReduxTasks } from "@/hooks/useReduxTasks";
+import { useReduxAuth } from "@/hooks/useReduxAuth";
+import { useReduxChores } from "@/hooks/useReduxChores";
 import { useState } from "react";
 
 export default function TabTwoScreen() {
@@ -29,9 +28,12 @@ export default function TabTwoScreen() {
   const pendingColor = useThemeColor({}, "pending");
   const overdueColor = useThemeColor({}, "overdue");
   const navigation = useRouter();
+  const { loading: tasksLoading, chores, reload } = useReduxChores();
   const [refreshing, setRefreshing] = useState(false);
-  const { loading: tasksLoading, tasks, reload } = useReduxTasks();
   const { width } = useWindowDimensions();
+
+  const { user: currentUser } = useReduxAuth();
+  const houseId = currentUser?.houseId;
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -42,19 +44,23 @@ export default function TabTwoScreen() {
   const isLargeScreen = Platform.OS === "web" && width >= 1024;
   const isMediumScreen = Platform.OS === "web" && width >= 768;
 
+  const filteredChores = houseId
+    ? chores.filter((chore) => chore.houseId === houseId)
+    : [];
+
   let pending = 0,
     completed = 0,
     overdue = 0,
-    totalTasks = 0;
-  tasks.forEach((task: Task) => {
-    totalTasks++;
-    if (task.progress === "PENDING") pending++;
-    else if (task.progress === "COMPLETED") completed++;
-    else if (task.progress === "OVERDUE") overdue++;
+    totalChores = 0;
+  filteredChores.forEach((chore) => {
+    totalChores++;
+    if (chore.status === "PENDING") pending++;
+    else if (chore.status === "APPROVED") completed++;
+    else if (chore.status === "REJECTED") overdue++;
   });
 
   const completionPercent =
-    totalTasks > 0 ? Math.round((completed / totalTasks) * 100) : 0;
+    totalChores > 0 ? Math.round((completed / totalChores) * 100) : 0;
 
   const responsiveStyles = StyleSheet.create({
     headerContainer: {
@@ -118,7 +124,7 @@ export default function TabTwoScreen() {
                   type="title"
                   style={{ width: "100%", color: "#FFFFFF" }}
                 >
-                  Tasks
+                  Chores
                 </ThemedText>
               </View>
 
@@ -137,7 +143,7 @@ export default function TabTwoScreen() {
               showGradient={false}
               strokeColor={primaryColor}
               strokeWidth={5}
-              legendTitle="Tasks Progress"
+              legendTitle="Chores Progress"
               centerLabelComponent={() => (
                 <View>
                   <ThemedText
@@ -149,7 +155,7 @@ export default function TabTwoScreen() {
                       color: "#FFFFFF",
                     }}
                   >
-                    {totalTasks === 0 ? "0%" : `${completionPercent}%`}
+                    {totalChores === 0 ? "0%" : `${completionPercent}%`}
                   </ThemedText>
                 </View>
               )}
@@ -169,7 +175,7 @@ export default function TabTwoScreen() {
                   color={primaryColor}
                   style={{ marginTop: "5%" }}
                 />
-              ) : tasks.length === 0 ? (
+              ) : chores.length === 0 ? (
                 <ThemedText
                   type="default"
                   style={{
@@ -178,26 +184,30 @@ export default function TabTwoScreen() {
                     color: "#888",
                   }}
                 >
-                  There are no tasks assigned yet.
+                  There are no chores assigned yet.
                 </ThemedText>
               ) : (
-                <TaskCard tasks={tasks} />
+                <ChoreCard chores={filteredChores} />
               )}
             </View>
           </ThemedView>
         </ScrollView>
 
-        {/* <Pressable
-          style={[styles.taskCTAbtn, { backgroundColor: primaryColor }, responsiveStyles.ctaButton]}
+        <Pressable
+          style={[
+            styles.taskCTAbtn,
+            { backgroundColor: primaryColor },
+            responsiveStyles.ctaButton,
+          ]}
           onPress={() => {
-            navigation.push("/add-task");
+            navigation.push("/add-chore");
           }}
         >
           <Image
             source={require("@/assets/icons/add.png")}
             style={styles.icon}
           />
-        </Pressable> */}
+        </Pressable>
       </ThemedView>
     </>
   );
@@ -222,6 +232,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   headerCard: {
+    // height: 280,
     width: "100%",
     borderBottomEndRadius: 20,
     borderBottomStartRadius: 20,

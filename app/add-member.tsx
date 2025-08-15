@@ -32,12 +32,21 @@ const genderMap: Record<string, string> = {
 
 const roleMap: Record<string, string> = {
   "Super Admin": "SUPER_ADMIN",
-  Admin: "ADMIN",
   Director: "DIRECTOR",
-  "Resident Manager": "RESIDENT_MANAGER",
-  "Facility Manager": "FACILITY_MANAGER",
+  Manager: "MANAGER",
   Resident: "RESIDENT",
-  Individual: "INDIVIDUAL",
+};
+
+const schoolStatusMap: Record<string, string> = {
+  "Full Time": "FULL_TIME",
+  "Part Time": "PART_TIME",
+  None: "NONE",
+};
+
+const employmentStatusMap: Record<string, string> = {
+  "Full Time": "FULL_TIME",
+  "Part Time": "PART_TIME",
+  None: "NONE",
 };
 
 export default function AddMemberScreen() {
@@ -49,10 +58,10 @@ export default function AddMemberScreen() {
   const [gender, setGender] = useState("");
   const [selectedRole, setSelectedRole] = useState<string>("");
   const [houseId, setHouseId] = useState<number | null>(null);
-  const [city, setCity] = useState("");
-  const [leavingDate, setLeavingDate] = useState("");
-  const [state, setState] = useState("");
-  const [zipCode, setZipCode] = useState("");
+  const [schoolStatus, setSchoolStatus] = useState("");
+  const [employmentStatus, setEmploymentStatus] = useState("");
+  const [periodStart, setPeriodStart] = useState<string>("");
+  const [periodEnd, setPeriodEnd] = useState<string>("");
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const [loading, setLoading] = useState(false);
@@ -72,9 +81,9 @@ export default function AddMemberScreen() {
 
   const currentUserRole = user?.role;
 
-  const roleOptions = ["Resident", "Individual"];
+  const roleOptions = ["Resident"];
   if (currentUserRole === "DIRECTOR") {
-    roleOptions.push("Facility Manager", "Resident Manager");
+    roleOptions.push("Manager");
   }
 
   const houseOptions = houses.map((house: House) => ({
@@ -93,9 +102,18 @@ export default function AddMemberScreen() {
     if (!selectedRole) newErrors.role = "Role is required.";
     if (selectedRole === "Resident" && !houseId)
       newErrors.house = "House is required for Resident.";
-    if (!city) newErrors.city = "City is required.";
-    if (!state) newErrors.state = "State is required.";
-    if (!zipCode) newErrors.zipCode = "Zip Code is required.";
+    if (!schoolStatus) newErrors.schoolStatus = "School status is required.";
+    if (!employmentStatus)
+      newErrors.employmentStatus = "Employment status is required.";
+    if (!periodStart) newErrors.periodStart = "Start date is required.";
+    if (!periodEnd) newErrors.periodEnd = "End date is required.";
+    if (
+      periodStart &&
+      periodEnd &&
+      new Date(periodEnd) < new Date(periodStart)
+    ) {
+      newErrors.periodEnd = "End date cannot be before start date.";
+    }
 
     setErrors(newErrors);
 
@@ -119,11 +137,13 @@ export default function AddMemberScreen() {
         houseId: selectedRole === "Resident" ? houseId : undefined,
         password: name.replace(/\s+/g, "").toLowerCase(),
         joinedDate: new Date().toISOString(),
-        leavingDate: leavingDate ? leavingDate : undefined,
-        city,
-        state,
-        zipCode,
+        schoolStatus: schoolStatusMap[schoolStatus] || schoolStatus,
+        employmentStatus:
+          employmentStatusMap[employmentStatus] || employmentStatus,
+        periodStart: periodStart ? new Date(periodStart).toISOString() : null,
+        periodEnd: periodEnd ? new Date(periodEnd).toISOString() : null,
       });
+
       await reload();
       Alert.alert("Success", "Member created successfully!");
       setFirstName("");
@@ -133,10 +153,10 @@ export default function AddMemberScreen() {
       setGender("");
       setSelectedRole("");
       setHouseId(null);
-      setCity("");
-      setState("");
-      setZipCode("");
-      setLeavingDate("");
+      setSchoolStatus("");
+      setEmploymentStatus("");
+      setPeriodStart("");
+      setPeriodEnd("");
       setErrors({});
       navigation.back();
     } catch (error: any) {
@@ -299,8 +319,7 @@ export default function AddMemberScreen() {
             </ThemedView>
 
             {(selectedRole === "Resident" ||
-              selectedRole === "Facility Manager" ||
-              selectedRole === "Resident Manager") && (
+              selectedRole === "Manager") && (
               <ThemedView style={styles.inputField}>
                 <ThemedText type="default">
                   House <Dot />
@@ -314,12 +333,16 @@ export default function AddMemberScreen() {
                 ) : (
                   <ThemedDropdown
                     placeholder="Select house"
-                    items={houseOptions.map((h) => h.label)}
+                    items={houseOptions.map((h: { label: string }) => h.label)}
                     value={
-                      houseOptions.find((h) => h.value === houseId)?.label || ""
+                      houseOptions.find(
+                        (h: { value: number }) => h.value === houseId
+                      )?.label || ""
                     }
                     onSelect={(label) => {
-                      const found = houseOptions.find((h) => h.label === label);
+                      const found = houseOptions.find(
+                        (h: { label: string }) => h.label === label
+                      );
                       setHouseId(found ? found.value : null);
                       if (errors.house) setErrors((e) => ({ ...e, house: "" }));
                     }}
@@ -330,71 +353,77 @@ export default function AddMemberScreen() {
               </ThemedView>
             )}
 
-            {selectedRole === "Individual" && (
-              <ThemedView style={styles.inputField}>
-                <ThemedText type="default">
-                  Leaving <Dot />
-                </ThemedText>
-                <ThemedDatePicker
-                  value={leavingDate}
-                  onChangeText={(val) => {
-                    setLeavingDate(val);
-                    if (errors.leavingDate)
-                      setErrors((e) => ({ ...e, leavingDate: "" }));
-                  }}
-                  errorMessage={errors.leavingDate}
-                />
-              </ThemedView>
-            )}
+            <ThemedView style={styles.inputField}>
+              <ThemedText type="default">
+                School Status <Dot />
+              </ThemedText>
+              <ThemedDropdown
+                placeholder="Select status"
+                items={["Full Time", "Part Time", "None"]}
+                value={schoolStatus}
+                onSelect={(val) => {
+                  setSchoolStatus(val);
+                  if (errors.schoolStatus)
+                    setErrors((e) => ({ ...e, schoolStatus: "" }));
+                }}
+                errorMessage={errors.schoolStatus}
+                multiSelect={false}
+              />
+            </ThemedView>
+
+            <ThemedView style={styles.inputField}>
+              <ThemedText type="default">
+                Employment <Dot />
+              </ThemedText>
+              <ThemedDropdown
+                placeholder="Select status"
+                items={["Full Time", "Part Time", "None"]}
+                value={employmentStatus}
+                onSelect={(val) => {
+                  setEmploymentStatus(val);
+                  if (errors.employmentStatus)
+                    setErrors((e) => ({ ...e, employmentStatus: "" }));
+                }}
+                errorMessage={errors.employmentStatus}
+                multiSelect={false}
+              />
+            </ThemedView>
 
             <ThemedView style={styles.row}>
               <ThemedView style={{ width: "48%" }}>
                 <ThemedView style={styles.inputField}>
                   <ThemedText type="default">
-                    City <Dot />
+                    Period Start <Dot />{" "}
                   </ThemedText>
-                  <ThemedTextInput
-                    placeholder="Enter city"
-                    value={city}
+                  <ThemedDatePicker
+                    placeholder="Select start date"
+                    value={periodStart}
                     onChangeText={(text) => {
-                      setCity(text);
-                      if (errors.city) setErrors((e) => ({ ...e, city: "" }));
+                      setPeriodStart(text);
+                      if (errors.periodStart)
+                        setErrors((e) => ({ ...e, periodStart: "" }));
                     }}
-                    errorMessage={errors.city}
+                    errorMessage={errors.periodStart}
                   />
                 </ThemedView>
               </ThemedView>
               <ThemedView style={{ width: "48%" }}>
                 <ThemedView style={styles.inputField}>
                   <ThemedText type="default">
-                    State <Dot />
+                    Period End <Dot />{" "}
                   </ThemedText>
-                  <ThemedTextInput
-                    placeholder="Enter state"
-                    value={state}
+                  <ThemedDatePicker
+                    placeholder="Select end date"
+                    value={periodEnd}
                     onChangeText={(text) => {
-                      setState(text);
-                      if (errors.state) setErrors((e) => ({ ...e, state: "" }));
+                      setPeriodEnd(text);
+                      if (errors.periodEnd)
+                        setErrors((e) => ({ ...e, periodEnd: "" }));
                     }}
-                    errorMessage={errors.state}
+                    errorMessage={errors.periodEnd}
                   />
                 </ThemedView>
               </ThemedView>
-            </ThemedView>
-
-            <ThemedView style={styles.inputField}>
-              <ThemedText type="default">
-                Zip Code <Dot />
-              </ThemedText>
-              <ThemedTextInput
-                placeholder="Enter zip code"
-                value={zipCode}
-                onChangeText={(text) => {
-                  setZipCode(text);
-                  if (errors.zipCode) setErrors((e) => ({ ...e, zipCode: "" }));
-                }}
-                errorMessage={errors.zipCode}
-              />
             </ThemedView>
 
             <ThemedView style={{ marginTop: "5%", width: "100%" }}>

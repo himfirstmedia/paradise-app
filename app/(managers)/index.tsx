@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import {
   ActivityIndicator,
   Platform,
@@ -10,7 +10,6 @@ import {
 } from "react-native";
 
 import { ScriptureCard } from "@/components/ScriptureCard";
-import { TaskCard } from "@/components/TaskCard";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { Avatar } from "@/components/ui/Avatar";
@@ -18,7 +17,10 @@ import { useThemeColor } from "@/hooks/useThemeColor";
 
 import { useReduxAuth } from "@/hooks/useReduxAuth";
 import { useReduxScripture } from "@/hooks/useReduxScripture";
-import { useReduxTasks } from "@/hooks/useReduxTasks";
+import { useRouter } from "expo-router";
+import { useReduxHouse } from "@/hooks/useReduxHouse";
+import { HouseSelectCard } from "@/components/HouseCard";
+import { Button } from "@/components/ui/Button";
 
 function getGreeting() {
   const hour = new Date().getHours();
@@ -28,22 +30,21 @@ function getGreeting() {
 }
 
 export default function HomeScreen() {
+  const router = useRouter();
   const primaryColor = useThemeColor({}, "selection");
   const { width } = useWindowDimensions();
+  const navigation = useRouter();
 
   const isLargeScreen = Platform.OS === "web" && width >= 1024;
   const isMediumScreen = Platform.OS === "web" && width >= 768;
 
-  const { user } = useReduxAuth();
+  const { user, isAuthenticated } = useReduxAuth();
   const userName = user?.name?.split(" ")[0] || "User";
+  const userHouse = user?.house?.name;
   const [refreshing, setRefreshing] = React.useState(false);
-  const {
-    tasks,
-    loading: tasksLoading,
-    reload: ReloadTasks,
-  } = useReduxTasks({
-    onlyCurrentUser: true,
-  });
+
+  const { houses, loading, reload: ReloadHouses } = useReduxHouse();
+
   const {
     scriptures,
     loading: scriptureLoading,
@@ -54,9 +55,24 @@ export default function HomeScreen() {
 
   const handleRefresh = async () => {
     setRefreshing(true);
-    await ReloadTasks();
+    await ReloadHouses();
     await ReloadScripture();
     setRefreshing(false);
+  };
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      router.replace("/auth/login");
+    }
+  }, [isAuthenticated, router]);
+
+  const getFormattedDate = () => {
+    const now = new Date();
+    return now.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
   };
 
   const fontSizes = {
@@ -83,8 +99,6 @@ export default function HomeScreen() {
       marginTop: isLargeScreen ? 10 : 5,
     },
   });
-
-  
 
   return (
     <ThemedView style={styles.container}>
@@ -122,11 +136,31 @@ export default function HomeScreen() {
                   fontSize: fontSizes.subtitle,
                 }}
               >
-                {getGreeting()}
-                {userName}
+                {getFormattedDate()}
               </ThemedText>
             </ThemedView>
-            <Avatar />
+            <ThemedView
+              style={[
+                {
+                  backgroundColor: primaryColor,
+                  justifyContent: "flex-end",
+                  alignItems: "center",
+                  flexDirection: "row",
+                  width: 100,
+                },
+              ]}
+            >
+              <Button
+                type="icon-rounded"
+                icon={require("@/assets/icons/chat.png")}
+                iconStyle={{ height: 30, width: 30 }}
+                onPress={() => {
+                  navigation.push("/conversations");
+                }}
+                style={{ width: 50, marginRight: 10 }}
+              />
+              <Avatar />
+            </ThemedView>
           </ThemedView>
 
           <View style={{ marginTop: 10, gap: 12 }}>
@@ -138,7 +172,18 @@ export default function HomeScreen() {
                 fontSize: fontSizes.title,
               }}
             >
-              Welcome to Paradise App.
+              {getGreeting()}
+              {userName}
+            </ThemedText>
+            <ThemedText
+              type="default"
+              style={{
+                width: "100%",
+                color: "#FFFFFF",
+                fontSize: fontSizes.subtitle,
+              }}
+            >
+              {userHouse}
             </ThemedText>
           </View>
         </ThemedView>
@@ -169,15 +214,14 @@ export default function HomeScreen() {
             ) : null}
           </View>
 
-
-          <View style={{ marginTop: "1%" }}>
-            {tasksLoading ? (
+          <View style={responsiveStyles.taskSection}>
+            {loading ? (
               <ActivityIndicator
                 size="large"
                 color={primaryColor}
                 style={{ marginTop: "5%" }}
               />
-            ) : tasks.length === 0 ? (
+            ) : houses.length === 0 ? (
               <ThemedText
                 type="default"
                 style={{
@@ -186,10 +230,10 @@ export default function HomeScreen() {
                   color: "#888",
                 }}
               >
-                You have no tasks assigned yet.
+                There are no houses added yet.
               </ThemedText>
             ) : (
-              <TaskCard tasks={tasks} />
+              <HouseSelectCard houses={houses} />
             )}
           </View>
         </ThemedView>
