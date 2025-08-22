@@ -8,7 +8,7 @@ import { Stack, useRouter } from "expo-router";
 import { SimpleHeader } from "@/components/SimpleHeader";
 import { UpdateHeader } from "@/components/UpdateHeader";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { View, StatusBar } from "react-native";
+import { View, StatusBar, ActivityIndicator } from "react-native";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { Colors } from "@/constants/Colors";
 import * as SplashScreen from "expo-splash-screen";
@@ -19,6 +19,8 @@ import {
   registerNotificationListeners,
 } from "@/utils/notificationHandler";
 import * as Notifications from "expo-notifications";
+import { useCameraPermissions } from "expo-camera";
+import * as MediaLibrary from "expo-media-library";
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -34,6 +36,9 @@ SplashScreen.preventAutoHideAsync();
 export default function RootLayout() {
   const colorScheme = useColorScheme() ?? "light";
   const [appIsReady, setAppIsReady] = useState(false);
+  const [cameraPermission, requestCameraPermission] = useCameraPermissions();
+  const splashHiddenRef = useRef(false);
+  const isMountedRef = useRef(true);
 
   const isAuthenticated = useAppSelector(
     (state) => state.auth?.isAuthenticated ?? false
@@ -45,46 +50,71 @@ export default function RootLayout() {
   const tokenSavedRef = useRef(false);
   const initializeNotifications = UseSetupPushNotifications();
 
-  const [fontsLoaded] = useFonts({
-    SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
+  const [fontsLoaded, fontError] = useFonts({
+    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
   });
 
   // 1️⃣ Prepare app (fonts, splash)
   useEffect(() => {
-    if (!fontsLoaded) return;
+    console.log('Font loading status:', { fontsLoaded, fontError });
+    if (!fontsLoaded && !fontError) return;
 
     async function prepareApp() {
       try {
-        // Any other one-time app setup goes here
+        console.log('Preparing app...');
+        if (fontError) {
+          console.warn('❌ Font loading failed:', fontError);
+        }
+        if (!splashHiddenRef.current) {
+          console.log('Hiding splash screen early...');
+          await SplashScreen.hideAsync();
+          console.log('✅ Splash screen hidden early');
+          splashHiddenRef.current = true;
+        }
       } catch (error) {
-        console.warn("❌ App preparation failed:", error);
+        console.warn('❌ App preparation failed:', error);
       } finally {
-        setAppIsReady(true); // ✅ only once
+        if (isMountedRef.current) {
+          console.log('Setting appIsReady to true');
+          setAppIsReady(true);
+        }
       }
     }
 
     prepareApp();
-  }, [fontsLoaded]);
+  }, [fontsLoaded, fontError]);
 
   // 2️⃣ Initialize push notifications when user logs in
   useEffect(() => {
-    if (!isAuthenticated || !userId || tokenSavedRef.current) return;
+    if (!isAuthenticated || !userId || tokenSavedRef.current) {
+      console.log('Skipping permissions setup:', { isAuthenticated, userId });
+      return;
+    }
 
-    async function setupPushToken() {
+    async function setupPermissions() {
       try {
         const token = await initializeNotifications(true);
-        if (token) {
+        if (token && isMountedRef.current) {
           dispatch(setPushToken(token));
-          console.log("✅ Push token initialized:", token);
+        }
+
+        if (!cameraPermission?.granted && isMountedRef.current) {
+          await requestCameraPermission();
+        }
+
+        if (isMountedRef.current) {
+          await MediaLibrary.requestPermissionsAsync();
           tokenSavedRef.current = true;
         }
       } catch (error) {
-        console.warn("❌ Notification setup failed:", error);
+        console.warn('❌ Permission setup failed:', error);
       }
     }
 
-    setupPushToken();
-  }, [isAuthenticated, userId, dispatch, initializeNotifications]);
+    if (isMountedRef.current) {
+      setupPermissions();
+    }
+  }, [isAuthenticated, userId, dispatch, initializeNotifications, requestCameraPermission, cameraPermission]);
 
   // 3️⃣ Register notification listeners after app is ready
   useEffect(() => {
@@ -110,7 +140,23 @@ export default function RootLayout() {
     if (appIsReady) SplashScreen.hideAsync();
   }, [appIsReady]);
 
-  if (!appIsReady) return null;
+  if (!appIsReady) {
+    console.log('Rendering loader:', { appIsReady });
+    return (
+      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+        <View
+          style={{
+            flex: 1,
+            justifyContent: 'center',
+            alignItems: 'center',
+            backgroundColor: Colors[colorScheme].background,
+          }}
+        >
+          <ActivityIndicator size='large' color={Colors[colorScheme].tint} />
+        </View>
+      </ThemeProvider>
+    );
+  }
 
   return (
     <View
@@ -151,6 +197,10 @@ export default function RootLayout() {
             options={{ header: () => <SimpleHeader title="Create Chore" /> }}
           />
           <Stack.Screen
+            name="update-chore"
+            options={{ header: () => <SimpleHeader title="Update Chore" /> }}
+          />
+          <Stack.Screen
             name="assign-chore"
             options={{ header: () => <SimpleHeader title="Assign Chore" /> }}
           />
@@ -165,7 +215,7 @@ export default function RootLayout() {
           <Stack.Screen
             name="chore-detail"
             options={{
-              header: () => <SimpleHeader title="Primary Chore Details" />,
+              header: () => <SimpleHeader title="Chore Details" />,
             }}
           />
           <Stack.Screen

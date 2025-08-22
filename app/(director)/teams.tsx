@@ -196,7 +196,7 @@ export default function TeamsScreen() {
                   type="title"
                   style={{ width: "100%", color: "#FFFFFF" }}
                 >
-                  Members
+                  Houses
                 </ThemedText>
               </View>
               <Avatar />

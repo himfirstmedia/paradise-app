@@ -55,11 +55,11 @@ export default function AddMemberScreen() {
   const [lastname, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
-  const [gender, setGender] = useState("");
-  const [selectedRole, setSelectedRole] = useState<string>("");
+  const [gender, setGender] = useState<string | number>("");
+  const [selectedRole, setSelectedRole] = useState<string | number>("");
   const [houseId, setHouseId] = useState<number | null>(null);
-  const [schoolStatus, setSchoolStatus] = useState("");
-  const [employmentStatus, setEmploymentStatus] = useState("");
+  const [schoolStatus, setSchoolStatus] = useState<string | number>("");
+  const [employmentStatus, setEmploymentStatus] = useState<string | number>("");
   const [periodStart, setPeriodStart] = useState<string>("");
   const [periodEnd, setPeriodEnd] = useState<string>("");
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -286,7 +286,10 @@ export default function AddMemberScreen() {
                   </ThemedText>
                   <ThemedDropdown
                     placeholder="Select gender"
-                    items={["Male", "Female"]}
+                    items={["Male", "Female"].map((opt) => ({
+                      label: opt,
+                      value: opt,
+                    }))}
                     value={gender}
                     onSelect={(val) => {
                       setGender(val);
@@ -305,7 +308,10 @@ export default function AddMemberScreen() {
                   </ThemedText>
                   <ThemedDropdown
                     placeholder="Select role"
-                    items={roleOptions}
+                    items={roleOptions.map((opt) => ({
+                      label: opt,
+                      value: opt,
+                    }))}
                     value={selectedRole}
                     onSelect={(val) => {
                       setSelectedRole(val);
@@ -318,8 +324,7 @@ export default function AddMemberScreen() {
               </ThemedView>
             </ThemedView>
 
-            {(selectedRole === "Resident" ||
-              selectedRole === "Manager") && (
+            {(selectedRole === "Resident" || selectedRole === "Manager") && (
               <ThemedView style={styles.inputField}>
                 <ThemedText type="default">
                   House <Dot />
@@ -333,7 +338,7 @@ export default function AddMemberScreen() {
                 ) : (
                   <ThemedDropdown
                     placeholder="Select house"
-                    items={houseOptions.map((h: { label: string }) => h.label)}
+                    items={houseOptions}
                     value={
                       houseOptions.find(
                         (h: { value: number }) => h.value === houseId
@@ -359,7 +364,10 @@ export default function AddMemberScreen() {
               </ThemedText>
               <ThemedDropdown
                 placeholder="Select status"
-                items={["Full Time", "Part Time", "None"]}
+                items={["Full Time", "Part Time", "None"].map((opt) => ({
+                  label: opt,
+                  value: opt,
+                }))}
                 value={schoolStatus}
                 onSelect={(val) => {
                   setSchoolStatus(val);
@@ -377,7 +385,10 @@ export default function AddMemberScreen() {
               </ThemedText>
               <ThemedDropdown
                 placeholder="Select status"
-                items={["Full Time", "Part Time", "None"]}
+                items={["Full Time", "Part Time", "None"].map((opt) => ({
+                  label: opt,
+                  value: opt,
+                }))}
                 value={employmentStatus}
                 onSelect={(val) => {
                   setEmploymentStatus(val);

@@ -16,6 +16,7 @@ import { useThemeColor } from "@/hooks/useThemeColor";
 import { useRouter } from "expo-router";
 import api from "@/utils/api";
 import { useReduxHouse } from "@/hooks/useReduxHouse";
+import { useReduxAuth } from "@/hooks/useReduxAuth";
 
 export interface House {
   id: number;
@@ -315,10 +316,16 @@ const getResponsiveSize = () => {
 export function HouseSelectCard({ houses, style }: HouseCardProps) {
   const bgColor = useThemeColor({}, "input");
   const navigation = useRouter();
-
-  
+  const { user } = useReduxAuth();
 
   if (!houses || houses.length === 0) return null;
+
+  // Filter houses based on user role
+  const filteredHouses = user?.role === "DIRECTOR" 
+    ? houses 
+    : houses.filter(house => house.id === user?.houseId);
+
+  if (filteredHouses.length === 0) return null;
 
   const handleView = (houseId: number) => {
     navigation.push({
@@ -397,10 +404,10 @@ export function HouseSelectCard({ houses, style }: HouseCardProps) {
           }
         ]}
       >
-        Current Houses
+        {user?.role === "DIRECTOR" ? "Current Houses" : "Your House"}
       </ThemedText>
       <ThemedView style={[styles.houseButtons, responsiveStyles.houseButtons]}>
-        {houses.map((house) => (
+        {filteredHouses.map((house) => (
           <Pressable
             key={house.id}
             style={[styles.button, responsiveStyles.button, { backgroundColor: bgColor }]}

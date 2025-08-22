@@ -1,5 +1,6 @@
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
+import { useReduxAuth } from "@/hooks/useReduxAuth";
 import { useReduxHouse } from "@/hooks/useReduxHouse";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { useRouter } from "expo-router";
@@ -27,6 +28,7 @@ export default function Reports() {
   const isMediumScreen = Platform.OS === "web" && width >= 768;
 
   const { houses, loading: housesLoading, getDisplayName } = useReduxHouse();
+  const { user: currentUser } = useReduxAuth();
   const [hasTimedOut, setHasTimedOut] = useState(false);
 
   useEffect(() => {
@@ -34,26 +36,32 @@ export default function Reports() {
       if (!houses || houses.length === 0) {
         setHasTimedOut(true);
       }
-    }, 500); // 5 seconds timeout
+    }, 5000); // 5 seconds timeout
 
     return () => clearTimeout(timeout); // cleanup on unmount
   }, [houses]);
 
   const residentReports = useMemo(() => {
-    // Filter out administration houses if needed
-    return houses
-      .filter((house) => !house.name.includes("Administration"))
-      .map((house) => ({
-        label: getDisplayName(house.name),
-        route: "/report-details" as const,
-        params: {
-          type: "house",
-          house: normalizeHouseName(house.name),
-          houseId: house.id,
-          houseName: house.name,
-        },
-      }));
-  }, [houses, getDisplayName]);
+    // Filter houses based on user role
+    let filteredHouses = houses.filter((house) => !house.name.includes("Administration"));
+    
+    // If user is a manager, only show their house
+    if (currentUser?.role === "MANAGER" && currentUser.houseId) {
+      filteredHouses = filteredHouses.filter(house => house.id === currentUser.houseId);
+    }
+    
+    // If user is a director or super admin, show all houses
+    return filteredHouses.map((house) => ({
+      label: getDisplayName(house.name),
+      route: "/report-details" as const,
+      params: {
+        type: "house",
+        house: normalizeHouseName(house.name),
+        houseId: house.id,
+        houseName: house.name,
+      },
+    }));
+  }, [houses, getDisplayName, currentUser]);
 
   if (housesLoading && !hasTimedOut) {
     return (
@@ -106,7 +114,9 @@ export default function Reports() {
       <View style={{ gap: 8, width: "100%" }}>
         {residentReports.length === 0 ? (
           <ThemedText type="default" style={{ marginTop: 10 }}>
-            There are no houses present to generate reports.
+            {currentUser?.role === "MANAGER" 
+              ? "You are not assigned to any house." 
+              : "There are no houses present to generate reports."}
           </ThemedText>
         ) : (
           <View style={{ gap: 8, width: "100%" }}>
@@ -124,31 +134,36 @@ export default function Reports() {
         )}
       </View>
 
-      <ThemedText type="title" style={[styles.title, { marginTop: 30 }]}>
-        Residents Report
-      </ThemedText>
+      {/* Only show Residents Report button for directors and super admins */}
+      {(currentUser?.role === "DIRECTOR" || currentUser?.role === "SUPER_ADMIN") && (
+        <>
+          <ThemedText type="title" style={[styles.title, { marginTop: 30 }]}>
+            Residents Report
+          </ThemedText>
 
-      <Pressable
-        style={[
-          styles.row,
-          styles.button,
-          { backgroundColor: bgColor, width: "100%" },
-        ]}
-        onPress={() =>
-          navigation.push({
-            pathname: "/report-details",
-            params: { type: "residents" },
-          })
-        }
-      >
-        <View style={{ flexDirection: "row", gap: 10 }}>
-          <ThemedText type="default">Get report</ThemedText>
-        </View>
-        <Image
-          source={require("@/assets/icons/chevron-right.png")}
-          style={styles.icon}
-        />
-      </Pressable>
+          <Pressable
+            style={[
+              styles.row,
+              styles.button,
+              { backgroundColor: bgColor, width: "100%" },
+            ]}
+            onPress={() =>
+              navigation.push({
+                pathname: "/report-details",
+                params: { type: "residents" },
+              })
+            }
+          >
+            <View style={{ flexDirection: "row", gap: 10 }}>
+              <ThemedText type="default">Get report</ThemedText>
+            </View>
+            <Image
+              source={require("@/assets/icons/chevron-right.png")}
+              style={styles.icon}
+            />
+          </Pressable>
+        </>
+      )}
     </ThemedView>
   );
 }

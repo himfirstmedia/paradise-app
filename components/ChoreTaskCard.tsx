@@ -53,8 +53,7 @@ export function ChoreTaskCard({
   const cameraRef = useRef<any>(null);
   const [cameraReady, setCameraReady] = useState(false);
 
-  const disabled = !["PENDING", "REJECTED"].includes(choreTask.status);
-
+  const disabled = !["PENDING", "REJECTED"].includes(choreTask.status || "");
 
   const { chores, reload } = useReduxChores();
 
@@ -150,139 +149,142 @@ export function ChoreTaskCard({
 
   const isManagerView =
     currentUserRole === "DIRECTOR" ||
-    currentUserRole === "FACILITY_MANAGER" ||
-    currentUserRole === "RESIDENT_MANAGER";
+    currentUserRole === "MANAGER";
 
   return (
     <>
       <ThemedView
         style={[styles.container, style, { backgroundColor: bgColor }]}
       >
-        <ThemedView style={[styles.card, { backgroundColor: bgColor }]}>
-          <View style={[styles.card, { width: "100%" }]}>
-            <View style={[styles.row, { marginRight: "5%" }]}>
-              <Tooltip
-                infoTitle="Task Details"
-                infoText={choreTask.description}
-              />
+       
+          <ThemedView style={[styles.card, { backgroundColor: bgColor }]}>
+            <View style={[styles.card, { width: "100%" }]}>
+              <View style={[styles.row, { marginRight: "5%" }]}>
+                <Tooltip
+                  infoTitle="Task Details"
+                  infoText={choreTask.description}
+                />
 
-              <Pressable
-                onPress={() => {
-                  setShowMore((prev) => !prev);
-                }}
-                style={{ width: "50%" }}
-              >
-                <ThemedText type="default">
-                  {choreTask.name.length > 15
-                    ? `${choreTask.name.slice(0, 15)}...`
-                    : choreTask.name}
-                </ThemedText>
-              </Pressable>
-              {!isManagerView && (
                 <Pressable
                   onPress={() => {
                     setShowMore((prev) => !prev);
                   }}
-                  style={{ marginRight: "1%" }}
+                  style={{ width: "50%" }}
                 >
-                  <Image
-                    source={
-                      showMore
-                        ? require("@/assets/icons/chevron-up.png")
-                        : require("@/assets/icons/chevron-down.png")
-                    }
-                    style={styles.icon}
-                  />
+                  <ThemedText type="default">
+                    {choreTask.name.length > 15
+                      ? `${choreTask.name.slice(0, 15)}...`
+                      : choreTask.name}
+                  </ThemedText>
                 </Pressable>
+                {!isManagerView && (
+                  <Pressable
+                    onPress={() => {
+                      setShowMore((prev) => !prev);
+                    }}
+                    style={{ marginRight: "1%" }}
+                  >
+                    <Image
+                      source={
+                        showMore
+                          ? require("@/assets/icons/chevron-up.png")
+                          : require("@/assets/icons/chevron-down.png")
+                      }
+                      style={styles.icon}
+                    />
+                  </Pressable>
+                )}
+              </View>
+              {choreTask.choreId && (
+                <ThemedCheckbox
+                  label="Primary"
+                  background={checkbgColor}
+                  checked={checked}
+                  onChange={setChecked}
+                />
               )}
             </View>
-            {choreTask.choreId && (
-              <ThemedCheckbox
-                label="Primary"
-                background={checkbgColor}
-                checked={checked}
-                onChange={setChecked}
-              />
-            )}
-          </View>
-        </ThemedView>
-        {showMore && !isManagerView ? (
-          <View style={{ paddingBottom: 20 }}>
-            <View style={[styles.row, { justifyContent: "space-between" }]}>
-              <View style={{ width: "48%" }}>
-                <ThemedText type="default">Date</ThemedText>
-                <ThemedDatePicker
-                  background={checkbgColor}
-                  placeholder="dd-mm-yyyy"
-                  value={date}
-                  onChangeText={setDate}
-                  errorMessage={errors.date}
-                  disabled={disabled}
-                />
-              </View>
-              <View style={{ width: "48%" }}>
-                <ThemedText type="default">Time</ThemedText>
-                <ThemedTimePicker
-                  background={checkbgColor}
-                  placeholder="hh-mm"
-                  value={time}
-                  onChangeText={setTime}
-                  errorMessage={errors.time}
-                  disabled={disabled}
-                />
-              </View>
-            </View>
-
-            <View style={[styles.row, { justifyContent: "space-between" }]}>
-              <View style={{ width: "65%" }}>
-                <ThemedText type="default">Description</ThemedText>
-                <ThemedTextArea
-                  background={checkbgColor}
-                  placeholder="Message"
-                  value={message}
-                  onChangeText={setMessage}
-                  errorMessage={errors.message}
-                  height={100}
-                  disabled={disabled}
-                />
-              </View>
-
-              <View style={{ width: "30%" }}>
-                <View style={styles.ImageContainer}>
-                  <ThemedText type="default">Image</ThemedText>
-                  <Image
-                    source={
-                      capturedImage
-                        ? { uri: capturedImage }
-                        : require("@/assets/images/placeholder.jpg")
-                    }
-                    style={{ width: "100%", height: 100, borderRadius: 8 }}
-                    resizeMode="cover"
+          </ThemedView>
+          {showMore && !isManagerView ? (
+            <View style={{ paddingBottom: 20 }}>
+              <View style={[styles.row, { justifyContent: "space-between" }]}>
+                <View style={{ width: "48%" }}>
+                  <ThemedText type="default">Date</ThemedText>
+                  <ThemedDatePicker
+                    background={checkbgColor}
+                    placeholder="mm-dd-yyyy"
+                    value={date}
+                    onChangeText={setDate}
+                    errorMessage={errors.date}
+                    disabled={disabled}
+                  />
+                </View>
+                <View style={{ width: "48%" }}>
+                  <ThemedText type="default">Time</ThemedText>
+                  <ThemedTimePicker
+                    background={checkbgColor}
+                    placeholder="hh-mm"
+                    value={time}
+                    onChangeText={setTime}
+                    errorMessage={errors.time}
+                    disabled={disabled}
                   />
                 </View>
               </View>
-            </View>
 
-            <View style={[styles.row, { alignItems: "center", marginTop: 10 }]}>
-              <Button
-                type="default"
-                title="Submit for Review"
-                onPress={handleTaskSubmit}
-                loading={loading}
-                style={{ flex: 1 }}
-                disabled={disabled}
-              />
-              <Button
-                type="icon-default"
-                icon={require("@/assets/icons/camera.png")}
-                onPress={() => setCameraVisible(true)}
-                disabled={disabled}
-              />
+              <View style={[styles.row, { justifyContent: "space-between" }]}>
+                <View style={{ width: "65%" }}>
+                  <ThemedText type="default">Description</ThemedText>
+                  <ThemedTextArea
+                    background={checkbgColor}
+                    placeholder="Message"
+                    value={message}
+                    onChangeText={setMessage}
+                    errorMessage={errors.message}
+                    height={100}
+                    disabled={disabled}
+                  />
+                </View>
+
+                <View style={{ width: "30%" }}>
+                  <View style={styles.ImageContainer}>
+                    <ThemedText type="default">Image</ThemedText>
+                    <Image
+                      source={
+                        capturedImage
+                          ? { uri: capturedImage }
+                          : require("@/assets/images/placeholder.jpg")
+                      }
+                      style={{ width: "100%", height: 100, borderRadius: 8 }}
+                      resizeMode="cover"
+                    />
+                  </View>
+                </View>
+              </View>
+
+              <View
+                style={[styles.row, { alignItems: "center", marginTop: 10 }]}
+              >
+                <Button
+                  type="default"
+                  title="Submit for Review"
+                  onPress={handleTaskSubmit}
+                  loading={loading}
+                  style={{ flex: 1 }}
+                  disabled={disabled}
+                />
+                <Button
+                  type="icon-default"
+                  icon={require("@/assets/icons/camera.png")}
+                  onPress={() => setCameraVisible(true)}
+                  disabled={disabled}
+                />
+              </View>
             </View>
-          </View>
-        ) : (
-          <ThemedView></ThemedView>
-        )}
+          ) : (
+            <ThemedView></ThemedView>
+          )}
+        
       </ThemedView>
 
       <Modal visible={cameraVisible} animationType="slide">
@@ -332,6 +334,7 @@ export function ChoreTaskCard({
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
     width: "100%",
     marginBottom: 16,
     borderRadius: 15,
@@ -359,5 +362,9 @@ const styles = StyleSheet.create({
   },
   ImageContainer: {
     flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: 50,
   },
 });

@@ -7,19 +7,8 @@ import { Pressable, StyleSheet } from "react-native";
 import { ThemedText } from "./ThemedText";
 import { ThemedView } from "./ThemedView";
 
-export type RoleType = "RESIDENT" | "INDIVIDUAL";
-
 interface MemberCardProps {
   members: User[]; // Use User interface from slice
-}
-
-const ROLE_LABELS: Record<RoleType, string> = {
-  RESIDENT: "Residents",
-  INDIVIDUAL: "Individuals",
-};
-
-function isRoleType(role: string): role is RoleType {
-  return role === "RESIDENT" || role === "INDIVIDUAL";
 }
 
 export function MemberCard({ members }: MemberCardProps) {
@@ -27,40 +16,42 @@ export function MemberCard({ members }: MemberCardProps) {
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const router = useRouter();
 
-  const groupedMembers: Record<RoleType, User[]> = {
-    RESIDENT: [],
-    INDIVIDUAL: [],
-  };
+  // Group residents by house name
+  const groupedByHouse: Record<string, User[]> = {};
   
   members.forEach((member) => {
-    if (isRoleType(member.role)) {
-      groupedMembers[member.role].push(member);
+    if (member.role !== "RESIDENT") return;
+    
+    const houseName = member.house?.abbreviation || "Individual";
+    if (!groupedByHouse[houseName]) {
+      groupedByHouse[houseName] = [];
     }
+    groupedByHouse[houseName].push(member);
   });
 
   return (
     <>
-      {(Object.keys(groupedMembers) as RoleType[]).map((role) => {
-        const groupMembers = groupedMembers[role];
+      {Object.keys(groupedByHouse).map((houseName) => {
+        const groupMembers = groupedByHouse[houseName];
         if (groupMembers.length === 0) return null;
         
         const showViewAll = groupMembers.length > 4;
-        const isExpanded = expanded[role] || false;
+        const isExpanded = expanded[houseName] || false;
         const displayedMembers = showViewAll && !isExpanded 
           ? groupMembers.slice(0, 4) 
           : groupMembers;
 
         return (
-          <ThemedView style={styles.container} key={role}>
+          <ThemedView style={styles.container} key={houseName}>
             <ThemedView style={[styles.row, { marginBottom: 12 }]}>
               <ThemedText type="subtitle">
-                {ROLE_LABELS[role]}
+                {houseName} Residents
               </ThemedText>
               {showViewAll && (
                 <Pressable
                   onPress={() => setExpanded(prev => ({
                     ...prev,
-                    [role]: !prev[role]
+                    [houseName]: !prev[houseName]
                   }))}
                 >
                   <ThemedText type="default">

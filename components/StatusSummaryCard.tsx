@@ -16,10 +16,12 @@ type StatusSummaryProps = {
     daysRemaining?: number;  
   },
   background?: string;
+  textColor?: string; // 👈 new optional prop
 };
 
-export function StatusSummaryCard({ summary, background }: StatusSummaryProps) {
+export function StatusSummaryCard({ summary, background, textColor }: StatusSummaryProps) {
   const primaryColor = useThemeColor({}, "selection");
+  const themeTextColor = useThemeColor({}, "text");
   const backgroundThemeColor = useThemeColor({}, (background || "selection") as any);
 
   let resolvedBackground: string;
@@ -34,6 +36,10 @@ export function StatusSummaryCard({ summary, background }: StatusSummaryProps) {
     resolvedBackground = primaryColor;
   }
 
+  // 👇 resolve text color based on props
+  const resolvedTextColor =
+    textColor || (background ? themeTextColor : "#fff");
+
   const safeSummary = summary || {
     beginningBalance: "0.0",
     currentBalance: "0.0",
@@ -46,32 +52,30 @@ export function StatusSummaryCard({ summary, background }: StatusSummaryProps) {
 
   return (
     <ThemedView style={[styles.card, { backgroundColor: resolvedBackground }]}>
-      <ThemedText type="subtitle" style={styles.statusText}>
+      <ThemedText type="subtitle" style={{ color: resolvedTextColor }}>
         Current Status
       </ThemedText>
-      <ThemedText type="default" style={styles.statusText}>
+      <ThemedText type="default" style={[styles.statusText, { color: resolvedTextColor }]}>
         Beginning Balance (Previous Period): {safeSummary.beginningBalance} hrs
       </ThemedText>
-      <ThemedText type="default" style={styles.statusText}>
+      <ThemedText type="default" style={[styles.statusText, { color: resolvedTextColor }]}>
         This Week: {safeSummary.weekStatus} hrs
       </ThemedText>
-      <ThemedText type="default" style={styles.statusText}>
+      <ThemedText type="default" style={[styles.statusText, { color: resolvedTextColor }]}>
         This Month: {safeSummary.monthStatus} hrs
       </ThemedText>
-      <ThemedText type="default" style={styles.statusText}>
+      <ThemedText type="default" style={[styles.statusText, { color: resolvedTextColor }]}>
         This Period: {safeSummary.periodStatus}
       </ThemedText>
-      <ThemedText type="default" style={styles.statusText}>
+      <ThemedText type="default" style={[styles.statusText, { color: resolvedTextColor }]}>
         Current Balance: {safeSummary.currentBalance} hrs
       </ThemedText>
-      <ThemedText type="default" style={styles.statusText}>
+      <ThemedText type="default" style={[styles.statusText, { color: resolvedTextColor }]}>
         Days remaining in this period: {safeSummary.daysRemaining}
       </ThemedText>
     </ThemedView>
   );
 }
-
-
 
 const styles = StyleSheet.create({
   card: {

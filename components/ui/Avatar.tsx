@@ -31,7 +31,7 @@ export function Avatar({ size = 40 }: AvatarProps) {
     try {
       await signout();
       setPopoverVisible(false); // Close modal before navigation
-      navigation.replace('/auth/login');
+      // navigation.replace('/auth/login');
     } catch (error: any) {
       console.error('Logout Error:', error);
       Alert.alert('Logout Failed', 'An error occurred during logout.');

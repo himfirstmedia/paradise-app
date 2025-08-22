@@ -30,6 +30,23 @@ export default function MembersScreen() {
   const { members, loading } = useReduxMembers();
   const { user: currentUser } = useReduxAuth();
 
+  const filteredMembers = useMemo(() => {
+    return members.filter((member) => {
+      // Always exclude SUPER_ADMIN and DIRECTOR
+      if (member.role === "SUPER_ADMIN" || member.role === "DIRECTOR") {
+        return false;
+      }
+
+      // If current user is a MANAGER, filter by houseId
+      if (currentUser?.role === "MANAGER") {
+        return member.houseId === currentUser.houseId;
+      }
+
+      // For other roles (SUPER_ADMIN/DIRECTOR), show all non-admin members
+      return true;
+    });
+  }, [members, currentUser]);
+
   const nonAdminMembers = useMemo(() => {
     return members.filter(
       (member) => member.role !== "SUPER_ADMIN" && member.role !== "DIRECTOR"
@@ -92,7 +109,7 @@ export default function MembersScreen() {
         ) : (
           <>
             {showAdminCard && <AdministratorCard members={members} />}
-            <MemberCard members={members} />
+            <MemberCard members={filteredMembers} />
           </>
         )}
       </ScrollView>

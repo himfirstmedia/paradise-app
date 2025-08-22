@@ -105,9 +105,9 @@ export default function TabTwoScreen() {
           contentContainerStyle={{
             alignItems: "center",
             width: "100%",
-            flex: 1,
           }}
           style={styles.innerContainer}
+          showsVerticalScrollIndicator={false}
         >
           <ThemedView
             style={[
@@ -122,7 +122,7 @@ export default function TabTwoScreen() {
                   type="title"
                   style={{ width: "100%", color: "#FFFFFF" }}
                 >
-                  Tasks
+                  Chores
                 </ThemedText>
               </View>
 
@@ -141,7 +141,7 @@ export default function TabTwoScreen() {
               showGradient={false}
               strokeColor={primaryColor}
               strokeWidth={5}
-              legendTitle="Tasks Progress"
+              legendTitle="Chores Progress"
               centerLabelComponent={() => (
                 <View>
                   <ThemedText

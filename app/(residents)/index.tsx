@@ -241,7 +241,7 @@ export default function HomeScreen() {
                     style={{ marginTop: "5%" }}
                   />
                 ) : (
-                  <StatusSummaryCard summary={summary} background={primaryColor}/>
+                  <StatusSummaryCard summary={summary} background={primaryColor} textColor="#fff "/>
                 )}
               </>
             )}

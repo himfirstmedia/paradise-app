@@ -46,11 +46,11 @@ export type ThemedInputProps = TextInputProps & {
 type ThemedDropdownProps = {
   type?: "default" | "floating" | "rounded";
   placeholder?: string;
-  items?: string[];
-  value?: string | string[]; // Accept both string and string[]
+  items?: { label: string; value: string | number }[];
+  value?: string | number | (string | number)[];
   multiSelect?: boolean;
-  onSelect?: (item: string) => void;
-  onValueChange?: (value: string | string[]) => void;
+  onSelect?: (item: string | number) => void;
+  onValueChange?: (value: string | number | (string | number)[]) => void;
   onChangeText?: (value: string) => void;
   errorMessage?: string;
   loading?: boolean;
@@ -239,7 +239,7 @@ export function ThemedCheckbox({
   return (
     <Pressable
       onPress={() => !disabled && onChange && onChange(!checked)}
-       disabled={disabled} 
+      disabled={disabled}
       style={[
         {
           flexDirection: "row",
@@ -262,8 +262,8 @@ export function ThemedCheckbox({
             backgroundColor: checked
               ? selectionColor
               : background === undefined
-                ? bgColor
-                : background,
+              ? bgColor
+              : background,
             justifyContent: "center",
             alignItems: "center",
           },
@@ -326,14 +326,15 @@ export function ThemedDropdown({
   const placeholderColor = useThemeColor({}, "placeholder");
 
   const isMulti = multiSelect === true;
-  const [selectedItems, setSelectedItems] = useState<string[]>(
-    Array.isArray(value)
-      ? value.filter((v) => v && v.trim() !== "")
-      : value && value.trim() !== ""
-        ? [value]
-        : []
-  );
 
+  // Convert initial value to string array for internal state
+  const initialValues = Array.isArray(value)
+    ? value.filter((v) => v !== null && v !== undefined).map((v) => String(v))
+    : value !== null && value !== undefined
+    ? [String(value)]
+    : [];
+
+  const [selectedItems, setSelectedItems] = useState<string[]>(initialValues);
   const [showModal, setShowModal] = useState(false);
   const [dropdownLayout, setDropdownLayout] = useState<LayoutRectangle | null>(
     null
@@ -354,34 +355,59 @@ export function ThemedDropdown({
   };
 
   useEffect(() => {
+    // Convert external value to string array for internal state
     if (Array.isArray(value)) {
-      setSelectedItems(value.filter((v) => v && v.trim() !== ""));
-    } else if (typeof value === "string" && value.trim() !== "") {
-      setSelectedItems([value]);
+      const stringValues = value
+        .filter((v) => v !== null && v !== undefined && v !== "")
+        .map((v) => String(v));
+      setSelectedItems(stringValues);
+    } else if (value !== null && value !== undefined && value !== "") {
+      setSelectedItems([String(value)]);
     } else {
       setSelectedItems([]);
     }
   }, [value]);
 
-  const handleSelect = (item: string) => {
+  const handleSelect = (itemValue: string | number) => {
+    const stringValue = String(itemValue);
+
     if (isMulti) {
       setSelectedItems((prev) => {
-        const updated = prev.includes(item)
-          ? prev.filter((i) => i !== item)
-          : [...prev, item];
+        const updated = prev.includes(stringValue)
+          ? prev.filter((i) => i !== stringValue)
+          : [...prev, stringValue];
 
-        onValueChange?.(updated);
-        onSelect?.(item);
+        // Convert back to original type for callback
+        const originalTypeValues = updated.map((v) => {
+          // Try to preserve number type if possible
+          const num = Number(v);
+          return isNaN(num) ? v : num;
+        });
+
+        onValueChange?.(originalTypeValues);
+        onSelect?.(itemValue);
         if (onChangeText) onChangeText(updated.join(", "));
         return updated;
       });
     } else {
-      setSelectedItems([item]);
-      onValueChange?.(item);
-      onSelect?.(item);
-      if (onChangeText) onChangeText(item);
+      setSelectedItems([stringValue]);
+
+      // Convert back to original type for callback
+      const originalValue = (() => {
+        const num = Number(itemValue);
+        return isNaN(num) ? itemValue : num;
+      })();
+
+      onValueChange?.(originalValue);
+      onSelect?.(originalValue);
+      if (onChangeText) onChangeText(String(itemValue));
       setShowModal(false);
     }
+  };
+
+  const getLabelForValue = (val: string) => {
+    const found = items.find((i) => String(i.value) === val);
+    return found ? found.label : val;
   };
 
   const windowHeight = Dimensions.get("window").height;
@@ -390,10 +416,16 @@ export function ThemedDropdown({
     <>
       <View ref={dropdownRef} onLayout={() => {}} style={{ width: "100%" }}>
         <Pressable onPress={handleOpen}>
-          <View style={[styles.dropdown, { backgroundColor: bgColor },  disabled && styles.disabled,]}>
+          <View
+            style={[
+              styles.dropdown,
+              { backgroundColor: bgColor },
+              disabled && styles.disabled,
+            ]}
+          >
             <View style={styles.dropdownTopRow}>
               <View style={styles.tagsContainerWrapper}>
-                {selectedItems.length === 0 ? (
+                {selectedItems.length === 0 || selectedItems[0] === "" ? (
                   <ThemedText
                     type="default"
                     style={{ color: placeholderColor }}
@@ -412,14 +444,18 @@ export function ThemedDropdown({
                           type="default"
                           style={{ marginRight: 4, color: textColor }}
                         >
-                          {item}
+                          {getLabelForValue(item)}
                         </ThemedText>
                         <TouchableOpacity
                           onPress={(e) => {
                             e.stopPropagation();
                             setSelectedItems((prev) => {
                               const updated = prev.filter((i) => i !== item);
-                              onValueChange?.(updated);
+                              const originalTypeValues = updated.map((v) => {
+                                const num = Number(v);
+                                return isNaN(num) ? v : num;
+                              });
+                              onValueChange?.(originalTypeValues);
                               if (onChangeText)
                                 onChangeText(updated.join(", "));
                               return updated;
@@ -436,7 +472,7 @@ export function ThemedDropdown({
                   })
                 ) : (
                   <ThemedText type="default" style={{ color: textColor }}>
-                    {selectedItems[0]}
+                    {getLabelForValue(selectedItems[0])}
                   </ThemedText>
                 )}
               </View>
@@ -510,10 +546,10 @@ export function ThemedDropdown({
               ) : (
                 <FlatList
                   data={items}
-                  keyExtractor={(item) => item}
+                  keyExtractor={(item) => String(item.value)}
                   numColumns={numColumns}
-                  style={{ flex: 1, width: "100%"}}
-                  showsVerticalScrollIndicator={false}
+                  style={{ flex: 1, width: "100%" }}
+                  showsVerticalScrollIndicator={true}
                   renderItem={({ item, index }) => {
                     const gap = 4;
                     const horizontalPadding = 20;
@@ -536,9 +572,9 @@ export function ThemedDropdown({
                           },
                           numColumns === 1 && { width: "100%" },
                         ]}
-                        onPress={() => handleSelect(item)}
+                        onPress={() => handleSelect(item.value)}
                       >
-                        <ThemedText type="default">{item}</ThemedText>
+                        <ThemedText type="default">{item.label}</ThemedText>
                       </Pressable>
                     );
                   }}
@@ -585,8 +621,8 @@ export function ThemedDatePicker({
     setShowPicker(false);
   };
 
-   const handlePress = () => {
-    if (disabled) return; 
+  const handlePress = () => {
+    if (disabled) return;
     setShowPicker(true);
   };
 
@@ -610,7 +646,7 @@ export function ThemedDatePicker({
         >
           <ThemedText
             type="default"
-             style={{ color: parsedValue ? textColor : placeholderColor }}
+            style={{ color: parsedValue ? textColor : placeholderColor }}
           >
             {parsedValue ? format(parsedValue, "MM-dd-yyyy") : placeholder}
           </ThemedText>
@@ -772,13 +808,12 @@ export function ThemedChatInput({
     if (capturedImage && onSendImage) {
       try {
         const formData = new FormData();
-        // Cast the object to any to bypass TypeScript error, or use ReactNativeFile type
         const file: ImageFile = {
           uri: capturedImage,
           name: `image-${Date.now()}.jpg`,
           type: "image/jpeg",
         };
-        formData.append("image", file as any); // Use type assertion to bypass TypeScript error
+        formData.append("image", file as any);
 
         const response = await api.post("/chats/upload", formData, {
           headers: {
@@ -791,8 +826,16 @@ export function ThemedChatInput({
         setCapturedImage(null);
         setPreviewVisible(false);
       } catch (error: any) {
-        console.error("Failed to send image:", error.response?.data || error.message);
-        Alert.alert("Error", `Failed to send image: ${error.response?.data?.error || error.message}`);
+        console.error(
+          "Failed to send image:",
+          error.response?.data || error.message
+        );
+        Alert.alert(
+          "Error",
+          `Failed to send image: ${
+            error.response?.data?.error || error.message
+          }`
+        );
       }
     }
   };
@@ -1056,7 +1099,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginLeft: 5,
   },
-   disabled: {
+  disabled: {
     opacity: 0.5,
   },
 });

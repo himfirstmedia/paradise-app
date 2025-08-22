@@ -176,7 +176,7 @@ return (
                   type="title"
                   style={{ width: "100%", color: "#FFFFFF" }}
                 >
-                  Members
+                  House
                 </ThemedText>
               </View>
               <Avatar />

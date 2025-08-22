@@ -5,7 +5,7 @@ import { useReduxAuth } from "@/hooks/useReduxAuth";
 import { useReduxChores } from "@/hooks/useReduxChores";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { useRouter } from "expo-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Image,
@@ -24,6 +24,9 @@ export default function ChoreManagerScreen() {
   const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
 
   const { user } = useReduxAuth();
+  
+  const userHouse = user?.houseId;
+
 
   useEffect(() => {
     setCurrentUserRole(user?.role ?? null);
@@ -34,7 +37,17 @@ export default function ChoreManagerScreen() {
   const isLargeScreen = Platform.OS === "web" && width >= 1024;
   const isMediumScreen = Platform.OS === "web" && width >= 768;
 
-  const safeChores = Array.isArray(chores) ? chores : [];
+  
+  const filteredChores = useMemo(() => {
+    const safeChores = Array.isArray(chores) ? chores : [];
+    if (currentUserRole === "DIRECTOR") {
+      return safeChores; 
+    } else if (currentUserRole === "MANAGER" && userHouse) {
+      return safeChores.filter(chore => chore.houseId === userHouse);
+    } else {
+      return [];
+    }
+  }, [chores, currentUserRole, userHouse]);
 
   const responsiveStyles = StyleSheet.create({
     headerContainer: {
@@ -58,8 +71,7 @@ export default function ChoreManagerScreen() {
 
   const showAddTask =
     currentUserRole === "DIRECTOR" ||
-    currentUserRole === "FACILITY_MANAGER" ||
-    currentUserRole === "RESIDENT_MANAGER";
+    currentUserRole === "MANAGER"
 
   return (
     <ThemedView
@@ -75,7 +87,7 @@ export default function ChoreManagerScreen() {
           color={primaryColor}
           style={{ marginTop: "5%" }}
         />
-      ) : safeChores.length === 0 ? (
+      ) : filteredChores.length === 0 ? (
         <ThemedText
           type="default"
           style={{
@@ -95,7 +107,7 @@ export default function ChoreManagerScreen() {
           }}
           style={styles.innerContainer}
         >
-          <PrimaryChoresCard chores={safeChores} />
+          <PrimaryChoresCard chores={filteredChores} />
         </ScrollView>
       )}
       {showAddTask && (

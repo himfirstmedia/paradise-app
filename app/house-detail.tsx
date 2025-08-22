@@ -141,7 +141,7 @@ export default function HouseDetailScreen() {
         </ThemedText>
 
         <ThemedText type="defaultSemiBold" style={{ marginBottom: 20 }}>
-          Capacity: {house.users.length} / {house.capacity} members
+          Residents: {house.users.length} / {house.capacity}
         </ThemedText>
 
         {managers.length > 0 && (

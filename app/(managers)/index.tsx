@@ -21,6 +21,8 @@ import { useRouter } from "expo-router";
 import { useReduxHouse } from "@/hooks/useReduxHouse";
 import { HouseSelectCard } from "@/components/HouseCard";
 import { Button } from "@/components/ui/Button";
+import { ChoreReviewCard } from "@/components/ChoreReviewCard";
+import { useReduxChores } from "@/hooks/useReduxChores";
 
 function getGreeting() {
   const hour = new Date().getHours();
@@ -44,7 +46,8 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = React.useState(false);
 
   const { houses, loading, reload: ReloadHouses } = useReduxHouse();
-
+  const { chores } = useReduxChores();
+  
   const {
     scriptures,
     loading: scriptureLoading,
@@ -183,7 +186,7 @@ export default function HomeScreen() {
                 fontSize: fontSizes.subtitle,
               }}
             >
-              {userHouse}
+              Manager of {userHouse}
             </ThemedText>
           </View>
         </ThemedView>
@@ -235,6 +238,7 @@ export default function HomeScreen() {
             ) : (
               <HouseSelectCard houses={houses} />
             )}
+            <ChoreReviewCard chores={chores} />
           </View>
         </ThemedView>
       </ScrollView>

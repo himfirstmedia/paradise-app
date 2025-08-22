@@ -6,7 +6,7 @@ import { useCallback, useEffect } from "react";
 
 export function useChoreSummary() {
   const dispatch = useAppDispatch();
-  const { summary, summaryStatus, error } = useAppSelector((state) => state.task);
+  const { summary, summaryStatus, error } = useAppSelector((state) => state.chore);
   const currentUser = useAppSelector(selectCurrentUser);
   
   

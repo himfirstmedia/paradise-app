@@ -118,7 +118,7 @@ export default function TabTwoScreen() {
                   type="title"
                   style={{ width: "100%", color: "#FFFFFF" }}
                 >
-                  Tasks
+                  Chores
                 </ThemedText>
               </View>
 
@@ -137,7 +137,7 @@ export default function TabTwoScreen() {
               showGradient={false}
               strokeColor={primaryColor}
               strokeWidth={5}
-              legendTitle="Tasks Progress"
+              legendTitle="Chores Progress"
               centerLabelComponent={() => (
                 <View>
                   <ThemedText

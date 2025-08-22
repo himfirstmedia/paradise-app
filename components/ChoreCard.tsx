@@ -5,6 +5,7 @@ import {
   Image,
   Modal,
   Pressable,
+  ScrollView,
   StyleSheet,
   View,
   ViewStyle,
@@ -43,6 +44,7 @@ export function ChoreCard({ onPress, chores }: ChoreCardProps) {
   const router = useRouter();
   const bgColor = useThemeColor({}, "input");
   const checkbgColor = useThemeColor({}, "background");
+  const [visible, setVisible] = useState(false);
 
   const { user } = useReduxAuth();
   const currentUserRole = user?.role || "";
@@ -73,13 +75,6 @@ export function ChoreCard({ onPress, chores }: ChoreCardProps) {
   const showLoading = chores ? false : loading;
   const showError = chores ? null : error;
 
-  const CATEGORY_LABELS = {
-    MAINTENANCE: "Maintenance Chores",
-    HOUSEHOLD: "Household Chores",
-    SUPPORT: "Support Chores",
-    REVIEW: "Chores Under Review",
-  };
-
   // Initialize form data for chores
   useEffect(() => {
     const initialData: Record<string, any> = {};
@@ -94,23 +89,19 @@ export function ChoreCard({ onPress, chores }: ChoreCardProps) {
     setChoreFormData(initialData);
   }, [choresToUse]);
 
-  // Group chores by category and review status
-  const groupedChores: Record<ChoreCategory, Chore[]> = {
-    MAINTENANCE: [],
-    HOUSEHOLD: [],
-    SUPPORT: [],
-    REVIEW: [],
-  };
+  const filteredChores = (chores ?? reduxChores).filter(
+    (chore) => chore.status !== "REVIEWING"
+  );
 
   const groupedChoresByHouse: Record<string, Chore[]> = {};
 
-  choresToUse.forEach((chore) => {
+  filteredChores.forEach((chore) => {
     const houseName = chore.house?.name || "Unassigned House";
     if (!groupedChoresByHouse[houseName]) {
       groupedChoresByHouse[houseName] = [];
     }
     groupedChoresByHouse[houseName].push(chore as Chore);
-  });
+  }); 
 
   const takePicture = async () => {
     if (cameraRef.current && cameraReady && currentChoreId) {
@@ -189,7 +180,7 @@ export function ChoreCard({ onPress, chores }: ChoreCardProps) {
       await reload();
       Alert.alert(
         "Chore Submitted",
-        "Chore marked as completed and is under review."
+        "Chore marked as completed and is now under review."
       );
 
       setExpandedChores((prev) => ({ ...prev, [chore.id]: false }));
@@ -222,197 +213,207 @@ export function ChoreCard({ onPress, chores }: ChoreCardProps) {
     currentUserRole === "DIRECTOR" || currentUserRole?.includes("MANAGER");
 
   const disabledForChore = (chore: any) =>
-    !["PENDING", "REJECTED"].includes(chore.status);
+    !["PENDING", "APPROVED"].includes(chore.status);
 
   if (showLoading) return <ThemedText>Loading chores...</ThemedText>;
   if (showError) return <ThemedText>Error: {showError}</ThemedText>;
 
   return (
-    <>
-      {Object.keys(groupedChoresByHouse).map((houseName) => {
-        const houseChores = groupedChoresByHouse[houseName];
-        if (!houseChores || houseChores.length === 0) return null;
+    <View style={{ flex: 1 }}>
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ paddingBottom: 50 }}
+        showsVerticalScrollIndicator={false}
+      >
+        {Object.keys(groupedChoresByHouse).map((houseName) => {
+          const houseChores = groupedChoresByHouse[houseName];
+          if (!houseChores || houseChores.length === 0) return null;
 
-        const showViewAll = houseChores.length > 4;
-        const isHouseExpanded = expandedCategories[houseName] || false;
-        const displayedChores = isHouseExpanded
-          ? houseChores
-          : houseChores.slice(0, 4);
+          const showViewAll = houseChores.length > 5;
+          const isHouseExpanded = expandedCategories[houseName] || false;
+          const displayedChores = isHouseExpanded
+            ? houseChores
+            : houseChores.slice(0, 5);
 
-        return (
-          <ThemedView style={styles.categoryContainer} key={houseName}>
-            <ThemedView style={[styles.categoryHeader, { marginBottom: 12 }]}>
-              {currentUserRole !== "RESIDENT" && (
-                <ThemedText type="subtitle">{houseName}</ThemedText>
-              )}
+          return (
+            <ThemedView style={styles.categoryContainer} key={houseName}>
+              <ThemedView style={[styles.categoryHeader, { marginBottom: 12 }]}>
+                {currentUserRole !== "RESIDENT" && (
+                  <ThemedText type="subtitle">{houseName}</ThemedText>
+                )}
 
-              {showViewAll && (
-                <Pressable onPress={() => toggleCategoryExpand(houseName)}>
-                  <ThemedText type="default">
-                    {isHouseExpanded ? "View Less" : "View All"}
-                  </ThemedText>
-                </Pressable>
-              )}
-            </ThemedView>
+                {showViewAll && (
+                  <Pressable onPress={() => toggleCategoryExpand(houseName)}>
+                    <ThemedText type="default">
+                      {isHouseExpanded ? "View Less" : "View All"}
+                    </ThemedText>
+                  </Pressable>
+                )}
+              </ThemedView>
 
-            <ThemedView style={styles.choreCardsContainer}>
-              {displayedChores.map((chore) => {
-                const isExpanded = expandedChores[chore.id] || false;
-                const formData = choreFormData[chore.id] || {};
-                const errors = choreErrors[chore.id] || {};
-                const capturedImage = capturedImages[chore.id] || null;
-                const loading = loadingStates[chore.id] || false;
-                const disabled = disabledForChore(chore);
+              <ThemedView style={styles.choreCardsContainer}>
+                {displayedChores.map((chore) => {
+                  const isExpanded = expandedChores[chore.id] || false;
+                  const formData = choreFormData[chore.id] || {};
+                  const errors = choreErrors[chore.id] || {};
+                  const capturedImage = capturedImages[chore.id] || null;
+                  const loading = loadingStates[chore.id] || false;
+                  const disabled = disabledForChore(chore);
 
-                return (
-                  <ThemedView
-                    key={chore.id}
-                    style={[styles.choreCard, { backgroundColor: bgColor }]}
-                  >
-                    <View style={styles.cardHeader}>
-                      <View style={styles.choreInfo}>
-                        <Tooltip
-                          infoTitle="Chore Details"
-                          infoText={chore.description}
-                        />
-                        <Pressable
-                          onPress={() =>
-                            !isManagerView && toggleChoreExpand(chore.id)
-                          }
-                          style={{ marginRight: 12 }}
-                        >
-                          <ThemedText type="default" style={styles.choreName}>
-                            {chore.name}
-                          </ThemedText>
-                        </Pressable>
-                        <View style={styles.choreActions}>
-                          {!isManagerView && (
-                            <Pressable
-                              onPress={() => toggleChoreExpand(chore.id)}
-                            >
+                  return (
+                    <ThemedView
+                      key={chore.id}
+                      style={[styles.choreCard, { backgroundColor: bgColor }]}
+                    >
+                      <View style={styles.cardHeader}>
+                        <View style={styles.choreInfo}>
+                          <Tooltip
+                            infoTitle="Chore Details"
+                            infoText={chore.description}
+                          />
+                          <Pressable
+                            onPress={() =>
+                              !isManagerView && toggleChoreExpand(chore.id)
+                            }
+                            style={{ marginRight: 12 }}
+                          >
+                            <ThemedText type="default" style={styles.choreName}>
+                              {chore.name}
+                            </ThemedText>
+                          </Pressable>
+                          <View style={styles.choreActions}>
+                            {!isManagerView && (
+                              <Pressable
+                                onPress={() => toggleChoreExpand(chore.id)}
+                              >
+                                <Image
+                                  source={
+                                    isExpanded
+                                      ? require("@/assets/icons/chevron-up.png")
+                                      : require("@/assets/icons/chevron-down.png")
+                                  }
+                                  style={styles.expandIcon}
+                                />
+                              </Pressable>
+                            )}
+                            {chore.isPrimary === true && !isManagerView && (
+                              <ThemedCheckbox
+                                background={checkbgColor}
+                                checked={chore.isPrimary}
+                                onChange={(checked) =>
+                                  handleFormChange(
+                                    chore.id,
+                                    chore.isPrimary ? "checked" : "status",
+                                    checked ? "true" : "false"
+                                  )
+                                }
+                                disabled={disabled}
+                                style={styles.checkbox}
+                              />
+                            )}
+                          </View>
+                        </View>
+                      </View>
+
+                      {isExpanded && !isManagerView && (
+                        <View style={styles.choreForm}>
+                          {/* Date & Time */}
+                          <View style={styles.datetimeRow}>
+                            <View style={styles.datetimeInput}>
+                              <ThemedText type="defaultSemiBold">
+                                Date
+                              </ThemedText>
+                              <ThemedDatePicker
+                                background={checkbgColor}
+                                placeholder="mm-dd-yyyy"
+                                value={formData.date}
+                                onChangeText={(text) =>
+                                  handleFormChange(chore.id, "date", text)
+                                }
+                                errorMessage={errors.date}
+                                disabled={disabled}
+                              />
+                            </View>
+                            <View style={styles.datetimeInput}>
+                              <ThemedText type="defaultSemiBold">
+                                Time
+                              </ThemedText>
+                              <ThemedTimePicker
+                                background={checkbgColor}
+                                placeholder="hh-mm"
+                                value={formData.time}
+                                onChangeText={(text) =>
+                                  handleFormChange(chore.id, "time", text)
+                                }
+                                errorMessage={errors.time}
+                                disabled={disabled}
+                              />
+                            </View>
+                          </View>
+
+                          {/* Description & Image */}
+                          <View style={styles.descriptionRow}>
+                            <View style={styles.descriptionInput}>
+                              <ThemedText type="defaultSemiBold">
+                                Description
+                              </ThemedText>
+                              <ThemedTextArea
+                                background={checkbgColor}
+                                placeholder="Add details about chore completion"
+                                value={formData.message}
+                                onChangeText={(text) =>
+                                  handleFormChange(chore.id, "message", text)
+                                }
+                                errorMessage={errors.message}
+                                height={100}
+                                disabled={disabled}
+                              />
+                            </View>
+                            <View style={styles.imageContainer}>
+                              <ThemedText type="defaultSemiBold">
+                                Image
+                              </ThemedText>
                               <Image
                                 source={
-                                  isExpanded
-                                    ? require("@/assets/icons/chevron-up.png")
-                                    : require("@/assets/icons/chevron-down.png")
+                                  capturedImage
+                                    ? { uri: capturedImage }
+                                    : require("@/assets/images/placeholder.jpg")
                                 }
-                                style={styles.expandIcon}
+                                style={styles.imagePreview}
                               />
-                            </Pressable>
-                          )}
-                          {chore.isPrimary === true && !isManagerView && (
-                            <ThemedCheckbox
-                              background={checkbgColor}
-                              checked={chore.isPrimary}
-                              onChange={(checked) =>
-                                handleFormChange(
-                                  chore.id,
-                                  chore.isPrimary ? "checked" : "status",
-                                  checked ? "true" : "false"
-                                )
-                              }
-                              disabled={disabled}
-                              style={styles.checkbox}
-                            />
-                          )}
-                        </View>
-                      </View>
-                    </View>
+                            </View>
+                          </View>
 
-                    {isExpanded && !isManagerView && (
-                      <View style={styles.choreForm}>
-                        {/* Date & Time */}
-                        <View style={styles.datetimeRow}>
-                          <View style={styles.datetimeInput}>
-                            <ThemedText type="defaultSemiBold">Date</ThemedText>
-                            <ThemedDatePicker
-                              background={checkbgColor}
-                              placeholder="dd-mm-yyyy"
-                              value={formData.date}
-                              onChangeText={(text) =>
-                                handleFormChange(chore.id, "date", text)
-                              }
-                              errorMessage={errors.date}
+                          {/* Actions */}
+                          <View style={styles.formActions}>
+                            <Button
+                              type="default"
+                              title="Submit for Review"
+                              onPress={() => handleChoreSubmit(chore)}
+                              loading={loading}
+                              style={{ flex: 1 }}
                               disabled={disabled}
                             />
-                          </View>
-                          <View style={styles.datetimeInput}>
-                            <ThemedText type="defaultSemiBold">Time</ThemedText>
-                            <ThemedTimePicker
-                              background={checkbgColor}
-                              placeholder="hh-mm"
-                              value={formData.time}
-                              onChangeText={(text) =>
-                                handleFormChange(chore.id, "time", text)
-                              }
-                              errorMessage={errors.time}
+                            <Button
+                              type="icon-default"
+                              icon={require("@/assets/icons/camera.png")}
+                              onPress={() => {
+                                setCurrentChoreId(chore.id);
+                                setCameraVisible(true);
+                              }}
                               disabled={disabled}
                             />
                           </View>
                         </View>
-
-                        {/* Description & Image */}
-                        <View style={styles.descriptionRow}>
-                          <View style={styles.descriptionInput}>
-                            <ThemedText type="defaultSemiBold">
-                              Description
-                            </ThemedText>
-                            <ThemedTextArea
-                              background={checkbgColor}
-                              placeholder="Add details about chore completion"
-                              value={formData.message}
-                              onChangeText={(text) =>
-                                handleFormChange(chore.id, "message", text)
-                              }
-                              errorMessage={errors.message}
-                              height={100}
-                              disabled={disabled}
-                            />
-                          </View>
-                          <View style={styles.imageContainer}>
-                            <ThemedText type="defaultSemiBold">
-                              Image
-                            </ThemedText>
-                            <Image
-                              source={
-                                capturedImage
-                                  ? { uri: capturedImage }
-                                  : require("@/assets/images/placeholder.jpg")
-                              }
-                              style={styles.imagePreview}
-                            />
-                          </View>
-                        </View>
-
-                        {/* Actions */}
-                        <View style={styles.formActions}>
-                          <Button
-                            type="default"
-                            title="Submit for Review"
-                            onPress={() => handleChoreSubmit(chore)}
-                            loading={loading}
-                            style={{ flex: 1 }}
-                            disabled={disabled}
-                          />
-                          <Button
-                            type="icon-default"
-                            icon={require("@/assets/icons/camera.png")}
-                            onPress={() => {
-                              setCurrentChoreId(chore.id);
-                              setCameraVisible(true);
-                            }}
-                            disabled={disabled}
-                          />
-                        </View>
-                      </View>
-                    )}
-                  </ThemedView>
-                );
-              })}
+                      )}
+                    </ThemedView>
+                  );
+                })}
+              </ThemedView>
             </ThemedView>
-          </ThemedView>
-        );
-      })}
+          );
+        })}
+      </ScrollView>
 
       <Modal visible={cameraVisible} animationType="slide">
         <View style={{ flex: 1 }}>
@@ -444,11 +445,17 @@ export function ChoreCard({ onPress, chores }: ChoreCardProps) {
           </CameraView>
         </View>
       </Modal>
-    </>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.2)",
+  },
   categoryContainer: {
     width: "100%",
     marginBottom: 24,
@@ -545,5 +552,18 @@ const styles = StyleSheet.create({
   captureIcon: {
     height: 40,
     width: 40,
+  },
+  tooltip: {
+    padding: 15,
+    borderRadius: 8,
+    maxWidth: "80%",
+
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  tooltipText: {
+    fontSize: 14,
+    marginTop: 20,
   },
 });

@@ -172,16 +172,6 @@ export default function HomeScreen() {
               {getGreeting()}
               {userName}
             </ThemedText>
-            <ThemedText
-              type="subtitle"
-              style={{
-                width: "100%",
-                color: "#FFFFFF",
-                fontSize: fontSizes.subtitle,
-              }}
-            >
-              Welcome to Paradise App.
-            </ThemedText>
           </View>
         </ThemedView>
 

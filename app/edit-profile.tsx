@@ -59,6 +59,7 @@ export default function EditProfileScreen() {
 
   const userRole = currentUser?.role ?? "";
   const isPrivileged = ["MANAGER", "DIRECTOR"].includes(userRole);
+  const isManager = ["MANAGER"].includes(userRole);
 
   // Get user ID from params
   const paramId = Array.isArray(params.id) ? params.id[0] : params.id;
@@ -276,7 +277,7 @@ export default function EditProfileScreen() {
               multiSelect={false}
             />
           </ThemedView>
-          {isPrivileged && (
+          {isManager && (
             <ThemedView style={styles.inputField}>
               <ThemedText type="default">
                 House <Dot />

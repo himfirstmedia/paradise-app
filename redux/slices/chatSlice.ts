@@ -11,7 +11,7 @@ interface ChatState {
   currentChat: Chat | null;
 }
 
-const initialState: ChatState = {
+export const initialState: ChatState = {
   chats: [],
   chatsStatus: 'idle',
   error: null,

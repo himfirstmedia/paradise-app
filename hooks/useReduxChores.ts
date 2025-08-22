@@ -7,7 +7,7 @@ import { useCallback, useEffect } from "react";
 
 export function useReduxChores({ onlyCurrentUser = false } = {}) {
   const dispatch = useAppDispatch();
-  const { chores, choresStatus, error, summary, summaryStatus } = useAppSelector((state) => state.task);
+  const { chores, choresStatus, error, summary, summaryStatus } = useAppSelector((state) => state.chore);
   const currentUser = useAppSelector(selectCurrentUser);
 
   const reload = useCallback(() => {

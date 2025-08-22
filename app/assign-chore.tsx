@@ -41,7 +41,7 @@ export default function AssignChoreScreen() {
   } = useReduxChores();
   const [selectedMember, setSelectedMember] =
     useState<string>(preselectedMember);
-  const [selectedChoreId, setSelectedChoreId] = useState<number>();
+  const [selectedChoreId, setSelectedChoreId] = useState<string | number>();
   const [instruction, setInstruction] = useState<string>("");
   const [isPrimary, setIsPrimary] = useState<boolean>(false);
   const [loading, setLoading] = useState(false);
@@ -70,24 +70,29 @@ export default function AssignChoreScreen() {
     return chores;
   }, [chores, currentUser, isDirector]);
 
-   const choreOptions = useMemo(() => {
-    return visibleChores.map(chore => ({
+  const choreOptions = useMemo(() => {
+    return visibleChores.map((chore) => ({
       label: chore.name,
       value: chore.id.toString(),
     }));
   }, [visibleChores]);
 
+
   const handleChoreAssignment = async () => {
+
     if (!selectedMember || !selectedChoreId) {
       Alert.alert("Missing Fields", "Please select a member and a chore.");
       return;
     }
+
     setLoading(true);
     try {
       const member = members.find((m) => m.name === selectedMember);
       if (!member) throw new Error("Selected member not found.");
 
-      const chore = chores.find((t) => t.id === selectedChoreId);
+      // Convert the string ID back to a number
+      const choreId = selectedChoreId;
+      const chore = chores.find((t) => t.id === choreId);
       if (!chore) throw new Error("Selected chore not found.");
 
       const payload = {
@@ -96,7 +101,9 @@ export default function AssignChoreScreen() {
         isPrimary,
       };
 
-      await api.put(`/chores/${chore.id}`, payload);
+      console.log("Chore Payload: ", payload);
+
+      await api.post(`/chores/${choreId}/assign`, payload);
 
       setSelectedChoreId(undefined);
       setSelectedMember("");
@@ -179,9 +186,11 @@ export default function AssignChoreScreen() {
                       ? "No chores available"
                       : "Select Chore"
                   }
-                  value={selectedChoreId?.toString() || ""}
-                  onSelect={(value) => setSelectedChoreId(parseInt(value, 10))}
-                  items={choreOptions.map((option) => option.label)}
+                  value={selectedChoreId}
+                  onSelect={(value) => {
+                    setSelectedChoreId(value);
+                  }}
+                  items={choreOptions}
                   multiSelect={false}
                 />
               </>

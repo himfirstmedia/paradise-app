@@ -37,6 +37,7 @@ export default function MemberDetailScreen() {
   const isMediumScreen = Platform.OS === "web" && width >= 768;
 
   const bgColor = useThemeColor({}, "background");
+  const textColor = useThemeColor({}, "text");
   // const inputColor = useThemeColor({}, "input");
   const navigation = useRouter();
   const [alertMessage, setAlertMessage] = useState("");
@@ -54,7 +55,7 @@ export default function MemberDetailScreen() {
 
   const userChores = chores.filter((chore) => chore.userId === Number(userId));
 
-  console.log("Primary Chores:", userChores);
+  // console.log("Primary Chores:", userChores);
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -83,7 +84,7 @@ export default function MemberDetailScreen() {
   const { id, firstname, lastname, name, role, periodStart, periodEnd } =
     member;
 
-  console.log("Member Detail:", member);
+  // console.log("Member Detail:", member);
 
   // Fixed: Simplify house display logic
   const houseDisplayName = member?.houseId
@@ -143,7 +144,7 @@ export default function MemberDetailScreen() {
         showsVerticalScrollIndicator={false}
       >
         <ThemedText type="title" style={{ marginBottom: 20 }}>
-          Resident Information
+          {member.role === "MANAGER" ? "Manager" : "Resident"} Information
         </ThemedText>
 
         <View style={styles.row}>
@@ -221,9 +222,10 @@ export default function MemberDetailScreen() {
                     daysRemaining: 0,
                   }}
                   background="input"
+                  textColor={textColor}
                 />
               ) : (
-                <StatusSummaryCard summary={summary} background="input" />
+                <StatusSummaryCard summary={summary} background="input" textColor={textColor}/>
               )}
             </>
           )}
